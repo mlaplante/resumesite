@@ -233,7 +233,7 @@ function parallax() {
       $.ajax({
 
 	      type: "POST",
-	      url: "inc/sendEmail.php",
+	      url: "inc/mailer.php",
 	      data: data,
 	      success: function(msg) {
 
