@@ -1,18 +1,3 @@
-/* ==================================================================
-
-*   Intima Media Queries
-
-TOC : 
-
-1. screenwidth less than 1024px (Medium Screen/Large Tablets)
-2. screenwidth less than 900px (Tablets)
-3. screenwidth less than 767px (Mobile wide/Smaller Tablets)
-4. screenwidth less than 480px (Small Screen Mobile)
-
-
-/* ================================================================== */
-
-
 /* screenwidth less than 1024px
 --------------------------------------------------------------------- */
 @media only screen and (min-width : 768px) and (max-width: 1024px) {
