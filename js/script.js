@@ -229,7 +229,7 @@ jQuery(document).ready(function($) {
     var form = $('#contactForm');
 
     // Get the messages div.
-    var formMessages = $('#message-success #form-messages');
+    var formMessages = $('#form-messages');
 
     // Set up an event listener for the contact form.
     $(form).submit(function(e) {
