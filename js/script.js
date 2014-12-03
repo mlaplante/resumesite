@@ -218,44 +218,92 @@ function parallax() {
 /*	contact form
 ------------------------------------------------------*/
 
-   $('form#contactForm button.submit').click(function() {
+   // $('form#contactForm button.submit').click(function() {
 
-      $('#image-loader').fadeIn();
+   //    $('#image-loader').fadeIn();
 
-      var contactName = $('#contactForm #contactName').val();
-      var contactEmail = $('#contactForm #contactEmail').val();
-      var contactSubject = $('#contactForm #contactSubject').val();
-      var contactMessage = $('#contactForm #contactMessage').val();
+   //    var contactName = $('#contactForm #contactName').val();
+   //    var contactEmail = $('#contactForm #contactEmail').val();
+   //    var contactSubject = $('#contactForm #contactSubject').val();
+   //    var contactMessage = $('#contactForm #contactMessage').val();
 
-      var data = 'contactName=' + contactName + '&contactEmail=' + contactEmail +
-               '&contactSubject=' + contactSubject + '&contactMessage=' + contactMessage;
+   //    var data = 'contactName=' + contactName + '&contactEmail=' + contactEmail +
+   //             '&contactSubject=' + contactSubject + '&contactMessage=' + contactMessage;
 
-      $.ajax({
+   //    $.ajax({
 
-	      type: "POST",
-	      url: "inc/mailer.php",
-	      data: data,
-	      success: function(msg) {
+	  //     type: "POST",
+	  //     url: "inc/mailer.php",
+	  //     data: data,
+	  //     success: function(msg) {
 
-            // Message was sent
-            if (msg == 'OK') {
-               $('#image-loader').fadeOut();
-               $('#message-warning').hide();
-               $('#contactForm').fadeOut();
-               $('#message-success').fadeIn();   
-            }
-            // There was an error
-            else {
-               $('#image-loader').fadeOut();
-               $('#message-warning').html(msg);
-	            $('#message-warning').fadeIn();
-            }
+   //          // Message was sent
+   //          if (msg == 'OK') {
+   //             $('#image-loader').fadeOut();
+   //             $('#message-warning').hide();
+   //             $('#contactForm').fadeOut();
+   //             $('#message-success').fadeIn();   
+   //          }
+   //          // There was an error
+   //          else {
+   //             $('#image-loader').fadeOut();
+   //             $('#message-warning').html(msg);
+	  //           $('#message-warning').fadeIn();
+   //          }
 
-	      }
+	  //     }
 
-      });
-      return false;
-   });
+   //    });
+   //    return false;
+   // });
+
+// Get the form.
+  var form = $('#ajax-contact');
+
+  // Get the messages div.
+  var formMessages = $('#form-messages');
+
+  // Set up an event listener for the contact form.
+  $(form).submit(function(e) {
+    // Stop the browser from submitting the form.
+    e.preventDefault();
+
+    // Serialize the form data.
+    var formData = $(form).serialize();
+
+    // Submit the form using AJAX.
+    $.ajax({
+      type: 'POST',
+      url: $(form).attr('action'),
+      data: formData
+    })
+    .done(function(response) {
+      // Make sure that the formMessages div has the 'success' class.
+      $(formMessages).removeClass('error');
+      $(formMessages).addClass('success');
+
+      // Set the message text.
+      $(formMessages).text(response);
+
+      // Clear the form.
+      $('#name').val('');
+      $('#email').val('');
+      $('#message').val('');
+    })
+    .fail(function(data) {
+      // Make sure that the formMessages div has the 'error' class.
+      $(formMessages).removeClass('success');
+      $(formMessages).addClass('error');
+
+      // Set the message text.
+      if (data.responseText !== '') {
+        $(formMessages).text(data.responseText);
+      } else {
+        $(formMessages).text('Oops! An error occured and your message could not be sent.');
+      }
+    });
+
+  });
 
 
 });
