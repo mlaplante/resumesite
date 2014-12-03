@@ -206,13 +206,13 @@ function parallax() {
 ------------------------------------------------------*/
 
     // main directions
-      map = new GMaps({
-        el: '#map', lat: 23.790223, lng: 90.414036, zoom: 13, zoomControl : true, 
-        zoomControlOpt: { style : 'SMALL', position: 'TOP_LEFT' }, panControl : false, scrollwheel: false
-      });
+      // map = new GMaps({
+      //   el: '#map', lat: 23.790223, lng: 90.414036, zoom: 13, zoomControl : true, 
+      //   zoomControlOpt: { style : 'SMALL', position: 'TOP_LEFT' }, panControl : false, scrollwheel: false
+      // });
     // add address markers
-    map.addMarker({ lat: 23.790223, lng: 90.414036, title: 'BD InfoSys',
-      infoWindow: { content: '<p>Building # 2, Plot # 111, Road # 35, Gulshan - 2, Dhaka</p>' } });
+    // map.addMarker({ lat: 23.790223, lng: 90.414036, title: 'BD InfoSys',
+    //   infoWindow: { content: '<p>Building # 2, Plot # 111, Road # 35, Gulshan - 2, Dhaka</p>' } });
 
 /*----------------------------------------------------*/
 /*	contact form
