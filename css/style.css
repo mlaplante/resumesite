@@ -728,19 +728,19 @@ ul#nav li a:hover {
 
 .photoshop {
   background: #1abc9c;
-  width: 95%;
+  width: 90%;
   	-moz-animation: photoshop 2s ease;
   	-webkit-animation: photoshop 2s ease;
 }
 .illustrator {
   background: #e74c3c;
-  	width: 95%;
+  	width: 85%;
   	-moz-animation: illustrator 2s ease;
   	-webkit-animation: illustrator 2s ease;
 }
 .wordpress {
   background: #34495e;
-  	width: 85%;
+  	width: 75%;
   	-moz-animation: wordpress 2s ease;
   	-webkit-animation: wordpress 2s ease;
 }
@@ -764,7 +764,7 @@ ul#nav li a:hover {
 }
 .jquery {
   background: #9b59b6;
-  	width: 95%;
+  	width: 98%;
   	-moz-animation: jquery 2s ease;
   	-webkit-animation: jquery 2s ease;
 }
