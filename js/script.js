@@ -1,13 +1,15 @@
-$(function(){
-	'use strict';
-
-	/*========================================
-		Set Copyright Year
-	==========================================*/
+/*========================================
+	Set Copyright Year
+==========================================*/
+(function setCopyrightYear() {
 	var copyrightYearElement = document.getElementById('copyright-year');
 	if (copyrightYearElement) {
 		copyrightYearElement.textContent = new Date().getFullYear();
 	}
+})();
+
+$(function(){
+	'use strict';
 
 	/*========================================
 		SmoothScroll
