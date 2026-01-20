@@ -53,35 +53,6 @@ img{
 
 
 /*==================================================
-	Preloader
-==================================================*/
-#preloader{
-	position:fixed;
-	top:0;
-	left:0;
-	height:100%;
-	width:100%;
-	z-index:999;
-	background:#F1F1F1;
-	transition:all .3s ease;
-}
-body.loaded #preloader{
-	opacity:0;
-	visibility:hidden;
-}
-#preloader .loader{
-	position:absolute;
-	top:50%;
-	left:0;
-	right:0;
-	margin:auto;
-	width:100px;
-	margin-top:-50px;
-	height:100px;
-}
-
-
-/*==================================================
 	Menu
 ==================================================*/
 .top-nav{
