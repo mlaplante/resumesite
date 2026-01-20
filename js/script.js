@@ -86,6 +86,7 @@ $(function(){
 	$body.addClass('loaded');
 
 	// Set a fallback timeout to ensure preloader is always removed
+	// even if the DOM manipulation above fails for any reason (3 seconds)
 	setTimeout(function() {
 		$body.addClass('loaded');
 	}, 3000);
