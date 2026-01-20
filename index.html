@@ -1,10 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 	<head>
 		<meta charset="utf-8">
-		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
 
 		<!-- Title -->
 		<title>Michael LaPlante - Web Designer | UX Consultant | Front end developer | Css Architect | Software Engineer | VP of Technology | Chief Security Officer</title>
@@ -12,12 +10,11 @@
 		<!--========================================
 			CSS Stylesheets
 		=========================================-->
+		<link rel='stylesheet' type='text/css' href='css/fonts.css' >
 		<link rel='stylesheet' type='text/css' href='bootstrap/css/bootstrap.min.css' >
 		<link rel='stylesheet' type='text/css' href='css/linea.css' >
-		<link rel='stylesheet' type='text/css' href='css/ionicons.min.css' >
 		<link rel='stylesheet' type='text/css' href='css/waves.min.css' >
 		<link rel='stylesheet' type='text/css' href='css/owl.carousel.css' >
-		<link rel='stylesheet' type='text/css' href='css/aos.css' >
 		<link rel='stylesheet' type='text/css' href='css/style.css' >
 		<link rel="icon" href="https://res.cloudinary.com/laplantedev/image/upload/v1590184813/Personal%20Site/favicon_zenwv4.ico" type="image/x-icon">
 		<script async src="https://laplantedevanalytics.netlify.app/script.js" data-website-id="1432237e-7cf8-4b54-9b2d-2f8f5bde6e7c"></script>
@@ -26,19 +23,19 @@
 		<!--========================================
 			Preloader
 		=========================================-->
-		<div id='preloader' >
+		<div id='preloader' role="status" aria-label="Loading">
 			<div class='loader' >
-				<img src='img/loader.gif' alt>
+				<img src='img/loader.gif' alt="Loading animation">
 			</div>
 		</div>
 
 		<!--========================================
 			Menu
 		=========================================-->
-		<div class='top-nav' >
+		<nav class='top-nav' aria-label="Main navigation">
 			<div class='container' >
 
-				<a href='#' class='menu-btn white-btn' >
+				<a href='#' class='menu-btn white-btn' aria-label="Toggle menu" aria-expanded="false">
 					<span class='lines' >
 						<span class='l1' ></span>
 						<span class='l2' ></span>
@@ -46,7 +43,7 @@
 					</span>
 				</a>
 
-				<div class='menu' >
+				<div class='menu' role="menu">
 					<ul>
 
 						<li>
@@ -76,17 +73,18 @@
 					</ul>
 				</div>
 			</div>
-		</div>
+		</nav>
 
 		<!--========================================
 			Main Section
 		=========================================-->
-		<section class='main-section' id='home' >
+		<main>
+		<section class='main-section' id='home' aria-label="Introduction">
 			<div class='container' >
 
 				<!-- Person Image -->
 				<div class='person-img' data-aos='zoom-out-up' >
-					<img src='https://res.cloudinary.com/laplantedev/image/upload/v1732243228/2023-inductees-la-plante-square_wwy6ir.jpg' alt>
+					<img src='https://res.cloudinary.com/laplantedev/image/upload/v1732243228/2023-inductees-la-plante-square_wwy6ir.jpg' alt="Michael LaPlante" loading="eager" fetchpriority="high">
 				</div>
 
 				<!-- Your Name -->
@@ -146,21 +144,21 @@
 
 				<div class='row' >
 
-					<div class='col-sm-4 col-xs-6' >
+					<div class='col-sm-4 col-6' >
 						<div class='funfact' data-aos='fade-up'>
 							<strong>483</strong>
 							<span>Happy clients</span>
 						</div>
 					</div>
 
-					<div class='col-sm-4 col-xs-6' >
+					<div class='col-sm-4 col-6' >
 						<div class='funfact' data-aos='fade-up'>
 							<strong>9</strong>
 							<span> Programming languages</span>
 						</div>
 					</div>
 
-					<div class='col-sm-4 col-xs-6' >
+					<div class='col-sm-4 col-6' >
 						<div class='funfact' data-aos='fade-up'>
 							<strong>70</strong>
 							<span>Speaking sessions</span>
@@ -462,6 +460,7 @@
 			<div class="typeform-widget" data-url="https://michaellaplante.typeform.com/to/bD5P85" data-transparency="100" data-hide-headers=true data-hide-footer=true style="width: 100%; height: 500px;"></div> <script> (function() { var qs,js,q,s,d=document, gi=d.getElementById, ce=d.createElement, gt=d.getElementsByTagName, id="typef_orm", b="https://embed.typeform.com/"; if(!gi.call(d,id)) { js=ce.call(d,"script"); js.id=id; js.src=b+"embed.js"; q=gt.call(d,"script")[0]; q.parentNode.insertBefore(js,q) } })() </script> <div style="font-family: Sans-Serif;font-size: 12px;color: #999;opacity: 0.5; padding-top: 5px;"> powered by <a href="https://admin.typeform.com/signup?utm_campaign=bD5P85&utm_source=typeform.com-14023910-Basic&utm_medium=typeform&utm_content=typeform-embedded-poweredbytypeform&utm_term=EN" style="color: #999" target="_blank" rel="noopener noreferrer">Typeform</a> </div>
 			</div>
 		</section>
+		</main>
 
 		<!--========================================
 			Footer
@@ -483,7 +482,6 @@
 		<script src='js/waves.min.js' ></script>
 		<script src='js/owl.carousel.min.js' ></script>
 		<script src='js/validator.min.js' ></script>
-		<script src='js/aos.js' ></script>
 		<script src='js/script.js' ></script>
 		<!-- Global site tag (gtag.js) - Google Analytics -->
 		<script async src="https://www.googletagmanager.com/gtag/js?id=G-8NYWNGQRKS"></script>

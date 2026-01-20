@@ -8,6 +8,51 @@
 	}
 })();
 
+/*========================================
+	Native Scroll Animations (replaces AOS.js)
+==========================================*/
+(function() {
+	'use strict';
+
+	// Skip animations on mobile for performance
+	var isMobile = window.matchMedia('(max-width: 768px)').matches;
+
+	function initScrollAnimations() {
+		var animatedElements = document.querySelectorAll('[data-aos]');
+
+		if (isMobile) {
+			// On mobile, just show all elements without animation
+			animatedElements.forEach(function(el) {
+				el.classList.add('aos-animate');
+			});
+			return;
+		}
+
+		var observer = new IntersectionObserver(function(entries) {
+			entries.forEach(function(entry) {
+				if (entry.isIntersecting) {
+					entry.target.classList.add('aos-animate');
+					observer.unobserve(entry.target);
+				}
+			});
+		}, {
+			threshold: 0.1,
+			rootMargin: '-40px 0px'
+		});
+
+		animatedElements.forEach(function(el) {
+			observer.observe(el);
+		});
+	}
+
+	// Initialize on DOM ready
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', initScrollAnimations);
+	} else {
+		initScrollAnimations();
+	}
+})();
+
 $(function(){
 	'use strict';
 
@@ -38,10 +83,6 @@ $(function(){
 
 		c_height = $('.main-section').outerHeight() - 40;
 
-		setTimeout(function(){
-			AOS.refreshHard();
-		}, 800);
-
 	}).on('load', function(){
 
 		$body.addClass('loaded');
@@ -65,16 +106,6 @@ $(function(){
 			Portfolio Items
 		==========================================*/
 		$('.portfolio-items').shuffle();
-
-		/*========================================
-			AnimateOnScroll
-		==========================================*/
-		AOS.init({
-			offset: 40,
-			disable: 'mobile',
-			duration: 600
-		});
-
 
 	}).on('scroll', function(){
 
@@ -133,6 +164,9 @@ $(function(){
 	$menu_btn.on('click', function(e){
 		e.preventDefault();
 		$body.toggleClass('show-menu');
+		// Update aria-expanded for accessibility
+		var isExpanded = $body.hasClass('show-menu');
+		$menu_btn.attr('aria-expanded', isExpanded);
 	});
 	$('.menu li > a').on('click', function(e){
 		$body.removeClass('show-menu');

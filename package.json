@@ -1,0 +1,26 @@
+{
+  "name": "resumesite",
+  "version": "1.0.0",
+  "description": "Personal portfolio website for Michael LaPlante",
+  "private": true,
+  "scripts": {
+    "serve": "npx serve .",
+    "lint:css": "npx stylelint 'css/**/*.css' --fix",
+    "lint:js": "npx eslint js/script.js --fix",
+    "minify:css": "npx clean-css-cli -o css/style.min.css css/style.css",
+    "minify:js": "npx terser js/script.js -o js/script.min.js -c -m",
+    "build": "npm run minify:css && npm run minify:js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mlaplante/resumesite"
+  },
+  "author": "Michael LaPlante",
+  "license": "MIT",
+  "devDependencies": {},
+  "keywords": [
+    "portfolio",
+    "resume",
+    "personal-website"
+  ]
+}
