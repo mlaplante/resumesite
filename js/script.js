@@ -1,7 +1,7 @@
 /*========================================
 	Set Copyright Year
 ==========================================*/
-(function setCopyrightYear() {
+(function() {
 	var copyrightYearElement = document.getElementById('copyright-year');
 	if (copyrightYearElement) {
 		copyrightYearElement.textContent = new Date().getFullYear();
