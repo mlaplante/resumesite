@@ -993,3 +993,264 @@ footer .copyright{
 		transition: none;
 	}
 }
+
+/*==================================================
+	Skip to Content (Accessibility)
+==================================================*/
+.skip-to-content {
+	position: absolute;
+	top: -40px;
+	left: 0;
+	background: #3F51B5;
+	color: white;
+	padding: 8px 16px;
+	text-decoration: none;
+	z-index: 100;
+	border-radius: 0 0 4px 0;
+	font-weight: 600;
+}
+
+.skip-to-content:focus {
+	top: 0;
+	outline: 2px solid #FFF;
+	outline-offset: 2px;
+}
+
+/*==================================================
+	Dark Mode Toggle Button
+==================================================*/
+.dark-mode-toggle {
+	position: absolute;
+	top: 28px;
+	right: 55px;
+	background: transparent;
+	border: 2px solid rgba(255, 255, 255, 0.8);
+	border-radius: 50%;
+	width: 44px;
+	height: 44px;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 20px;
+	transition: all 0.3s ease;
+	z-index: 98;
+	padding: 0;
+}
+
+.dark-mode-toggle:hover {
+	background: rgba(255, 255, 255, 0.1);
+	transform: scale(1.1);
+}
+
+.dark-mode-toggle:focus {
+	outline: 2px solid #3F51B5;
+	outline-offset: 2px;
+}
+
+.dark-mode-toggle .sun-icon {
+	display: block;
+}
+
+.dark-mode-toggle .moon-icon {
+	display: none;
+}
+
+body.dark-mode .dark-mode-toggle {
+	border-color: rgba(255, 255, 255, 0.3);
+}
+
+body.dark-mode .dark-mode-toggle .sun-icon {
+	display: none;
+}
+
+body.dark-mode .dark-mode-toggle .moon-icon {
+	display: block;
+}
+
+/*==================================================
+	Dark Mode Styles
+==================================================*/
+body.dark-mode {
+	background: #1a1a1a;
+	color: #e0e0e0;
+}
+
+body.dark-mode .section-header > h2 {
+	color: rgba(255, 255, 255, 0.9);
+}
+
+body.dark-mode .main-section {
+	background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+}
+
+body.dark-mode .intro-name,
+body.dark-mode .intro-info {
+	color: #ffffff;
+}
+
+body.dark-mode .section {
+	background: #1a1a1a;
+}
+
+body.dark-mode .about-section,
+body.dark-mode .skills-section,
+body.dark-mode .experience-section,
+body.dark-mode .contact-section {
+	background: #222222;
+}
+
+body.dark-mode .funfacts-section,
+body.dark-mode .services-section {
+	background: #1a1a1a;
+}
+
+body.dark-mode .about-text p,
+body.dark-mode .experience-section p {
+	color: #b0b0b0;
+}
+
+body.dark-mode .social-links a {
+	color: #e0e0e0;
+	border-color: rgba(255, 255, 255, 0.2);
+}
+
+body.dark-mode .social-links a:hover {
+	background: #3F51B5;
+	color: #ffffff;
+	border-color: #3F51B5;
+}
+
+body.dark-mode .funfact strong {
+	color: #ffffff;
+}
+
+body.dark-mode .funfact span {
+	color: #b0b0b0;
+}
+
+body.dark-mode .service {
+	background: #2d2d2d;
+	border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .service:hover {
+	background: #333333;
+	box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+body.dark-mode .service i {
+	color: #3F51B5;
+}
+
+body.dark-mode .service h4 {
+	color: #ffffff;
+}
+
+body.dark-mode .skill-bar {
+	background: #2d2d2d;
+}
+
+body.dark-mode .skill-bar > div {
+	background: #3F51B5;
+}
+
+body.dark-mode .skill h4,
+body.dark-mode .skill .percent {
+	color: #ffffff;
+}
+
+body.dark-mode .timeline li .content {
+	background: #2d2d2d;
+	border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .timeline li .content h4 {
+	color: #ffffff;
+}
+
+body.dark-mode .timeline li .content span {
+	color: #3F51B5;
+}
+
+body.dark-mode .timeline li .date {
+	color: #b0b0b0;
+}
+
+body.dark-mode footer {
+	background: #1a1a1a;
+	border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode footer .copyright {
+	color: #b0b0b0;
+}
+
+body.dark-mode .menu {
+	background: rgba(26, 26, 26, 0.98);
+}
+
+body.dark-mode .menu li a {
+	color: #ffffff;
+}
+
+body.dark-mode .menu-btn > .lines > span {
+	background: #ffffff;
+}
+
+/*==================================================
+	Intro Actions (CTA Buttons)
+==================================================*/
+.intro-actions {
+	margin-top: 30px;
+}
+
+.btn-custom {
+	display: inline-block;
+	padding: 16px 40px;
+	background: #3F51B5;
+	color: #fff;
+	text-decoration: none;
+	border-radius: 6px;
+	font-weight: 700;
+	font-size: 16px;
+	text-transform: uppercase;
+	letter-spacing: 1.5px;
+	transition: all 0.3s ease;
+	border: 2px solid #3F51B5;
+	box-shadow: 0 4px 15px rgba(63, 81, 181, 0.4);
+}
+
+.btn-custom:hover {
+	background: transparent;
+	color: #3F51B5;
+	transform: translateY(-3px);
+	box-shadow: 0 10px 30px rgba(63, 81, 181, 0.5);
+}
+
+body.dark-mode .btn-custom:hover {
+	color: #3F51B5;
+	background: transparent;
+}
+
+/*==================================================
+	Responsive Adjustments
+==================================================*/
+@media (max-width: 768px) {
+	.dark-mode-toggle {
+		right: 70px;
+		top: 28px;
+		width: 40px;
+		height: 40px;
+		font-size: 18px;
+	}
+	
+	.intro-actions {
+		margin-top: 20px;
+	}
+	
+	.btn-custom {
+		padding: 14px 28px;
+		font-size: 14px;
+	}
+}
