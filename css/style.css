@@ -1134,7 +1134,6 @@ body.dark-mode .service {
 }
 
 body.dark-mode .service:hover {
-	background: #333333;
 	box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
