@@ -1021,8 +1021,8 @@ footer .copyright{
 ==================================================*/
 .dark-mode-toggle {
 	position: absolute;
-	top: 17px;
-	right: 40px;
+	top: 28px;
+	right: 55px;
 	background: transparent;
 	border: 2px solid rgba(255, 255, 255, 0.8);
 	border-radius: 50%;
@@ -1207,24 +1207,25 @@ body.dark-mode .menu-btn > .lines > span {
 
 .btn-custom {
 	display: inline-block;
-	padding: 14px 32px;
+	padding: 16px 40px;
 	background: #3F51B5;
 	color: #fff;
 	text-decoration: none;
-	border-radius: 4px;
-	font-weight: 600;
-	font-size: 14px;
+	border-radius: 6px;
+	font-weight: 700;
+	font-size: 16px;
 	text-transform: uppercase;
-	letter-spacing: 1px;
+	letter-spacing: 1.5px;
 	transition: all 0.3s ease;
 	border: 2px solid #3F51B5;
+	box-shadow: 0 4px 15px rgba(63, 81, 181, 0.4);
 }
 
 .btn-custom:hover {
 	background: transparent;
 	color: #3F51B5;
-	transform: translateY(-2px);
-	box-shadow: 0 8px 20px rgba(63, 81, 181, 0.3);
+	transform: translateY(-3px);
+	box-shadow: 0 10px 30px rgba(63, 81, 181, 0.5);
 }
 
 body.dark-mode .btn-custom:hover {
@@ -1237,7 +1238,8 @@ body.dark-mode .btn-custom:hover {
 ==================================================*/
 @media (max-width: 768px) {
 	.dark-mode-toggle {
-		right: 60px;
+		right: 70px;
+		top: 28px;
 		width: 40px;
 		height: 40px;
 		font-size: 18px;
@@ -1248,7 +1250,7 @@ body.dark-mode .btn-custom:hover {
 	}
 	
 	.btn-custom {
-		padding: 12px 24px;
-		font-size: 13px;
+		padding: 14px 28px;
+		font-size: 14px;
 	}
 }
