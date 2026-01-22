@@ -57,6 +57,34 @@ $(function(){
 	'use strict';
 
 	/*========================================
+		Dark Mode Toggle
+	==========================================*/
+	(function() {
+		var $body = $('body');
+		var $darkModeToggle = $('.dark-mode-toggle');
+		
+		// Check for saved dark mode preference
+		var darkMode = localStorage.getItem('darkMode');
+		
+		if (darkMode === 'enabled') {
+			$body.addClass('dark-mode');
+		}
+		
+		// Toggle dark mode
+		$darkModeToggle.on('click', function(e) {
+			e.preventDefault();
+			$body.toggleClass('dark-mode');
+			
+			// Save preference
+			if ($body.hasClass('dark-mode')) {
+				localStorage.setItem('darkMode', 'enabled');
+			} else {
+				localStorage.setItem('darkMode', 'disabled');
+			}
+		});
+	})();
+
+	/*========================================
 		SmoothScroll
 	==========================================*/
 	smoothScroll.init({

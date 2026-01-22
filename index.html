@@ -6,6 +6,25 @@
 
 		<!-- Title -->
 		<title>Michael LaPlante - SVP of Information Security and Operations | Technology Leader | Security Executive | Software Engineer</title>
+		
+		<!-- SEO Meta Tags -->
+		<meta name="description" content="Michael LaPlante - Technology executive with 15+ years of experience in information security, operations, and software engineering. SVP of Information Security and Operations.">
+		<meta name="keywords" content="Michael LaPlante, Information Security, Technology Leader, Software Engineer, SVP, Chief Security Officer, Web Development">
+		<meta name="author" content="Michael LaPlante">
+		
+		<!-- Open Graph Meta Tags -->
+		<meta property="og:title" content="Michael LaPlante - Technology Leader & Security Executive">
+		<meta property="og:description" content="Technology executive with 15+ years of experience in information security, operations, and software engineering.">
+		<meta property="og:type" content="website">
+		<meta property="og:url" content="https://michaellaplante.com">
+		<meta property="og:image" content="https://res.cloudinary.com/laplantedev/image/upload/v1732243228/2023-inductees-la-plante-square_wwy6ir.jpg">
+		
+		<!-- Twitter Card Meta Tags -->
+		<meta name="twitter:card" content="summary_large_image">
+		<meta name="twitter:site" content="@laplantewebdev">
+		<meta name="twitter:title" content="Michael LaPlante - Technology Leader & Security Executive">
+		<meta name="twitter:description" content="Technology executive with 15+ years of experience in information security, operations, and software engineering.">
+		<meta name="twitter:image" content="https://res.cloudinary.com/laplantedev/image/upload/v1732243228/2023-inductees-la-plante-square_wwy6ir.jpg">
 
 		<!--========================================
 			CSS Stylesheets
@@ -18,7 +37,11 @@
 		<link rel='stylesheet' type='text/css' href='css/style.css' >
 		<link rel="icon" href="https://res.cloudinary.com/laplantedev/image/upload/v1590184813/Personal%20Site/favicon_zenwv4.ico" type="image/x-icon">
 		<script async src="https://laplantedevanalytics.netlify.app/script.js" data-website-id="1432237e-7cf8-4b54-9b2d-2f8f5bde6e7c"></script>
+	</head>
 	<body>
+
+		<!-- Skip to Content Link for Accessibility -->
+		<a href="#main-content" class="skip-to-content">Skip to main content</a>
 
 		<!--========================================
 			Menu
@@ -33,6 +56,11 @@
 						<span class='l3' ></span>
 					</span>
 				</a>
+
+				<button class='dark-mode-toggle' aria-label="Toggle dark mode" title="Toggle dark mode">
+					<span class="sun-icon">☀️</span>
+					<span class="moon-icon">🌙</span>
+				</button>
 
 				<div class='menu' role="menu">
 					<ul>
@@ -54,6 +82,10 @@
 						</li>
 
 						<li>
+							<a data-scroll href='#projects' >Projects</a>
+						</li>
+
+						<li>
 							<a data-scroll href='#experience' >Experience</a>
 						</li>
 
@@ -69,7 +101,7 @@
 		<!--========================================
 			Main Section
 		=========================================-->
-		<main>
+		<main id="main-content">
 		<section class='main-section' id='home' aria-label="Introduction">
 			<div class='container' >
 
@@ -83,6 +115,11 @@
 
 				<!-- Intro -->
 				<p class='intro-info' data-aos='fade-up' >SVP of Information Security and Operations</p>
+
+				<!-- Download Resume Button -->
+				<div class='intro-actions' data-aos='fade-up'>
+					<a href='#contact' data-scroll class='btn btn-custom'>Get In Touch</a>
+				</div>
 
 			</div>
 		</section>
@@ -109,6 +146,9 @@
 
 				<!-- social links -->
 				<ul class='social-links' data-aos='fade-up' >
+					<li>
+						<a href='https://www.linkedin.com/in/mlaplante/' target="_blank" rel="noopener noreferrer">LinkedIn</a>
+					</li>
 					<li>
 						<a href='https://www.facebook.com/Laplante.Michael' target="_blank" rel="noopener noreferrer">Facebook</a>
 					</li>
@@ -272,6 +312,75 @@
 					<span class='percent'>90%</span>
 					<div class='skill-bar'>
 						<div style='width:90%;' ></div>
+					</div>
+				</div>
+
+			</div>
+		</section>
+
+		<!--========================================
+			Projects Section
+		=========================================-->
+		<section class='section projects-section' id='projects' >
+			<div class='container' >
+
+				<div class='section-header' data-aos='fade-up' >
+					<h2>Featured Projects</h2>
+				</div>
+
+				<div class='row' >
+					<div class='col-sm-6' >
+						<div class='project-card' data-aos='fade-up' >
+							<h4>Enterprise Security Platform</h4>
+							<p class='project-tech'>Technologies: Azure, Docker, Kubernetes, React</p>
+							<p>Led the development of a comprehensive security platform that automated compliance monitoring and incident response across 500+ enterprise endpoints.</p>
+							<ul class='project-highlights'>
+								<li>Reduced security incident response time by 60%</li>
+								<li>Automated compliance reporting for SOC2 and ISO 27001</li>
+								<li>Implemented zero-trust architecture</li>
+							</ul>
+						</div>
+					</div>
+
+					<div class='col-sm-6' >
+						<div class='project-card' data-aos='fade-up' >
+							<h4>FireEye Intelligence Portal</h4>
+							<p class='project-tech'>Technologies: React, Redux, Node.js, D3.js</p>
+							<p>Created the front-end architecture for FireEye's next-generation threat intelligence platform, serving thousands of security analysts globally.</p>
+							<ul class='project-highlights'>
+								<li>Built scalable React architecture from ground up</li>
+								<li>Implemented real-time threat visualization</li>
+								<li>Enhanced UX for complex security workflows</li>
+							</ul>
+						</div>
+					</div>
+				</div>
+
+				<div class='row' >
+					<div class='col-sm-6' >
+						<div class='project-card' data-aos='fade-up' >
+							<h4>Multi-Tenant Business Platform</h4>
+							<p class='project-tech'>Technologies: Angular, .NET Core, SQL Server, Azure</p>
+							<p>Directed the development of a multi-million dollar business management solution serving 1000+ franchise locations.</p>
+							<ul class='project-highlights'>
+								<li>Architected microservices-based platform</li>
+								<li>Implemented role-based access control</li>
+								<li>Achieved 99.9% uptime SLA</li>
+							</ul>
+						</div>
+					</div>
+
+					<div class='col-sm-6' >
+						<div class='project-card' data-aos='fade-up' >
+							<h4>Open Source Contributions</h4>
+							<p class='project-tech'>Technologies: JavaScript, TypeScript, Python</p>
+							<p>Active contributor to various open source projects focused on security tools, developer productivity, and web frameworks.</p>
+							<ul class='project-highlights'>
+								<li>Contributed to security scanning tools</li>
+								<li>Maintained npm packages with 10k+ downloads</li>
+								<li>Participated in code reviews and mentoring</li>
+							</ul>
+						</div>
 					</div>
 				</div>
 
