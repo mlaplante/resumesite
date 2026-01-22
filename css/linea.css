@@ -3,10 +3,10 @@
 @font-face {
   font-family: "linea";
   src:url("../fonts/linea.eot");
-  src:url("../fonts/linea-iefix.eot#iefix") format("embedded-opentype"),
+  src:url("../fonts/linea-iefix.eot") format("embedded-opentype"),
     url("../fonts/linea.woff") format("woff"),
     url("../fonts/linea.ttf") format("truetype"),
-    url("../fonts/linea.svg#linea") format("svg");
+    url("../fonts/linea.svg") format("svg");
   font-weight: normal;
   font-style: normal;
 
