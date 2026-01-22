@@ -1,0 +1,21 @@
+# Netlify configuration for static site deployment
+
+[build]
+  # No build command needed for static HTML site
+  publish = "."
+
+[[redirects]]
+  # Redirect default Netlify subdomain to primary domain (optional)
+  from = "https://*.netlify.app/*"
+  to = "https://michaellaplante.com/:splat"
+  status = 301
+  force = false
+
+[[headers]]
+  # Apply security headers to all pages
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-XSS-Protection = "1; mode=block"

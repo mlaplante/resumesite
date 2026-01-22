@@ -1,20 +1,54 @@
 /*========================================
-	Set Copyright Year
-==========================================*/
-(function() {
-	var copyrightYearElement = document.getElementById('copyright-year');
-	if (copyrightYearElement) {
-		copyrightYearElement.textContent = new Date().getFullYear();
-	}
-})();
-
-/*========================================
-	Native Scroll Animations (replaces AOS.js)
+	Modern Vanilla JavaScript Implementation
+	No jQuery dependencies
 ==========================================*/
 (function() {
 	'use strict';
 
-	// Skip animations on mobile for performance
+	/*========================================
+		Set Copyright Year
+	==========================================*/
+	var copyrightYearElement = document.getElementById('copyright-year');
+	if (copyrightYearElement) {
+		copyrightYearElement.textContent = new Date().getFullYear();
+	}
+
+	/*========================================
+		Dark Mode Toggle
+	==========================================*/
+	var DARK_MODE_ENABLED = 'enabled';
+	var DARK_MODE_DISABLED = 'disabled';
+	
+	function initDarkMode() {
+		var body = document.body;
+		var darkModeToggle = document.querySelector('.dark-mode-toggle');
+		
+		if (!darkModeToggle) return;
+		
+		// Check for saved dark mode preference
+		var darkMode = localStorage.getItem('darkMode');
+		
+		if (darkMode === DARK_MODE_ENABLED) {
+			body.classList.add('dark-mode');
+		}
+		
+		// Toggle dark mode
+		darkModeToggle.addEventListener('click', function(e) {
+			e.preventDefault();
+			body.classList.toggle('dark-mode');
+			
+			// Save preference
+			if (body.classList.contains('dark-mode')) {
+				localStorage.setItem('darkMode', DARK_MODE_ENABLED);
+			} else {
+				localStorage.setItem('darkMode', DARK_MODE_DISABLED);
+			}
+		});
+	}
+
+	/*========================================
+		Native Scroll Animations
+	==========================================*/
 	var isMobile = window.matchMedia('(max-width: 768px)').matches;
 
 	function initScrollAnimations() {
@@ -45,215 +79,142 @@
 		});
 	}
 
-	// Initialize on DOM ready
-	if (document.readyState === 'loading') {
-		document.addEventListener('DOMContentLoaded', initScrollAnimations);
-	} else {
-		initScrollAnimations();
-	}
-})();
-
-$(function(){
-	'use strict';
-
 	/*========================================
-		Dark Mode Toggle
+		Smooth Scroll
 	==========================================*/
-	(function() {
-		var $body = $('body');
-		var $darkModeToggle = $('.dark-mode-toggle');
-		var DARK_MODE_ENABLED = 'enabled';
-		var DARK_MODE_DISABLED = 'disabled';
-		
-		// Check for saved dark mode preference
-		var darkMode = localStorage.getItem('darkMode');
-		
-		if (darkMode === DARK_MODE_ENABLED) {
-			$body.addClass('dark-mode');
-		}
-		
-		// Toggle dark mode
-		$darkModeToggle.on('click', function(e) {
-			e.preventDefault();
-			$body.toggleClass('dark-mode');
-			
-			// Save preference
-			if ($body.hasClass('dark-mode')) {
-				localStorage.setItem('darkMode', DARK_MODE_ENABLED);
-			} else {
-				localStorage.setItem('darkMode', DARK_MODE_DISABLED);
-			}
+	function initSmoothScroll() {
+		document.querySelectorAll('a[data-scroll]').forEach(function(anchor) {
+			anchor.addEventListener('click', function(e) {
+				e.preventDefault();
+				var targetId = this.getAttribute('href');
+				var targetElement = document.querySelector(targetId);
+				
+				if (targetElement) {
+					targetElement.scrollIntoView({
+						behavior: 'smooth',
+						block: 'start'
+					});
+				}
+			});
 		});
-	})();
-
-	/*========================================
-		SmoothScroll
-	==========================================*/
-	smoothScroll.init({
-		updateURL: false
-	});
+	}
 
 	/*========================================
 		Adjust Menu Button's Color
 	==========================================*/
-	var c_height = $('.main-section').outerHeight() - 40,
-		$body = $('body'),
-		$menu_btn = $('.menu-btn');
-	function menu_btn_color(){
-		if( $(window).scrollTop() >= c_height ){
-			$menu_btn.removeClass('white-btn');
-		}else{
-			$menu_btn.addClass('white-btn');
+	function initMenuButtonColor() {
+		var mainSection = document.querySelector('.main-section');
+		var body = document.body;
+		var menuBtn = document.querySelector('.menu-btn');
+		
+		if (!mainSection || !menuBtn) return;
+		
+		var c_height = mainSection.offsetHeight - 40;
+
+		function adjustColor() {
+			if (window.pageYOffset >= c_height) {
+				menuBtn.classList.remove('white-btn');
+			} else {
+				menuBtn.classList.add('white-btn');
+			}
 		}
+
+		adjustColor();
+
+		window.addEventListener('resize', function() {
+			c_height = mainSection.offsetHeight - 40;
+		});
+
+		window.addEventListener('scroll', adjustColor);
 	}
-	menu_btn_color();
-
-	$(window).on('resize', function(){
-
-		c_height = $('.main-section').outerHeight() - 40;
-
-	}).on('load', function(){
-
-		/*========================================
-			Testimonials Slider
-		==========================================*/
-		$('.testimonials-slider').owlCarousel({
-			items: 1
-		});
-
-		/*========================================
-			Project Images Slider
-		==========================================*/
-		$('.project-slider').owlCarousel({
-			items: 1,
-			autoHeight: true
-		});
-
-		/*========================================
-			Portfolio Items
-		==========================================*/
-		$('.portfolio-items').shuffle();
-
-	}).on('scroll', function(){
-
-		menu_btn_color();
-
-	});
-
-	/*========================================
-		Material Design Ripples
-	==========================================*/
-	Waves.attach('.btn-custom, .menu li > a', 'waves-classic');
-	Waves.init();
-
-	/*========================================
-		Material Design Textbox
-	==========================================*/
-	$('.material-input > .form-control').blur(function() {
-		if ($(this).val()){
-			$(this).addClass('used');
-		}else{
-			$(this).removeClass('used');
-		}
-	});
-
-	/*========================================
-		Portfolio Items Ripple Effect
-	==========================================*/
-	$('.portfolio-items > li > .inner').each(function(){
-		var $this = $(this),
-			_w = $this.outerWidth(),
-			_h = $this.outerHeight(),
-			_s = _w > _h ? _w : _h,
-			_s = _s * 2.6;
-		$this.append('<div class="ripple" ></div>');
-		$this.find('.ripple').css({
-			height: _s,
-			width: _s
-		});
-	}).on('mouseenter', function(e){
-		var $this = $(this),
-			_s = parseInt($this.find('.ripple').css('height')),
-			_offset = $this.offset(),
-			_x = e.pageX - $this.offset().left,
-			_y = e.pageY - $this.offset().top,
-			_x = _x - (_s/2),
-			_y = _y - (_s/2);
-		$this.find('.ripple').css({
-			'top': _y,
-			'left': _x
-		});
-	});
 
 	/*========================================
 		Menu Functions
 	==========================================*/
-	$menu_btn.on('click', function(e){
-		e.preventDefault();
-		$body.toggleClass('show-menu');
-		// Update aria-expanded for accessibility
-		var isExpanded = $body.hasClass('show-menu');
-		$menu_btn.attr('aria-expanded', isExpanded);
-	});
-	$('.menu li > a').on('click', function(e){
-		$body.removeClass('show-menu');
-	});
+	function initMenu() {
+		var body = document.body;
+		var menuBtn = document.querySelector('.menu-btn');
+		var menuLinks = document.querySelectorAll('.menu li > a');
 
-
-	/*=========================================================================
-		Contact Form (NOT WORKING IN DEMO ONLY)
-	=========================================================================*/
-	$('#contact-form').validator().on('submit', function (e) {
-		if (!e.isDefaultPrevented()) {
-			e.preventDefault();
-			var $this = $(this),
-				//You can edit alerts here
-				alerts = {
-					success:
-					"<div class='form-group' >\
-						<div class='alert alert-success' role='alert'> \
-							<strong>Message Sent!</strong> We'll be in touch as soon as possible\
-						</div>\
-					</div>",
-					error:
-					"<div class='form-group' >\
-						<div class='alert alert-danger' role='alert'> \
-							<strong>Oops!</strong> Sorry, an error occurred. Try again.\
-						</div>\
-					</div>"
-				};
-			$('#contact-form-result').html(alerts.success);
-			$('#contact-form').trigger('reset');
-			$('#contact-form .used').removeClass('used');
-		}
-	});
-
-
-	// Demo Code
-	if( typeof Storage != 'undefined' ){
-
-		var color = window.localStorage.getItem('color');
-
-		if(color != null ){
-			$body.addClass(color);
+		if (menuBtn) {
+			menuBtn.addEventListener('click', function(e) {
+				e.preventDefault();
+				body.classList.toggle('show-menu');
+				
+				// Update aria-expanded for accessibility
+				var isExpanded = body.classList.contains('show-menu');
+				menuBtn.setAttribute('aria-expanded', isExpanded);
+			});
 		}
 
+		menuLinks.forEach(function(link) {
+			link.addEventListener('click', function() {
+				body.classList.remove('show-menu');
+				if (menuBtn) {
+					menuBtn.setAttribute('aria-expanded', 'false');
+				}
+			});
+		});
 	}
-	$('.color-switch > a').on('click', function(e){
 
-		e.preventDefault();
+	/*========================================
+		Material Design Ripples
+	==========================================*/
+	function initRipples() {
+		if (typeof Waves !== 'undefined') {
+			Waves.attach('.btn-custom, .menu li > a', 'waves-classic');
+			Waves.init();
+		}
+	}
 
-		color = this.className.replace('c-', '');
-
-		if( typeof Storage != 'undefined' ){
-			window.localStorage.setItem('color', color);
+	/*========================================
+		Color Theme Demo Code
+	==========================================*/
+	function initColorTheme() {
+		var body = document.body;
+		
+		if (typeof Storage !== 'undefined') {
+			var color = window.localStorage.getItem('color');
+			
+			if (color !== null) {
+				body.classList.add(color);
+			}
 		}
 
+		var colorSwitches = document.querySelectorAll('.color-switch > a');
+		colorSwitches.forEach(function(switchBtn) {
+			switchBtn.addEventListener('click', function(e) {
+				e.preventDefault();
+				
+				var color = this.className.replace('c-', '');
+				
+				if (typeof Storage !== 'undefined') {
+					window.localStorage.setItem('color', color);
+				}
 
-		$body.removeClass('pink green blue teal blue-grey default purple');
+				body.classList.remove('pink', 'green', 'blue', 'teal', 'blue-grey', 'default', 'purple');
+				body.classList.add(color);
+			});
+		});
+	}
 
-		$body.addClass(color);
+	/*========================================
+		Initialize All Functions
+	==========================================*/
+	function init() {
+		initDarkMode();
+		initScrollAnimations();
+		initSmoothScroll();
+		initMenuButtonColor();
+		initMenu();
+		initRipples();
+		initColorTheme();
+	}
 
-	});
-
-});
+	// Initialize on DOM ready
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', init);
+	} else {
+		init();
+	}
+})();
