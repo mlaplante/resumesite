@@ -62,11 +62,13 @@ $(function(){
 	(function() {
 		var $body = $('body');
 		var $darkModeToggle = $('.dark-mode-toggle');
+		var DARK_MODE_ENABLED = 'enabled';
+		var DARK_MODE_DISABLED = 'disabled';
 		
 		// Check for saved dark mode preference
 		var darkMode = localStorage.getItem('darkMode');
 		
-		if (darkMode === 'enabled') {
+		if (darkMode === DARK_MODE_ENABLED) {
 			$body.addClass('dark-mode');
 		}
 		
@@ -77,9 +79,9 @@ $(function(){
 			
 			// Save preference
 			if ($body.hasClass('dark-mode')) {
-				localStorage.setItem('darkMode', 'enabled');
+				localStorage.setItem('darkMode', DARK_MODE_ENABLED);
 			} else {
-				localStorage.setItem('darkMode', 'disabled');
+				localStorage.setItem('darkMode', DARK_MODE_DISABLED);
 			}
 		});
 	})();
