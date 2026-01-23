@@ -1036,6 +1036,9 @@ footer .copyright{
 	transition: all 0.3s ease;
 	z-index: 98;
 	padding: 0;
+	-webkit-appearance: none;
+	appearance: none;
+	line-height: 1;
 }
 
 .dark-mode-toggle:hover {
@@ -1048,8 +1051,16 @@ footer .copyright{
 	outline-offset: 2px;
 }
 
+.dark-mode-toggle .sun-icon,
+.dark-mode-toggle .moon-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	line-height: 1;
+}
+
 .dark-mode-toggle .sun-icon {
-	display: block;
+	display: flex;
 }
 
 .dark-mode-toggle .moon-icon {
@@ -1065,7 +1076,7 @@ body.dark-mode .dark-mode-toggle .sun-icon {
 }
 
 body.dark-mode .dark-mode-toggle .moon-icon {
-	display: block;
+	display: flex;
 }
 
 /*==================================================
