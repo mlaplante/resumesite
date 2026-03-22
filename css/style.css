@@ -1203,7 +1203,7 @@ body.dark-mode.show-menu .menu:after {
 }
 
 body.dark-mode .menu li a {
-	color: #e0e0e0;
+	color: #808080;
 }
 
 body.dark-mode .menu li > a:hover {
