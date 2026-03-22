@@ -6,3 +6,7 @@ tmp/
 screenshots/
 blog-src/node_modules/
 blog-src/.astro/
+blog/**/CLAUDE.md
+blog/CLAUDE/
+blog-src/**/CLAUDE.md
+docs/**/CLAUDE.md
