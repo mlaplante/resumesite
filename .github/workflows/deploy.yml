@@ -9,15 +9,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check for blog changes
+        id: blog-changes
+        run: |
+          if git diff --name-only HEAD~1 HEAD | grep -q '^blog-src/'; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - uses: actions/setup-node@v4
+        if: steps.blog-changes.outputs.changed == 'true'
         with:
           node-version: 22
+          cache: npm
+          cache-dependency-path: blog-src/package-lock.json
 
       - name: Install blog dependencies
+        if: steps.blog-changes.outputs.changed == 'true'
         run: cd blog-src && npm ci
 
       - name: Build blog
+        if: steps.blog-changes.outputs.changed == 'true'
         run: npm run blog:build
 
       - name: Deploy via FTP
