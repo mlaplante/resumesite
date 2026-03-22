@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Personal portfolio website for Michael LaPlante",
   "private": true,
+  "type": "module",
   "scripts": {
     "serve": "npx serve .",
     "lint:css": "npx stylelint 'css/**/*.css' --fix",
@@ -12,7 +13,9 @@
     "build": "npm run minify:css && npm run minify:js",
     "blog:dev": "cd blog-src && npm run dev",
     "blog:build": "cd blog-src && npm run build",
-    "blog:preview": "cd blog-src && npm run preview"
+    "blog:preview": "cd blog-src && npm run preview",
+    "blog:draft:git": "node scripts/generate-post.js git",
+    "blog:draft:topic": "node scripts/generate-post.js topic"
   },
   "repository": {
     "type": "git",
@@ -20,10 +23,12 @@
   },
   "author": "Michael LaPlante",
   "license": "MIT",
-  "devDependencies": {},
   "keywords": [
     "portfolio",
     "resume",
     "personal-website"
-  ]
+  ],
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.80.0"
+  }
 }
