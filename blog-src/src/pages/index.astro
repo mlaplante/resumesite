@@ -1,0 +1,193 @@
+---
+import { getCollection } from 'astro:content';
+import BlogLayout from '../layouts/BlogLayout.astro';
+
+const posts = (await getCollection('posts')).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
+);
+
+const categories = ['all', 'project-update', 'thought-leadership', 'dev-session'];
+---
+
+<BlogLayout title="Blog" description="Thoughts on security, engineering, and building things.">
+  <h1>Blog</h1>
+  <p class="blog-subtitle">Thoughts on security, engineering, and building things.</p>
+
+  <div class="category-filter">
+    {categories.map((cat) => (
+      <button class="filter-btn" data-category={cat}>
+        {cat === 'all' ? 'All' : cat.replace(/-/g, ' ')}
+      </button>
+    ))}
+  </div>
+
+  {posts.length === 0 && <p class="no-posts">No posts yet. Check back soon.</p>}
+
+  <div class="post-list">
+    {posts.map((post) => (
+      <a href={`${import.meta.env.BASE_URL}/${post.id}/`} class="post-card" data-category={post.data.category}>
+        <div class="post-card-meta">
+          <time datetime={post.data.date.toISOString()}>
+            {post.data.date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+          </time>
+          <span class="category">{post.data.category.replace(/-/g, ' ')}</span>
+        </div>
+        <h2>{post.data.title}</h2>
+        <p>{post.data.excerpt}</p>
+        <div class="post-tags">
+          {post.data.tags.map((tag) => (
+            <span class="tag">{tag}</span>
+          ))}
+        </div>
+      </a>
+    ))}
+  </div>
+</BlogLayout>
+
+<style>
+  .blog-subtitle {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.5);
+    margin-bottom: 30px;
+  }
+
+  .category-filter {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: lowercase;
+    padding: 6px 12px;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 3px;
+    background: transparent;
+    cursor: pointer;
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  .filter-btn:hover,
+  .filter-btn.active {
+    background: #2980b9;
+    color: #fff;
+    border-color: #2980b9;
+  }
+
+  .post-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .post-card {
+    display: block;
+    padding: 20px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 6px;
+    text-decoration: none;
+    transition: box-shadow 0.2s;
+  }
+
+  .post-card:hover {
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  .post-card h2 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.85);
+    margin: 8px 0;
+  }
+
+  .post-card p {
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.6);
+    margin: 0;
+    line-height: 1.6;
+  }
+
+  .post-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.45);
+  }
+
+  .post-card-meta .category {
+    background: #2980b9;
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    text-transform: lowercase;
+    letter-spacing: 1px;
+  }
+
+  .post-tags {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+
+  .tag {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 11px;
+    color: rgba(0, 0, 0, 0.4);
+    padding: 2px 6px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
+  }
+
+  .no-posts {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.4);
+    text-align: center;
+    padding: 40px 0;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .blog-subtitle { color: rgba(255, 255, 255, 0.5); }
+    .filter-btn { border-color: rgba(255, 255, 255, 0.15); color: rgba(255, 255, 255, 0.6); }
+    .filter-btn:hover, .filter-btn.active { background: #1a5276; border-color: #1a5276; }
+    .post-card { border-color: rgba(255, 255, 255, 0.08); }
+    .post-card:hover { box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3); }
+    .post-card h2 { color: rgba(255, 255, 255, 0.9); }
+    .post-card p { color: rgba(255, 255, 255, 0.6); }
+    .post-card-meta { color: rgba(255, 255, 255, 0.45); }
+    .post-card-meta .category { background: #1a5276; }
+    .tag { color: rgba(255, 255, 255, 0.4); border-color: rgba(255, 255, 255, 0.1); }
+    .no-posts { color: rgba(255, 255, 255, 0.4); }
+  }
+</style>
+
+<script>
+  document.querySelectorAll('.filter-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      const cat = btn.getAttribute('data-category');
+      document.querySelectorAll('.post-card').forEach((card) => {
+        const el = card as HTMLElement;
+        if (cat === 'all' || el.getAttribute('data-category') === cat) {
+          el.style.display = '';
+        } else {
+          el.style.display = 'none';
+        }
+      });
+    });
+  });
+  // Set "all" as active by default
+  document.querySelector('.filter-btn')?.classList.add('active');
+</script>
