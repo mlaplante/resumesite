@@ -4,3 +4,5 @@ node_modules
 npm-debug.log
 tmp/
 screenshots/
+blog-src/node_modules/
+blog-src/.astro/
