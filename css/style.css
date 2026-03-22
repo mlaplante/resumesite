@@ -1191,11 +1191,15 @@ body.dark-mode footer .copyright {
 }
 
 body.dark-mode .menu {
-	background: rgba(26, 26, 26, 0.98);
+	background: #1a1a1a;
 }
 
 body.dark-mode .menu:after {
-	background: #1a1a1a;
+	background: #1a1a1a !important;
+}
+
+body.dark-mode.show-menu .menu:after {
+	background: #1a1a1a !important;
 }
 
 body.dark-mode .menu li a {
