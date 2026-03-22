@@ -1,0 +1,44 @@
+name: Deploy via FTP
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install blog dependencies
+        run: cd blog-src && npm ci
+
+      - name: Build blog
+        run: npm run blog:build
+
+      - name: Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          exclude: |
+            **/.git*
+            **/.git*/**
+            node_modules/**
+            blog-src/**
+            docs/**
+            scripts/**
+            .claude/**
+            package.json
+            package-lock.json
+            netlify.toml
+            SECURITY_REVIEW.md
+            README.md
+            blog-listing-*.png
+            blog-post-*.png
