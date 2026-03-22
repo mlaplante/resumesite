@@ -1194,8 +1194,26 @@ body.dark-mode .menu {
 	background: rgba(26, 26, 26, 0.98);
 }
 
+body.dark-mode .menu:after {
+	background: #1a1a1a;
+}
+
 body.dark-mode .menu li a {
+	color: #e0e0e0;
+}
+
+body.dark-mode .menu li > a:hover {
+	background: rgba(255, 255, 255, 0.08);
 	color: #ffffff;
+}
+
+body.dark-mode .menu > ul::-webkit-scrollbar {
+	background: #1a1a1a;
+}
+
+body.dark-mode .menu > ul::-webkit-scrollbar-thumb {
+	background: #555;
+	border-color: #1a1a1a;
 }
 
 body.dark-mode .menu-btn > .lines > span {
