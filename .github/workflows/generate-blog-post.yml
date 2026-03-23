@@ -92,9 +92,11 @@ jobs:
 
           ### To publish:
           1. Review and edit the draft in `${{ steps.check.outputs.draft_file }}`
-          2. Move the file from `drafts/` to `posts/`
-          3. Add appropriate tags in the frontmatter
-          4. Merge this PR
+          2. Add appropriate tags in the frontmatter
+          3. Merge this PR
+
+          > **Note:** When this PR is merged, the draft will automatically be moved
+          > from `drafts/` to `posts/` and deployed to the site.
 
           *Generated on ${{ steps.check.outputs.title }} via GitHub Actions*
           EOF
