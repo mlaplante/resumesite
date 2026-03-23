@@ -13,6 +13,10 @@ const categories = ['all', ...new Set(posts.map((p) => p.data.category))];
   <h1>Blog</h1>
   <p class="blog-subtitle">Thoughts on security, engineering, and building things.</p>
 
+  <div class="search-box">
+    <input type="text" id="blog-search" placeholder="search posts..." autocomplete="off" />
+  </div>
+
   <div class="category-filter">
     {categories.map((cat) => (
       <button class="filter-btn" data-category={cat}>
@@ -164,7 +168,35 @@ const categories = ['all', ...new Set(posts.map((p) => p.data.category))];
     padding: 60px 0;
   }
 
+  .search-box {
+    margin-bottom: 20px;
+  }
+
+  #blog-search {
+    width: 100%;
+    padding: 10px 14px;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: transparent;
+    color: #1a1a1a;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  #blog-search::placeholder {
+    color: #9ca3af;
+  }
+
+  #blog-search:focus {
+    border-color: #2980b9;
+  }
+
   @media (prefers-color-scheme: dark) {
+    #blog-search { border-color: #334155; color: #f1f5f9; background: #1e293b; }
+    #blog-search::placeholder { color: #64748b; }
+    #blog-search:focus { border-color: #1a5276; }
     .blog-subtitle { color: #94a3b8; }
     .filter-btn { border-color: #334155; color: #94a3b8; }
     .filter-btn:hover, .filter-btn.active { background: #1a5276; border-color: #1a5276; color: #fff; }
@@ -180,21 +212,31 @@ const categories = ['all', ...new Set(posts.map((p) => p.data.category))];
 </style>
 
 <script>
+  // Category filter
   document.querySelectorAll('.filter-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.filter-btn').forEach((b) => b.classList.remove('active'));
       btn.classList.add('active');
-      const cat = btn.getAttribute('data-category');
-      document.querySelectorAll('.post-card').forEach((card) => {
-        const el = card as HTMLElement;
-        if (cat === 'all' || el.getAttribute('data-category') === cat) {
-          el.style.display = '';
-        } else {
-          el.style.display = 'none';
-        }
-      });
+      applyFilters();
     });
   });
-  // Set "all" as active by default
   document.querySelector('.filter-btn')?.classList.add('active');
+
+  // Search filter
+  const searchInput = document.getElementById('blog-search') as HTMLInputElement;
+  searchInput?.addEventListener('input', () => applyFilters());
+
+  function applyFilters() {
+    const activeBtn = document.querySelector('.filter-btn.active') as HTMLElement;
+    const cat = activeBtn?.getAttribute('data-category') || 'all';
+    const query = searchInput?.value.toLowerCase().trim() || '';
+
+    document.querySelectorAll('.post-card').forEach((card) => {
+      const el = card as HTMLElement;
+      const matchesCat = cat === 'all' || el.getAttribute('data-category') === cat;
+      const text = el.textContent?.toLowerCase() || '';
+      const matchesSearch = !query || text.includes(query);
+      el.style.display = matchesCat && matchesSearch ? '' : 'none';
+    });
+  }
 </script>
