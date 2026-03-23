@@ -1,0 +1,43 @@
+name: Publish Blog Post
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [master]
+
+jobs:
+  publish:
+    if: github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'blog-draft')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+
+      - name: Move drafts to posts
+        id: move
+        run: |
+          DRAFTS_DIR="blog-src/src/content/drafts"
+          POSTS_DIR="blog-src/src/content/posts"
+          MOVED=false
+
+          for file in "$DRAFTS_DIR"/*.md; do
+            [ -f "$file" ] || continue
+            FILENAME=$(basename "$file")
+            echo "Moving $FILENAME from drafts/ to posts/"
+            mv "$file" "$POSTS_DIR/$FILENAME"
+            MOVED=true
+          done
+
+          echo "moved=$MOVED" >> "$GITHUB_OUTPUT"
+
+      - name: Commit and push
+        if: steps.move.outputs.moved == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add blog-src/src/content/drafts/ blog-src/src/content/posts/
+          git commit -m "publish: move blog draft(s) to posts for deployment"
+          git push
