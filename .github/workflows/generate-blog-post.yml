@@ -81,6 +81,8 @@ jobs:
           git commit -m "draft: ${{ steps.check.outputs.title }}"
           git push -u origin "$BRANCH"
 
+          gh label create blog-draft --color "0E8A16" --description "Auto-generated blog draft" 2>/dev/null || true
+
           gh pr create \
             --title "📝 Blog Draft: ${{ steps.check.outputs.title }}" \
             --body "$(cat <<'EOF'
