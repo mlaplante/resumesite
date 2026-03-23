@@ -54,8 +54,8 @@ jobs:
       - name: Check for new draft
         id: check
         run: |
-          if git diff --name-only | grep -q '^blog-src/src/content/drafts/'; then
-            DRAFT_FILE=$(git diff --name-only | grep '^blog-src/src/content/drafts/' | head -1)
+          if git status --porcelain | grep -q 'blog-src/src/content/drafts/'; then
+            DRAFT_FILE=$(git status --porcelain | grep 'blog-src/src/content/drafts/' | awk '{print $2}' | head -1)
             TITLE=$(head -5 "$DRAFT_FILE" | grep '^title:' | sed 's/^title: *"//;s/"$//')
             echo "has_draft=true" >> "$GITHUB_OUTPUT"
             echo "draft_file=$DRAFT_FILE" >> "$GITHUB_OUTPUT"
