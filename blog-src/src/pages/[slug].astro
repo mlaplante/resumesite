@@ -17,7 +17,7 @@ const wordCount = post.body?.split(/\s+/).length ?? 0;
 const readTime = Math.max(1, Math.ceil(wordCount / 250));
 ---
 
-<BlogLayout title={post.data.title} description={post.data.excerpt}>
+<BlogLayout title={post.data.title} description={post.data.excerpt} ogType="article">
   <article>
     <h1>{post.data.title}</h1>
     <div class="blog-meta">
