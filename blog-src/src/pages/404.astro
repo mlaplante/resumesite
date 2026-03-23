@@ -1,0 +1,67 @@
+---
+import BlogLayout from '../layouts/BlogLayout.astro';
+---
+
+<BlogLayout title="Page Not Found" description="The page you're looking for doesn't exist.">
+  <div class="not-found">
+    <h1>404</h1>
+    <p>The page you're looking for doesn't exist.</p>
+    <div class="not-found-links">
+      <a href="/blog/">Back to Blog</a>
+      <a href="/">Home</a>
+    </div>
+  </div>
+</BlogLayout>
+
+<style>
+  .not-found {
+    text-align: center;
+    padding: 80px 0;
+  }
+
+  .not-found h1 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 72px;
+    font-weight: 700;
+    color: #d1d5db;
+    margin-bottom: 8px;
+    line-height: 1;
+  }
+
+  .not-found p {
+    font-family: 'Poppins', sans-serif;
+    font-size: 17px;
+    color: #6b7280;
+    margin-bottom: 32px;
+  }
+
+  .not-found-links {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+  }
+
+  .not-found-links a {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 13px;
+    color: #2980b9;
+    text-decoration: none;
+    letter-spacing: 1px;
+    padding: 8px 16px;
+    border: 1px solid #2980b9;
+    border-radius: 6px;
+    transition: all 0.2s;
+  }
+
+  .not-found-links a:hover {
+    background: #2980b9;
+    color: #fff;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .not-found h1 { color: #334155; }
+    .not-found p { color: #94a3b8; }
+    .not-found-links a { color: #60a5fa; border-color: #60a5fa; }
+    .not-found-links a:hover { background: #1a5276; border-color: #1a5276; color: #fff; }
+  }
+</style>
