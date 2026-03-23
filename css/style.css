@@ -141,10 +141,10 @@ body.show-menu .menu-btn .l3{
 .menu:after{
 	content: ' ';
 	position:absolute;
-	top:-480px;
-	right:-480px;
-	height:960px;
-	width:960px;
+	top:-600px;
+	right:-600px;
+	height:1200px;
+	width:1200px;
 	transform:scale(0);
 	transition:transform .6s ease, opacity .3s .3s ease;
 	border-radius:50%;
@@ -231,6 +231,9 @@ body.show-menu .menu-btn .l3{
 }
 .show-menu .menu li:nth-of-type(7){
 	transition-delay:.7s;
+}
+.show-menu .menu li:nth-of-type(8){
+	transition-delay:.8s;
 }
 
 
