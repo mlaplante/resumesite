@@ -28,8 +28,6 @@ Security is a massive topic, and I didn't expect anyone to absorb all of it in o
 
 The talks were just part of it. I spent time doing one-on-one mentoring sessions, participated in panel discussions, and had plenty of informal conversations with students during meet-and-greets. Those unstructured moments are often where the most meaningful exchanges happen — a student asking what the first year in the industry is really like, or whether they should specialize early or stay broad.
 
-I wasn't there alone, either. My colleagues from Proforma joined me: Brian Carothers, our CIO, and Mike Miller, a Senior Software Engineer who's also a Full Sail alumnus. Having multiple perspectives from the same company gave students a fuller picture of what a technology career can look like at different levels. Proforma also put out a [press release](https://proforma.com/news-158-proforma-supports-the-next-generation-of-tech-professionals-at-full-sail-universitys-hall-of-fame-week.html) about our involvement.
-
 ## Why It Matters
 
 Full Sail is where I got my start. Giving back to that community isn't something I do out of obligation — it's something I genuinely look forward to. The students there are hungry to learn, and they ask sharp questions. Being in that environment reminds me of the energy I had when I was starting out, and honestly, it pushes me to stay sharp too.
