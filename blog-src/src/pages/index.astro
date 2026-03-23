@@ -6,7 +6,7 @@ const posts = (await getCollection('posts')).sort(
   (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
 );
 
-const categories = ['all', 'project-update', 'thought-leadership', 'dev-session'];
+const categories = ['all', ...new Set(posts.map((p) => p.data.category))];
 ---
 
 <BlogLayout title="Blog" description="Thoughts on security, engineering, and building things.">
