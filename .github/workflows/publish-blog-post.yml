@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -41,3 +42,9 @@ jobs:
           git add blog-src/src/content/drafts/ blog-src/src/content/posts/
           git commit -m "publish: move blog draft(s) to posts for deployment"
           git push
+
+      - name: Trigger deploy workflow
+        if: steps.move.outputs.moved == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run deploy.yml
