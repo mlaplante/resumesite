@@ -18,18 +18,163 @@ const readTime = Math.max(1, Math.ceil(wordCount / 250));
 ---
 
 <BlogLayout title={post.data.title} description={post.data.excerpt} ogType="article">
-  <article>
-    <h1>{post.data.title}</h1>
-    <div class="blog-meta">
-      <time datetime={post.data.date.toISOString()}>
-        {post.data.date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-      </time>
-      <span class="category">{post.data.category.replace(/-/g, ' ')}</span>
-      <span>{readTime} min read</span>
+  <div class="article-layout">
+    <div class="article-main">
+      <article>
+        <h1>{post.data.title}</h1>
+        <div class="blog-meta">
+          <time datetime={post.data.date.toISOString()}>
+            {post.data.date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+          </time>
+          <span class="dot-sep">&middot;</span>
+          <span>{readTime} min read</span>
+          <span class="dot-sep">&middot;</span>
+          <span class="category">{post.data.category.replace(/-/g, ' ')}</span>
+        </div>
+        <Content />
+      </article>
+      <div class="blog-footer">
+        <a href={import.meta.env.BASE_URL}>&larr; Back to all posts</a>
+      </div>
     </div>
-    <Content />
-  </article>
-  <div class="blog-footer">
-    <a href={import.meta.env.BASE_URL}>&larr; back to blog</a>
+    <aside class="toc-sidebar">
+      <div class="toc-container">
+        <h2 class="toc-title">Table of Contents</h2>
+        <nav class="toc-nav" id="toc-nav"></nav>
+      </div>
+    </aside>
   </div>
 </BlogLayout>
+
+<style>
+  .article-layout {
+    display: flex;
+    gap: 48px;
+    align-items: flex-start;
+  }
+
+  .article-main {
+    flex: 1;
+    min-width: 0;
+    max-width: 680px;
+  }
+
+  .toc-sidebar {
+    display: none;
+    width: 260px;
+    flex-shrink: 0;
+  }
+
+  @media (min-width: 960px) {
+    .toc-sidebar {
+      display: block;
+    }
+  }
+
+  .toc-container {
+    position: sticky;
+    top: 80px;
+  }
+
+  .toc-title {
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: none;
+    padding: 0;
+  }
+
+  .toc-nav :global(a) {
+    display: block;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    color: #6b7280;
+    text-decoration: none;
+    padding: 4px 0 4px 12px;
+    border-left: 2px solid #e5e7eb;
+    line-height: 1.5;
+    transition: all 0.2s;
+  }
+
+  .toc-nav :global(a:hover) {
+    color: #2980b9;
+  }
+
+  .toc-nav :global(a.active) {
+    color: #2980b9;
+    border-left-color: #2980b9;
+    font-weight: 500;
+  }
+
+  .toc-nav :global(a.toc-h3) {
+    padding-left: 24px;
+    font-size: 12px;
+  }
+
+  .blog-meta .dot-sep {
+    color: #d1d5db;
+  }
+
+  /* Dark mode */
+  @media (prefers-color-scheme: dark) {
+    .toc-title { color: #e2e8f0; }
+    .toc-nav :global(a) { color: #94a3b8; border-left-color: #334155; }
+    .toc-nav :global(a:hover) { color: #60a5fa; }
+    .toc-nav :global(a.active) { color: #60a5fa; border-left-color: #60a5fa; }
+    .blog-meta .dot-sep { color: #475569; }
+  }
+</style>
+
+<script>
+  // Generate TOC from article headings
+  function buildTOC() {
+    const article = document.querySelector('.article-main article');
+    const tocNav = document.getElementById('toc-nav');
+    if (!article || !tocNav) return;
+
+    const headings = article.querySelectorAll('h2, h3');
+    if (headings.length === 0) {
+      const sidebar = document.querySelector('.toc-sidebar') as HTMLElement;
+      if (sidebar) sidebar.style.display = 'none';
+      return;
+    }
+
+    headings.forEach((heading, i) => {
+      if (!heading.id) {
+        heading.id = `heading-${i}`;
+      }
+
+      const link = document.createElement('a');
+      link.href = `#${heading.id}`;
+      link.textContent = heading.textContent || '';
+      if (heading.tagName === 'H3') {
+        link.classList.add('toc-h3');
+      }
+      tocNav.appendChild(link);
+    });
+
+    // Scroll-spy: highlight current section
+    const tocLinks = tocNav.querySelectorAll('a');
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const id = entry.target.id;
+            tocLinks.forEach((link) => {
+              link.classList.toggle('active', link.getAttribute('href') === `#${id}`);
+            });
+          }
+        });
+      },
+      { rootMargin: '-80px 0px -70% 0px', threshold: 0 }
+    );
+
+    headings.forEach((heading) => observer.observe(heading));
+  }
+
+  buildTOC();
+</script>
