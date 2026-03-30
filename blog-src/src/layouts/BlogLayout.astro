@@ -5,9 +5,10 @@ interface Props {
   image?: string;
   ogType?: string;
   noindex?: boolean;
+  showProgressBar?: boolean;
 }
 
-const { title, description, image, ogType = 'website', noindex = false } = Astro.props;
+const { title, description, image, ogType = 'website', noindex = false, showProgressBar = false } = Astro.props;
 const baseUrl = import.meta.env.BASE_URL;
 const siteUrl = 'https://michaellaplante.com';
 const defaultImage = 'https://res.cloudinary.com/laplantedev/image/upload/v1732243228/2023-inductees-la-plante-square_wwy6ir.jpg';
@@ -59,6 +60,11 @@ const ogDescription = description || 'Thoughts on security, engineering, and bui
     <script defer src="https://laplantedevanalytics.netlify.app/script.js" data-website-id="b7f548e1-c6ab-4900-8693-e500f5400f0f"></script>
   </head>
   <body>
+    {showProgressBar && (
+      <div class="reading-progress-container" aria-hidden="true">
+        <div class="reading-progress-bar"></div>
+      </div>
+    )}
     <nav class="blog-nav">
       <div class="container">
         <a href="/">Michael LaPlante</a>

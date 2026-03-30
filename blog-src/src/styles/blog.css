@@ -8,6 +8,29 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ===== Reading Progress Bar ===== */
+.reading-progress-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 101;
+  background: transparent;
+  pointer-events: none;
+}
+
+.reading-progress-bar {
+  height: 3px;
+  background: #60a5fa;
+  animation-timeline: scroll(y);
+  animation-name: reading-progress;
+}
+
+@keyframes reading-progress {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
 /* ===== Navigation ===== */
 .blog-nav {
   background: linear-gradient(135deg, #2980b9 0%, #1a6da3 100%);
