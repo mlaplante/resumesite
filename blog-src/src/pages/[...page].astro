@@ -1,12 +1,19 @@
 ---
+import type { GetStaticPaths } from 'astro';
 import { getCollection } from 'astro:content';
 import BlogLayout from '../layouts/BlogLayout.astro';
 
-const posts = (await getCollection('posts')).sort(
-  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
-);
+export const getStaticPaths = (async ({ paginate }) => {
+  const posts = (await getCollection('posts')).sort(
+    (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
+  );
+  return paginate(posts, { pageSize: 10 });
+}) satisfies GetStaticPaths;
 
+const { page } = Astro.props;
+const posts = page.data;
 const categories = ['all', ...new Set(posts.map((p) => p.data.category))];
+const isFirstPage = page.currentPage === 1;
 ---
 
 <BlogLayout title="Blog" description="Thoughts on security, engineering, and building things.">
@@ -28,15 +35,17 @@ const categories = ['all', ...new Set(posts.map((p) => p.data.category))];
 
     {posts.length === 0 && <p class="no-posts">No posts yet. Check back soon.</p>}
 
-    <!-- Sponsored/Featured Content Slot -->
-    <div class="featured-banner">
-      <div class="featured-banner-content">
-        <span class="featured-label">Services</span>
-        <h3>Security Consulting & Architecture Reviews</h3>
-        <p>15+ years of experience in enterprise security. I help teams build secure, scalable systems.</p>
-        <a href="/#contact" class="featured-cta">Get in touch &rarr;</a>
+    {isFirstPage && (
+      <!-- Sponsored/Featured Content Slot -->
+      <div class="featured-banner">
+        <div class="featured-banner-content">
+          <span class="featured-label">Services</span>
+          <h3>Security Consulting & Architecture Reviews</h3>
+          <p>15+ years of experience in enterprise security. I help teams build secure, scalable systems.</p>
+          <a href="/#contact" class="featured-cta">Get in touch &rarr;</a>
+        </div>
       </div>
-    </div>
+    )}
 
     <div class="post-grid">
       {posts.map((post) => {
@@ -59,6 +68,23 @@ const categories = ['all', ...new Set(posts.map((p) => p.data.category))];
       })}
     </div>
 
+    {page.lastPage > 1 && (
+      <nav class="pagination" aria-label="Blog pages">
+        {page.url.prev ? (
+          <a href={page.url.prev} class="pagination-link pagination-prev">&larr; Newer posts</a>
+        ) : (
+          <span class="pagination-link pagination-prev disabled">&larr; Newer posts</span>
+        )}
+        <span class="pagination-info">Page {page.currentPage} of {page.lastPage}</span>
+        {page.url.next ? (
+          <a href={page.url.next} class="pagination-link pagination-next">Older posts &rarr;</a>
+        ) : (
+          <span class="pagination-link pagination-next disabled">Older posts &rarr;</span>
+        )}
+      </nav>
+    )}
+
+    {isFirstPage && (
     <!-- Newsletter Signup -->
     <div class="newsletter-signup">
       <h3>Subscribe to the newsletter</h3>
@@ -74,6 +100,7 @@ const categories = ['all', ...new Set(posts.map((p) => p.data.category))];
         </div>
       </form>
     </div>
+    )}
   </div>
 </BlogLayout>
 
@@ -374,6 +401,39 @@ const categories = ['all', ...new Set(posts.map((p) => p.data.category))];
     background: #1a6da3;
   }
 
+  /* Pagination */
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 40px;
+    padding: 16px 0;
+    border-top: 1px solid #e5e7eb;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+  }
+
+  .pagination-link {
+    font-weight: 500;
+    color: #2980b9;
+    text-decoration: none;
+    transition: opacity 0.2s;
+  }
+
+  .pagination-link:hover {
+    opacity: 0.7;
+  }
+
+  .pagination-link.disabled {
+    color: #d1d5db;
+    pointer-events: none;
+  }
+
+  .pagination-info {
+    color: #6b7280;
+    font-size: 13px;
+  }
+
   /* Dark mode */
   @media (prefers-color-scheme: dark) {
     #blog-search { border-color: #334155; color: #f1f5f9; background: #1e293b; }
@@ -414,6 +474,10 @@ const categories = ['all', ...new Set(posts.map((p) => p.data.category))];
     }
     .newsletter-form-row button { background: #1a5276; }
     .newsletter-form-row button:hover { background: #154360; }
+    .pagination { border-top-color: #334155; }
+    .pagination-link { color: #60a5fa; }
+    .pagination-link.disabled { color: #475569; }
+    .pagination-info { color: #94a3b8; }
   }
 </style>
 
