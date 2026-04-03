@@ -58,6 +58,7 @@ const ogDescription = description || 'Thoughts on security, engineering, and bui
     <meta name="theme-color" content="#2980b9" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#1a5276" media="(prefers-color-scheme: dark)" />
     <script defer src="https://laplantedevanalytics.netlify.app/script.js" data-website-id="b7f548e1-c6ab-4900-8693-e500f5400f0f"></script>
+    <slot name="head" />
   </head>
   <body>
     {showProgressBar && (
