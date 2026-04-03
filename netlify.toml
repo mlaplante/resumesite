@@ -1,21 +1,73 @@
 # Netlify configuration for static site deployment
 
 [build]
-  # No build command needed for static HTML site
   publish = "."
 
+[build.processing]
+  skip_processing = false
+
+[build.processing.css]
+  bundle = true
+  minify = true
+
+[build.processing.js]
+  bundle = true
+  minify = true
+
+[build.processing.images]
+  compress = true
+
+[build.processing.html]
+  pretty_urls = true
+
 [[redirects]]
-  # Redirect default Netlify subdomain to primary domain (optional)
   from = "https://*.netlify.app/*"
   to = "https://michaellaplante.com/:splat"
   status = 301
   force = false
 
+# Security and default cache headers for all pages
 [[headers]]
-  # Apply security headers to all pages
   for = "/*"
   [headers.values]
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
     X-XSS-Protection = "1; mode=block"
+
+# Immutable cache for Astro hashed assets (filenames contain content hash)
+[[headers]]
+  for = "/blog/_astro/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Long cache for static CSS
+[[headers]]
+  for = "/css/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, must-revalidate"
+
+# Long cache for static JS
+[[headers]]
+  for = "/js/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, must-revalidate"
+
+# Long cache for images
+[[headers]]
+  for = "/images/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, must-revalidate"
+
+# Long cache for fonts
+[[headers]]
+  for = "/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Long cache for favicons
+[[headers]]
+  for = "/favicon*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, must-revalidate"
