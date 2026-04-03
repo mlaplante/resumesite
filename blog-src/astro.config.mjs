@@ -9,6 +9,14 @@ export default defineConfig({
   build: {
     format: 'directory',
   },
+  prefetch: {
+    defaultStrategy: 'viewport',
+  },
+  image: {
+    service: {
+      entrypoint: 'astro/assets/services/sharp',
+    },
+  },
   integrations: [sitemap()],
   markdown: {
     shikiConfig: {

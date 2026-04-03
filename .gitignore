@@ -10,3 +10,12 @@ blog/**/CLAUDE.md
 blog/CLAUDE/
 blog-src/**/CLAUDE.md
 docs/**/CLAUDE.md
+
+# Screenshot PNGs (design reference only, not served)
+blog-*.png
+blog-article-*.png
+blog-listing-*.png
+blog-post-*.png
+progress-bar-*.png
+reading-progress-bar*.png
+savvycal-*.png
