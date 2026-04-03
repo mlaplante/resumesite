@@ -35,17 +35,15 @@ const isFirstPage = page.currentPage === 1;
 
     {posts.length === 0 && <p class="no-posts">No posts yet. Check back soon.</p>}
 
-    {isFirstPage && (
-      <!-- Sponsored/Featured Content Slot -->
-      <div class="featured-banner">
-        <div class="featured-banner-content">
-          <span class="featured-label">Services</span>
-          <h3>Security Consulting & Architecture Reviews</h3>
-          <p>15+ years of experience in enterprise security. I help teams build secure, scalable systems.</p>
-          <a href="/#contact" class="featured-cta">Get in touch &rarr;</a>
-        </div>
+    <!-- Sponsored/Featured Content Slot -->
+    <div class="featured-banner">
+      <div class="featured-banner-content">
+        <span class="featured-label">Services</span>
+        <h3>Security Consulting & Architecture Reviews</h3>
+        <p>15+ years of experience in enterprise security. I help teams build secure, scalable systems.</p>
+        <a href="/#contact" class="featured-cta">Get in touch &rarr;</a>
       </div>
-    )}
+    </div>
 
     <div class="post-grid">
       {posts.map((post) => {
@@ -84,7 +82,6 @@ const isFirstPage = page.currentPage === 1;
       </nav>
     )}
 
-    {isFirstPage && (
     <!-- Newsletter Signup -->
     <div class="newsletter-signup">
       <h3>Subscribe to the newsletter</h3>
@@ -100,7 +97,6 @@ const isFirstPage = page.currentPage === 1;
         </div>
       </form>
     </div>
-    )}
   </div>
 </BlogLayout>
 
