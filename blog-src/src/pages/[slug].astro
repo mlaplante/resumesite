@@ -102,11 +102,18 @@ const breadcrumbSchema = JSON.stringify({
       <!-- Newsletter CTA -->
       <div class="newsletter-cta">
         <h3>Stay in the loop</h3>
-        <p>Get notified about new posts on security, engineering, and AI. Subscribe via RSS or follow me on social media.</p>
-        <div class="newsletter-actions">
-          <a href="/blog/rss.xml" class="cta-btn cta-btn-primary">Subscribe via RSS</a>
-          <a href="https://www.linkedin.com/in/mlaplante/" target="_blank" rel="noopener noreferrer" class="cta-btn cta-btn-secondary">Follow on LinkedIn</a>
-        </div>
+        <p>Get notified about new posts on security, engineering, and AI. No spam, unsubscribe anytime.</p>
+        <form
+          action="https://buttondown.com/api/emails/embed-subscribe/Mlaplante"
+          method="post"
+          class="newsletter-form"
+        >
+          <div class="newsletter-form-row">
+            <input type="email" name="email" placeholder="you@example.com" required aria-label="Email address" />
+            <button type="submit">Subscribe</button>
+          </div>
+        </form>
+        <p class="newsletter-alt">Or subscribe via <a href="/blog/rss.xml">RSS</a> &middot; Follow on <a href="https://www.linkedin.com/in/mlaplante/" target="_blank" rel="noopener noreferrer">LinkedIn</a></p>
       </div>
 
       <!-- Services CTA -->
@@ -265,40 +272,65 @@ const breadcrumbSchema = JSON.stringify({
     line-height: 1.6;
   }
 
-  .newsletter-actions {
+  .newsletter-form-row {
     display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
+    gap: 10px;
   }
 
-  .cta-btn {
+  .newsletter-form-row input[type="email"] {
+    flex: 1;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    padding: 10px 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #fff;
+    color: #1a1a1a;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .newsletter-form-row input[type="email"]::placeholder {
+    color: #9ca3af;
+  }
+
+  .newsletter-form-row input[type="email"]:focus {
+    border-color: #2980b9;
+    box-shadow: 0 0 0 3px rgba(41, 128, 185, 0.1);
+  }
+
+  .newsletter-form-row button {
     font-family: 'Poppins', sans-serif;
     font-size: 14px;
     font-weight: 600;
-    padding: 10px 20px;
+    padding: 10px 24px;
+    border: none;
     border-radius: 8px;
-    text-decoration: none;
-    transition: all 0.2s;
-    display: inline-block;
-  }
-
-  .cta-btn-primary {
     background: #2980b9;
     color: #fff;
+    cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
   }
 
-  .cta-btn-primary:hover {
+  .newsletter-form-row button:hover {
     background: #1a6da3;
   }
 
-  .cta-btn-secondary {
-    background: transparent;
-    color: #2980b9;
-    border: 1px solid #2980b9;
+  .newsletter-alt {
+    font-size: 13px !important;
+    color: #9ca3af !important;
+    margin: 14px 0 0 !important;
   }
 
-  .cta-btn-secondary:hover {
-    background: rgba(41, 128, 185, 0.06);
+  .newsletter-alt a {
+    color: #2980b9;
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .newsletter-alt a:hover {
+    opacity: 0.7;
   }
 
   /* Services CTA */
@@ -367,10 +399,20 @@ const breadcrumbSchema = JSON.stringify({
     }
     .newsletter-cta h3 { color: #f1f5f9; }
     .newsletter-cta p { color: #94a3b8; }
-    .cta-btn-primary { background: #1a5276; }
-    .cta-btn-primary:hover { background: #154360; }
-    .cta-btn-secondary { color: #60a5fa; border-color: #60a5fa; }
-    .cta-btn-secondary:hover { background: rgba(96, 165, 250, 0.1); }
+    .newsletter-form-row input[type="email"] {
+      background: #0f172a;
+      border-color: #334155;
+      color: #f1f5f9;
+    }
+    .newsletter-form-row input[type="email"]::placeholder { color: #64748b; }
+    .newsletter-form-row input[type="email"]:focus {
+      border-color: #1a5276;
+      box-shadow: 0 0 0 3px rgba(26, 82, 118, 0.2);
+    }
+    .newsletter-form-row button { background: #1a5276; }
+    .newsletter-form-row button:hover { background: #154360; }
+    .newsletter-alt { color: #64748b !important; }
+    .newsletter-alt a { color: #60a5fa; }
     .services-cta { background: #1e293b; border-color: #334155; }
     .services-cta h3 { color: #f1f5f9; }
     .services-cta p { color: #94a3b8; }
