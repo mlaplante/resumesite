@@ -28,6 +28,16 @@ const categories = ['all', ...new Set(posts.map((p) => p.data.category))];
 
     {posts.length === 0 && <p class="no-posts">No posts yet. Check back soon.</p>}
 
+    <!-- Sponsored/Featured Content Slot -->
+    <div class="featured-banner">
+      <div class="featured-banner-content">
+        <span class="featured-label">Services</span>
+        <h3>Security Consulting & Architecture Reviews</h3>
+        <p>15+ years of experience in enterprise security. I help teams build secure, scalable systems.</p>
+        <a href="/#contact" class="featured-cta">Get in touch &rarr;</a>
+      </div>
+    </div>
+
     <div class="post-grid">
       {posts.map((post) => {
         const wordCount = post.body?.split(/\s+/).length ?? 0;
@@ -214,6 +224,57 @@ const categories = ['all', ...new Set(posts.map((p) => p.data.category))];
     grid-column: 1 / -1;
   }
 
+  /* Featured/Sponsored Banner */
+  .featured-banner {
+    margin-bottom: 32px;
+    padding: 28px 32px;
+    background: linear-gradient(135deg, rgba(41, 128, 185, 0.06) 0%, rgba(41, 128, 185, 0.02) 100%);
+    border: 1px solid rgba(41, 128, 185, 0.15);
+    border-radius: 12px;
+  }
+
+  .featured-label {
+    font-family: 'Poppins', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #2980b9;
+    background: rgba(41, 128, 185, 0.08);
+    padding: 3px 10px;
+    border-radius: 100px;
+  }
+
+  .featured-banner h3 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #111827;
+    margin: 12px 0 8px;
+    line-height: 1.3;
+  }
+
+  .featured-banner p {
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0 0 16px;
+    line-height: 1.6;
+  }
+
+  .featured-cta {
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #2980b9;
+    text-decoration: none;
+    transition: opacity 0.2s;
+  }
+
+  .featured-cta:hover {
+    opacity: 0.7;
+  }
+
   /* Dark mode */
   @media (prefers-color-scheme: dark) {
     #blog-search { border-color: #334155; color: #f1f5f9; background: #1e293b; }
@@ -231,6 +292,11 @@ const categories = ['all', ...new Set(posts.map((p) => p.data.category))];
     .dot-sep { color: #475569; }
     .category-badge { color: #60a5fa; background: rgba(96, 165, 250, 0.1); }
     .no-posts { color: #64748b; }
+    .featured-banner { background: linear-gradient(135deg, rgba(26, 82, 118, 0.15) 0%, rgba(26, 82, 118, 0.05) 100%); border-color: rgba(96, 165, 250, 0.15); }
+    .featured-label { color: #60a5fa; background: rgba(96, 165, 250, 0.1); }
+    .featured-banner h3 { color: #f1f5f9; }
+    .featured-banner p { color: #94a3b8; }
+    .featured-cta { color: #60a5fa; }
   }
 </style>
 

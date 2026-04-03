@@ -15,11 +15,76 @@ const { Content } = await render(post);
 
 const wordCount = post.body?.split(/\s+/).length ?? 0;
 const readTime = Math.max(1, Math.ceil(wordCount / 250));
+const siteUrl = 'https://michaellaplante.com';
+const postUrl = `${siteUrl}/blog/${post.id}/`;
+const defaultImage = 'https://res.cloudinary.com/laplantedev/image/upload/v1732243228/2023-inductees-la-plante-square_wwy6ir.jpg';
+
+const blogPostingSchema = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": post.data.title,
+  "description": post.data.excerpt,
+  "datePublished": post.data.date.toISOString(),
+  "author": {
+    "@type": "Person",
+    "name": "Michael LaPlante",
+    "url": siteUrl,
+  },
+  "publisher": {
+    "@type": "Person",
+    "name": "Michael LaPlante",
+  },
+  "url": postUrl,
+  "image": defaultImage,
+  "wordCount": wordCount,
+  "keywords": post.data.tags.join(', '),
+  "articleSection": post.data.category.replace(/-/g, ' '),
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": postUrl,
+  },
+});
+
+const breadcrumbSchema = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": siteUrl,
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Blog",
+      "item": `${siteUrl}/blog/`,
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": post.data.title,
+      "item": postUrl,
+    },
+  ],
+});
 ---
 
 <BlogLayout title={post.data.title} description={post.data.excerpt} ogType="article" showProgressBar={true}>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={blogPostingSchema} />
+    <script type="application/ld+json" set:html={breadcrumbSchema} />
+  </Fragment>
   <div class="article-layout">
     <div class="article-main">
+      <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <span class="breadcrumb-sep">/</span>
+        <a href={import.meta.env.BASE_URL}>Blog</a>
+        <span class="breadcrumb-sep">/</span>
+        <span class="breadcrumb-current">{post.data.title}</span>
+      </nav>
       <article>
         <h1>{post.data.title}</h1>
         <div class="blog-meta">
@@ -33,6 +98,27 @@ const readTime = Math.max(1, Math.ceil(wordCount / 250));
         </div>
         <Content />
       </article>
+
+      <!-- Newsletter CTA -->
+      <div class="newsletter-cta">
+        <h3>Stay in the loop</h3>
+        <p>Get notified about new posts on security, engineering, and AI. Subscribe via RSS or follow me on social media.</p>
+        <div class="newsletter-actions">
+          <a href="/blog/rss.xml" class="cta-btn cta-btn-primary">Subscribe via RSS</a>
+          <a href="https://www.linkedin.com/in/mlaplante/" target="_blank" rel="noopener noreferrer" class="cta-btn cta-btn-secondary">Follow on LinkedIn</a>
+        </div>
+      </div>
+
+      <!-- Services CTA -->
+      <div class="services-cta">
+        <h3>Need expert help?</h3>
+        <p>I offer consulting in cybersecurity strategy, cloud security architecture, and software engineering leadership. <a href="/#contact">Let's talk</a>.</p>
+        <div class="services-links">
+          <a href="/#services">View Services</a>
+          <a href="/#contact">Get In Touch</a>
+        </div>
+      </div>
+
       <div class="blog-footer">
         <a href={import.meta.env.BASE_URL}>&larr; Back to all posts</a>
       </div>
@@ -119,6 +205,151 @@ const readTime = Math.max(1, Math.ceil(wordCount / 250));
     color: #d1d5db;
   }
 
+  /* Breadcrumbs */
+  .breadcrumbs {
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    color: #9ca3af;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .breadcrumbs a {
+    color: #6b7280;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .breadcrumbs a:hover {
+    color: #2980b9;
+  }
+
+  .breadcrumb-sep {
+    color: #d1d5db;
+  }
+
+  .breadcrumb-current {
+    color: #374151;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 400px;
+  }
+
+  /* Newsletter CTA */
+  .newsletter-cta {
+    margin-top: 48px;
+    padding: 32px;
+    background: linear-gradient(135deg, rgba(41, 128, 185, 0.06) 0%, rgba(41, 128, 185, 0.02) 100%);
+    border: 1px solid rgba(41, 128, 185, 0.15);
+    border-radius: 12px;
+  }
+
+  .newsletter-cta h3 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 8px;
+  }
+
+  .newsletter-cta p {
+    font-family: 'Poppins', sans-serif;
+    font-size: 15px;
+    color: #6b7280;
+    margin: 0 0 20px;
+    line-height: 1.6;
+  }
+
+  .newsletter-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .cta-btn {
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.2s;
+    display: inline-block;
+  }
+
+  .cta-btn-primary {
+    background: #2980b9;
+    color: #fff;
+  }
+
+  .cta-btn-primary:hover {
+    background: #1a6da3;
+  }
+
+  .cta-btn-secondary {
+    background: transparent;
+    color: #2980b9;
+    border: 1px solid #2980b9;
+  }
+
+  .cta-btn-secondary:hover {
+    background: rgba(41, 128, 185, 0.06);
+  }
+
+  /* Services CTA */
+  .services-cta {
+    margin-top: 24px;
+    padding: 24px 32px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+  }
+
+  .services-cta h3 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 8px;
+  }
+
+  .services-cta p {
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0 0 16px;
+    line-height: 1.6;
+  }
+
+  .services-cta p a {
+    color: #2980b9;
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  .services-links {
+    display: flex;
+    gap: 20px;
+  }
+
+  .services-links a {
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #2980b9;
+    text-decoration: none;
+    transition: opacity 0.2s;
+  }
+
+  .services-links a:hover {
+    opacity: 0.7;
+  }
+
   /* Dark mode */
   @media (prefers-color-scheme: dark) {
     .toc-title { color: #e2e8f0; }
@@ -126,6 +357,25 @@ const readTime = Math.max(1, Math.ceil(wordCount / 250));
     .toc-nav :global(a:hover) { color: #60a5fa; }
     .toc-nav :global(a.active) { color: #60a5fa; border-left-color: #60a5fa; }
     .blog-meta .dot-sep { color: #475569; }
+    .breadcrumbs a { color: #94a3b8; }
+    .breadcrumbs a:hover { color: #60a5fa; }
+    .breadcrumb-sep { color: #475569; }
+    .breadcrumb-current { color: #e2e8f0; }
+    .newsletter-cta {
+      background: linear-gradient(135deg, rgba(26, 82, 118, 0.15) 0%, rgba(26, 82, 118, 0.05) 100%);
+      border-color: rgba(96, 165, 250, 0.15);
+    }
+    .newsletter-cta h3 { color: #f1f5f9; }
+    .newsletter-cta p { color: #94a3b8; }
+    .cta-btn-primary { background: #1a5276; }
+    .cta-btn-primary:hover { background: #154360; }
+    .cta-btn-secondary { color: #60a5fa; border-color: #60a5fa; }
+    .cta-btn-secondary:hover { background: rgba(96, 165, 250, 0.1); }
+    .services-cta { background: #1e293b; border-color: #334155; }
+    .services-cta h3 { color: #f1f5f9; }
+    .services-cta p { color: #94a3b8; }
+    .services-cta p a { color: #60a5fa; }
+    .services-links a { color: #60a5fa; }
   }
 </style>
 

@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://michaellaplante.com/sitemap.xml
+Sitemap: https://michaellaplante.com/blog/sitemap-index.xml
