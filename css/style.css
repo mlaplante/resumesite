@@ -611,12 +611,18 @@ body.show-menu .menu-btn .l3{
 /*==================================================
 	Contact Form
 ==================================================*/
+.contact-form{
+	width:100%;
+	max-width:100%;
+}
 .material-input{
 	position:relative;
 	margin-top:5px;
+	width:100%;
 }
 .form-group{
-	margin-bottom:15px;
+	margin-bottom:20px;
+	width:100%;
 }
 .contact-form > .form-group:last-of-type{
 	margin-bottom:0;
@@ -624,32 +630,29 @@ body.show-menu .menu-btn .l3{
 .material-input > .form-control{
 	background:transparent;
 	border:none;
+	border-bottom:1px solid #ddd;
 	border-radius:0;
 	box-shadow:none !important;
 	outline:none;
-	padding:6px 0;
+	padding:10px 0;
 	height:auto;
 	line-height:normal;
 	position:relative;
 	z-index:10;
+	display:block;
 	width:100%;
 	font-family:inherit;
-	font-size:14px;
+	font-size:16px;
 	color:#333;
 	-webkit-appearance:none;
 	appearance:none;
 }
 .material-input > .form-control:focus{
-	outline:none;
-	border:none;
-	box-shadow:none !important;
+	border-bottom-color:#3F51B5;
 }
 .material-input > textarea.form-control{
 	resize:vertical;
 	min-height:80px;
-}
-.material-input > .border{
-	display:none;
 }
 .material-input > label{
 	font-size:14px;
@@ -1223,10 +1226,11 @@ body.dark-mode .menu-btn > .lines > span {
 body.dark-mode .material-input > .form-control {
 	color: #e0e0e0;
 	background: transparent;
+	border-bottom-color: #444;
 }
 
-body.dark-mode .material-input > .border:before {
-	background: #555;
+body.dark-mode .material-input > .form-control:focus {
+	border-bottom-color: #3F51B5;
 }
 
 body.dark-mode .material-input > label {
