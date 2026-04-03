@@ -571,28 +571,25 @@
 					<h2>Contact Me</h2>
 				</div>
 
-			<form name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field" class="contact-form" data-aos="fade-up">
+			<form name="contact" method="POST" action="/thank-you/" data-netlify="true" netlify-honeypot="bot-field" class="contact-form" data-aos="fade-up">
 					<p class="hidden" style="display:none">
 						<label>Don't fill this out: <input name="bot-field"></label>
 					</p>
 					<div class="form-group">
 						<div class="material-input">
-							<input type="text" name="name" class="form-control" required>
-							<span class="border"></span>
+							<input type="text" name="name" class="form-control" placeholder=" " required>
 							<label>Name</label>
 						</div>
 					</div>
 					<div class="form-group">
 						<div class="material-input">
-							<input type="email" name="email" class="form-control" required>
-							<span class="border"></span>
+							<input type="email" name="email" class="form-control" placeholder=" " required>
 							<label>Email</label>
 						</div>
 					</div>
 					<div class="form-group">
 						<div class="material-input">
-							<textarea name="message" class="form-control" rows="5" required></textarea>
-							<span class="border"></span>
+							<textarea name="message" class="form-control" rows="3" placeholder=" " required></textarea>
 							<label>Message</label>
 						</div>
 					</div>

@@ -662,7 +662,8 @@ body.show-menu .menu-btn .l3{
 	z-index:5;
 }
 .material-input > .form-control.used ~ label,
-.material-input > .form-control:focus ~ label{
+.material-input > .form-control:focus ~ label,
+.material-input > .form-control:not(:placeholder-shown) ~ label{
 	top:-15px;
 	font-size:12px;
 	color:#3F51B5;
