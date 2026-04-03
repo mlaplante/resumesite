@@ -35,7 +35,7 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
     Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://laplantedevanalytics.netlify.app https://www.googletagmanager.com https://embed.typeform.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' https://res.cloudinary.com data:; font-src 'self'; connect-src 'self' https://laplantedevanalytics.netlify.app https://www.google-analytics.com https://cdn.jsdelivr.net https://cloudflareinsights.com; frame-src https://michaellaplante.typeform.com; base-uri 'self'; form-action 'self' https://buttondown.com; upgrade-insecure-requests"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://laplantedevanalytics.netlify.app https://www.googletagmanager.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' https://res.cloudinary.com data:; font-src 'self'; connect-src 'self' https://laplantedevanalytics.netlify.app https://www.google-analytics.com https://cdn.jsdelivr.net https://cloudflareinsights.com; frame-src 'none'; base-uri 'self'; form-action 'self' https://buttondown.com; upgrade-insecure-requests"
 
 # Immutable cache for Astro hashed assets (filenames contain content hash)
 [[headers]]

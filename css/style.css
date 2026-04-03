@@ -1227,6 +1227,18 @@ body.dark-mode .menu-btn > .lines > span {
 	background: #ffffff;
 }
 
+body.dark-mode .material-input > .form-control {
+	color: #e0e0e0;
+}
+
+body.dark-mode .material-input > .border:before {
+	background: #555;
+}
+
+body.dark-mode .material-input > label {
+	color: #999;
+}
+
 /*==================================================
 	Intro Actions (CTA Buttons)
 ==================================================*/

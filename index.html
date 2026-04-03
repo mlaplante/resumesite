@@ -74,7 +74,6 @@
 		<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 		<link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
 		<link rel="dns-prefetch" href="https://www.googletagmanager.com">
-		<link rel="dns-prefetch" href="https://embed.typeform.com">
 		<link rel="dns-prefetch" href="https://laplantedevanalytics.netlify.app">
 
 		<!--========================================
@@ -572,7 +571,33 @@
 					<h2>Contact Me</h2>
 				</div>
 
-			<div class="typeform-widget" data-url="https://michaellaplante.typeform.com/to/bD5P85" data-transparency="100" data-hide-headers=true data-hide-footer=true style="width: 100%; height: 500px;"></div> <script> (function() { var qs,js,q,s,d=document, gi=d.getElementById, ce=d.createElement, gt=d.getElementsByTagName, id="typef_orm", b="https://embed.typeform.com/"; if(!gi.call(d,id)) { js=ce.call(d,"script"); js.id=id; js.src=b+"embed.js"; q=gt.call(d,"script")[0]; q.parentNode.insertBefore(js,q) } })() </script> <div style="font-family: Sans-Serif;font-size: 12px;color: #999;opacity: 0.5; padding-top: 5px;"> powered by <a href="https://admin.typeform.com/signup?utm_campaign=bD5P85&utm_source=typeform.com-14023910-Basic&utm_medium=typeform&utm_content=typeform-embedded-poweredbytypeform&utm_term=EN" style="color: #999" target="_blank" rel="noopener noreferrer">Typeform</a> </div>
+			<form name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field" class="contact-form" data-aos="fade-up">
+					<p class="hidden" style="display:none">
+						<label>Don't fill this out: <input name="bot-field"></label>
+					</p>
+					<div class="form-group">
+						<div class="material-input">
+							<input type="text" name="name" class="form-control" required>
+							<span class="border"></span>
+							<label>Name</label>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="material-input">
+							<input type="email" name="email" class="form-control" required>
+							<span class="border"></span>
+							<label>Email</label>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="material-input">
+							<textarea name="message" class="form-control" rows="5" required></textarea>
+							<span class="border"></span>
+							<label>Message</label>
+						</div>
+					</div>
+					<button type="submit" class="btn btn-custom">Send Message</button>
+				</form>
 			</div>
 		</section>
 		</main>

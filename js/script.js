@@ -199,6 +199,24 @@
 	}
 
 	/*========================================
+		Material Input Floating Labels
+	==========================================*/
+	function initMaterialInputs() {
+		document.querySelectorAll('.material-input .form-control').forEach(function(input) {
+			// Set initial state if pre-filled
+			if (input.value) input.classList.add('used');
+
+			input.addEventListener('blur', function() {
+				if (this.value) {
+					this.classList.add('used');
+				} else {
+					this.classList.remove('used');
+				}
+			});
+		});
+	}
+
+	/*========================================
 		Initialize All Functions
 	==========================================*/
 	function init() {
@@ -209,6 +227,7 @@
 		initMenu();
 		initRipples();
 		initColorTheme();
+		initMaterialInputs();
 	}
 
 	// Initialize on DOM ready
