@@ -277,6 +277,16 @@ const breadcrumbSchema = JSON.stringify({
     gap: 10px;
   }
 
+  @media (max-width: 480px) {
+    .newsletter-form-row {
+      flex-direction: column;
+    }
+
+    .newsletter-form-row button {
+      width: 100%;
+    }
+  }
+
   .newsletter-form-row input[type="email"] {
     flex: 1;
     font-family: 'Poppins', sans-serif;
