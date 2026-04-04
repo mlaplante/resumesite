@@ -2,6 +2,8 @@
 import type { GetStaticPaths } from 'astro';
 import { getCollection } from 'astro:content';
 import BlogLayout from '../layouts/BlogLayout.astro';
+import NewsletterSignup from '../components/NewsletterSignup.astro';
+import { getReadTime } from '../utils/readTime';
 
 export const getStaticPaths = (async ({ paginate }) => {
   const posts = (await getCollection('posts')).sort(
@@ -47,8 +49,7 @@ const isFirstPage = page.currentPage === 1;
 
     <div class="post-grid">
       {posts.map((post) => {
-        const wordCount = post.body?.split(/\s+/).length ?? 0;
-        const readTime = Math.max(1, Math.ceil(wordCount / 250));
+        const readTime = getReadTime(post.body);
         return (
           <a href={`${import.meta.env.BASE_URL}/${post.id}/`} class="post-card" data-category={post.data.category}>
             <div class="post-card-meta">
@@ -83,20 +84,11 @@ const isFirstPage = page.currentPage === 1;
     )}
 
     <!-- Newsletter Signup -->
-    <div class="newsletter-signup">
-      <h3>Subscribe to the newsletter</h3>
-      <p>New posts on security, AI, and engineering delivered to your inbox. No spam, unsubscribe anytime.</p>
-      <form
-        action="https://buttondown.com/api/emails/embed-subscribe/Mlaplante"
-        method="post"
-        class="newsletter-form"
-      >
-        <div class="newsletter-form-row">
-          <input type="email" name="email" placeholder="you@example.com" required aria-label="Email address" />
-          <button type="submit">Subscribe</button>
-        </div>
-      </form>
-    </div>
+    <NewsletterSignup
+      variant="centered"
+      heading="Subscribe to the newsletter"
+      description="New posts on security, AI, and engineering delivered to your inbox. No spam, unsubscribe anytime."
+    />
   </div>
 </BlogLayout>
 
@@ -314,89 +306,6 @@ const isFirstPage = page.currentPage === 1;
     opacity: 0.7;
   }
 
-  /* Newsletter Signup */
-  .newsletter-signup {
-    margin-top: 48px;
-    padding: 32px;
-    background: linear-gradient(135deg, rgba(41, 128, 185, 0.06) 0%, rgba(41, 128, 185, 0.02) 100%);
-    border: 1px solid rgba(41, 128, 185, 0.15);
-    border-radius: 12px;
-    text-align: center;
-  }
-
-  .newsletter-signup h3 {
-    font-family: 'Poppins', sans-serif;
-    font-size: 20px;
-    font-weight: 700;
-    color: #111827;
-    margin: 0 0 8px;
-  }
-
-  .newsletter-signup p {
-    font-family: 'Poppins', sans-serif;
-    font-size: 15px;
-    color: #6b7280;
-    margin: 0 0 20px;
-    line-height: 1.6;
-  }
-
-  .newsletter-form-row {
-    display: flex;
-    gap: 10px;
-    max-width: 480px;
-    margin: 0 auto;
-  }
-
-  @media (max-width: 480px) {
-    .newsletter-form-row {
-      flex-direction: column;
-    }
-
-    .newsletter-form-row button {
-      width: 100%;
-    }
-  }
-
-  .newsletter-form-row input[type="email"] {
-    flex: 1;
-    font-family: 'Poppins', sans-serif;
-    font-size: 14px;
-    padding: 10px 16px;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    background: #fff;
-    color: #1a1a1a;
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
-  }
-
-  .newsletter-form-row input[type="email"]::placeholder {
-    color: #9ca3af;
-  }
-
-  .newsletter-form-row input[type="email"]:focus {
-    border-color: #2980b9;
-    box-shadow: 0 0 0 3px rgba(41, 128, 185, 0.1);
-  }
-
-  .newsletter-form-row button {
-    font-family: 'Poppins', sans-serif;
-    font-size: 14px;
-    font-weight: 600;
-    padding: 10px 24px;
-    border: none;
-    border-radius: 8px;
-    background: #2980b9;
-    color: #fff;
-    cursor: pointer;
-    transition: background 0.2s;
-    white-space: nowrap;
-  }
-
-  .newsletter-form-row button:hover {
-    background: #1a6da3;
-  }
-
   /* Pagination */
   .pagination {
     display: flex;
@@ -452,24 +361,6 @@ const isFirstPage = page.currentPage === 1;
     .featured-banner h3 { color: #f1f5f9; }
     .featured-banner p { color: #94a3b8; }
     .featured-cta { color: #60a5fa; }
-    .newsletter-signup {
-      background: linear-gradient(135deg, rgba(26, 82, 118, 0.15) 0%, rgba(26, 82, 118, 0.05) 100%);
-      border-color: rgba(96, 165, 250, 0.15);
-    }
-    .newsletter-signup h3 { color: #f1f5f9; }
-    .newsletter-signup p { color: #94a3b8; }
-    .newsletter-form-row input[type="email"] {
-      background: #0f172a;
-      border-color: #334155;
-      color: #f1f5f9;
-    }
-    .newsletter-form-row input[type="email"]::placeholder { color: #64748b; }
-    .newsletter-form-row input[type="email"]:focus {
-      border-color: #1a5276;
-      box-shadow: 0 0 0 3px rgba(26, 82, 118, 0.2);
-    }
-    .newsletter-form-row button { background: #1a5276; }
-    .newsletter-form-row button:hover { background: #154360; }
     .pagination { border-top-color: #334155; }
     .pagination-link { color: #60a5fa; }
     .pagination-link.disabled { color: #475569; }

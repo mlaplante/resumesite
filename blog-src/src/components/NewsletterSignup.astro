@@ -1,0 +1,171 @@
+---
+interface Props {
+  variant?: 'inline' | 'centered';
+  heading?: string;
+  description?: string;
+  showAlt?: boolean;
+}
+
+const {
+  variant = 'inline',
+  heading = 'Stay in the loop',
+  description = 'Get notified about new posts on security, engineering, and AI. No spam, unsubscribe anytime.',
+  showAlt = false,
+} = Astro.props;
+
+const wrapperClass = variant === 'centered' ? 'newsletter-signup' : 'newsletter-cta';
+---
+
+<div class={wrapperClass}>
+  <h3>{heading}</h3>
+  <p>{description}</p>
+  <form
+    action="https://buttondown.com/api/emails/embed-subscribe/Mlaplante"
+    method="post"
+    class="newsletter-form"
+  >
+    <div class="newsletter-form-row">
+      <input type="email" name="email" placeholder="you@example.com" required aria-label="Email address" />
+      <button type="submit">Subscribe</button>
+    </div>
+  </form>
+  {showAlt && (
+    <p class="newsletter-alt">Or subscribe via <a href="/blog/rss.xml">RSS</a> &middot; Follow on <a href="https://www.linkedin.com/in/mlaplante/" target="_blank" rel="noopener noreferrer">LinkedIn</a></p>
+  )}
+</div>
+
+<style>
+  .newsletter-cta,
+  .newsletter-signup {
+    margin-top: 48px;
+    padding: 32px;
+    background: linear-gradient(135deg, rgba(41, 128, 185, 0.06) 0%, rgba(41, 128, 185, 0.02) 100%);
+    border: 1px solid rgba(41, 128, 185, 0.15);
+    border-radius: 12px;
+  }
+
+  .newsletter-signup {
+    text-align: center;
+  }
+
+  .newsletter-cta h3,
+  .newsletter-signup h3 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 8px;
+  }
+
+  .newsletter-cta p,
+  .newsletter-signup p {
+    font-family: 'Poppins', sans-serif;
+    font-size: 15px;
+    color: #6b7280;
+    margin: 0 0 20px;
+    line-height: 1.6;
+  }
+
+  .newsletter-form-row {
+    display: flex;
+    gap: 10px;
+  }
+
+  .newsletter-signup .newsletter-form-row {
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  @media (max-width: 480px) {
+    .newsletter-form-row {
+      flex-direction: column;
+    }
+
+    .newsletter-form-row button {
+      width: 100%;
+    }
+  }
+
+  .newsletter-form-row input[type="email"] {
+    flex: 1;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    padding: 10px 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #fff;
+    color: #1a1a1a;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .newsletter-form-row input[type="email"]::placeholder {
+    color: #9ca3af;
+  }
+
+  .newsletter-form-row input[type="email"]:focus {
+    border-color: #2980b9;
+    box-shadow: 0 0 0 3px rgba(41, 128, 185, 0.1);
+  }
+
+  .newsletter-form-row button {
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 24px;
+    border: none;
+    border-radius: 8px;
+    background: #2980b9;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+
+  .newsletter-form-row button:hover {
+    background: #1a6da3;
+  }
+
+  .newsletter-alt {
+    font-size: 13px !important;
+    color: #9ca3af !important;
+    margin: 14px 0 0 !important;
+  }
+
+  .newsletter-alt a {
+    color: #2980b9;
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .newsletter-alt a:hover {
+    opacity: 0.7;
+  }
+
+  /* Dark mode */
+  @media (prefers-color-scheme: dark) {
+    .newsletter-cta,
+    .newsletter-signup {
+      background: linear-gradient(135deg, rgba(26, 82, 118, 0.15) 0%, rgba(26, 82, 118, 0.05) 100%);
+      border-color: rgba(96, 165, 250, 0.15);
+    }
+    .newsletter-cta h3,
+    .newsletter-signup h3 { color: #f1f5f9; }
+    .newsletter-cta p,
+    .newsletter-signup p { color: #94a3b8; }
+    .newsletter-form-row input[type="email"] {
+      background: #0f172a;
+      border-color: #334155;
+      color: #f1f5f9;
+    }
+    .newsletter-form-row input[type="email"]::placeholder { color: #64748b; }
+    .newsletter-form-row input[type="email"]:focus {
+      border-color: #1a5276;
+      box-shadow: 0 0 0 3px rgba(26, 82, 118, 0.2);
+    }
+    .newsletter-form-row button { background: #1a5276; }
+    .newsletter-form-row button:hover { background: #154360; }
+    .newsletter-alt { color: #64748b !important; }
+    .newsletter-alt a { color: #60a5fa; }
+  }
+</style>
