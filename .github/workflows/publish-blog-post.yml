@@ -43,8 +43,3 @@ jobs:
           git commit -m "publish: move blog draft(s) to posts for deployment"
           git push
 
-      - name: Trigger deploy workflow
-        if: steps.move.outputs.moved == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh workflow run deploy.yml
