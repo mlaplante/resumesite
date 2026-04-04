@@ -1,6 +1,7 @@
 # Netlify configuration for static site deployment
 
 [build]
+  command = "cd blog-src && npm install && npm run build"
   publish = "."
 
 [build.processing]
