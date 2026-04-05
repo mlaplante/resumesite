@@ -16,10 +16,22 @@ export async function getStaticPaths() {
 const { post } = Astro.props;
 const { Content } = await render(post);
 
+const allPosts = await getCollection('posts');
 const wordCount = getWordCount(post.body);
 const readTime = getReadTime(post.body);
 const siteUrl = SITE_URL;
 const postUrl = `${siteUrl}/blog/${post.id}/`;
+
+// Related posts: same category first, then recent, exclude current
+const relatedPosts = allPosts
+  .filter((p) => p.id !== post.id)
+  .sort((a, b) => {
+    const aMatch = a.data.category === post.data.category ? 1 : 0;
+    const bMatch = b.data.category === post.data.category ? 1 : 0;
+    if (bMatch !== aMatch) return bMatch - aMatch;
+    return b.data.date.valueOf() - a.data.date.valueOf();
+  })
+  .slice(0, 3);
 const defaultImage = DEFAULT_OG_IMAGE;
 
 const blogPostingSchema = JSON.stringify({
@@ -114,6 +126,23 @@ const breadcrumbSchema = JSON.stringify({
           <a href="/#contact">Get In Touch</a>
         </div>
       </div>
+
+      <!-- Related Posts -->
+      {relatedPosts.length > 0 && (
+        <div class="related-posts">
+          <h3>Related Posts</h3>
+          <div class="related-posts-grid">
+            {relatedPosts.map((rp) => (
+              <a href={`/blog/${rp.id}/`} class="related-post-card">
+                <span class="related-post-date">
+                  {rp.data.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}
+                </span>
+                <h4>{rp.data.title}</h4>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div class="blog-footer">
         <a href="/blog/">&larr; Back to all posts</a>
@@ -285,6 +314,57 @@ const breadcrumbSchema = JSON.stringify({
     opacity: 0.7;
   }
 
+  /* Related Posts */
+  .related-posts {
+    margin-top: 32px;
+    padding-top: 32px;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  .related-posts h3 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 16px;
+  }
+
+  .related-posts-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .related-post-card {
+    display: block;
+    padding: 16px 20px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+
+  .related-post-card:hover {
+    border-color: #2980b9;
+    transform: translateX(4px);
+  }
+
+  .related-post-date {
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    color: #9ca3af;
+  }
+
+  .related-post-card h4 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    margin: 4px 0 0;
+    line-height: 1.4;
+  }
+
   /* Dark mode */
   @media (prefers-color-scheme: dark) {
     .toc-title { color: #e2e8f0; }
@@ -301,6 +381,12 @@ const breadcrumbSchema = JSON.stringify({
     .services-cta p { color: #94a3b8; }
     .services-cta p a { color: #60a5fa; }
     .services-links a { color: #60a5fa; }
+    .related-posts { border-top-color: #1e293b; }
+    .related-posts h3 { color: #f1f5f9; }
+    .related-post-card { background: #1e293b; border-color: #334155; }
+    .related-post-card:hover { border-color: #60a5fa; }
+    .related-post-card h4 { color: #e2e8f0; }
+    .related-post-date { color: #64748b; }
   }
 </style>
 

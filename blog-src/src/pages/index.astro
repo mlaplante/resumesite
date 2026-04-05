@@ -1,5 +1,11 @@
 ---
 import SiteLayout from '../layouts/SiteLayout.astro';
+import { getCollection } from 'astro:content';
+import { getReadTime } from '../utils/readTime';
+
+const posts = (await getCollection('posts'))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .slice(0, 4);
 ---
 
 <SiteLayout title="Michael LaPlante - SVP of Information Security and Operations | Technology Leader | Security Executive | Software Engineer" description="Michael LaPlante - Technology executive with 15+ years of experience in information security, operations, and software engineering. SVP of Information Security and Operations.">
@@ -151,9 +157,9 @@ import SiteLayout from '../layouts/SiteLayout.astro';
       <!-- Intro -->
       <p class="intro-info" data-aos="fade-up">SVP of Information Security and Operations</p>
 
-      <!-- Download Resume Button -->
+      <!-- CTA -->
       <div class="intro-actions" data-aos="fade-up">
-        <a href="#contact" data-scroll class="btn btn-custom">Get In Touch</a>
+        <a href="#contact" data-scroll class="btn btn-custom">Schedule a Consultation</a>
       </div>
 
     </div>
@@ -203,35 +209,42 @@ import SiteLayout from '../layouts/SiteLayout.astro';
   </section>
 
   <!--========================================
-    Funfacts Section
+    Impact Section
   =========================================-->
   <section class="section funfacts-section" id="funfacts">
     <div class="container">
 
       <div class="section-header" data-aos="fade-up">
-        <h2>Funfacts</h2>
+        <h2>By the Numbers</h2>
       </div>
 
       <div class="row">
 
-        <div class="col-sm-4 col-6">
+        <div class="col-sm-3 col-6">
           <div class="funfact" data-aos="fade-up">
-            <strong>483</strong>
-            <span>Happy clients</span>
+            <strong>$800M</strong>
+            <span>Company secured</span>
           </div>
         </div>
 
-        <div class="col-sm-4 col-6">
+        <div class="col-sm-3 col-6">
           <div class="funfact" data-aos="fade-up">
-            <strong>9</strong>
-            <span> Programming languages</span>
+            <strong>15+</strong>
+            <span>Years in enterprise security</span>
           </div>
         </div>
 
-        <div class="col-sm-4 col-6">
+        <div class="col-sm-3 col-6">
           <div class="funfact" data-aos="fade-up">
-            <strong>70</strong>
-            <span>Speaking sessions</span>
+            <strong>70+</strong>
+            <span>Speaking engagements</span>
+          </div>
+        </div>
+
+        <div class="col-sm-3 col-6">
+          <div class="funfact" data-aos="fade-up">
+            <strong>500+</strong>
+            <span>Clients served</span>
           </div>
         </div>
 
@@ -246,103 +259,112 @@ import SiteLayout from '../layouts/SiteLayout.astro';
     <div class="container">
 
       <div class="section-header" data-aos="fade-up">
-        <h2>My Services</h2>
+        <h2>Consulting Services</h2>
       </div>
 
       <div class="row">
         <div class="col-sm-6">
           <div class="service" data-aos="fade-up">
-            <i class="icon-basic-keyboard"></i>
-            <h4>Programming</h4>
+            <i class="icon-basic-shield"></i>
+            <h4>Security Architecture Reviews</h4>
+            <p>Assess your infrastructure, identify gaps, and design defense-in-depth strategies tailored to your risk profile and compliance requirements.</p>
+          </div>
+        </div>
+        <div class="col-sm-6">
+          <div class="service" data-aos="fade-up">
+            <i class="icon-basic-cloud"></i>
+            <h4>Cloud Security Strategy</h4>
+            <p>Build secure multi-cloud architectures across AWS, Azure, and GCP with zero-trust principles, least-privilege access, and continuous monitoring.</p>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-sm-6">
+          <div class="service" data-aos="fade-up">
+            <i class="icon-basic-lock"></i>
+            <h4>Compliance &amp; Risk Assessment</h4>
+            <p>Navigate SOC 2, ISO 27001, HIPAA, and PCI-DSS with practical frameworks that satisfy auditors without slowing your teams down.</p>
           </div>
         </div>
         <div class="col-sm-6">
           <div class="service" data-aos="fade-up">
             <i class="icon-basic-lightbulb"></i>
-            <h4>Creative</h4>
+            <h4>Engineering Leadership Advisory</h4>
+            <p>Scale engineering organizations, establish DevSecOps practices, and build the security culture that keeps your company out of the headlines.</p>
           </div>
         </div>
       </div>
-      <div class="row">
-        <div class="col-sm-6">
-          <div class="service" data-aos="fade-up">
-            <i class="icon-basic-cup"></i>
-            <h4>Consulting</h4>
-          </div>
-        </div>
-        <div class="col-sm-6">
-          <div class="service" data-aos="fade-up">
-            <i class="icon-basic-magnifier"></i>
-            <h4>SEO</h4>
-          </div>
-        </div>
+
+      <div class="text-center" data-aos="fade-up" style="margin-top: 24px;">
+        <a href="#contact" data-scroll class="btn btn-custom">Discuss Your Needs</a>
       </div>
     </div>
   </section>
 
   <!--========================================
-    Skills Section
+    Expertise Section
   =========================================-->
   <section class="section skills-section" id="skills">
     <div class="container">
 
       <div class="section-header" data-aos="fade-up">
-        <h2>My Skills</h2>
+        <h2>Areas of Expertise</h2>
       </div>
 
-      <div class="skill" data-percent="99" data-aos="fade-up">
-        <h4>Adobe Design Suite</h4>
-        <span class="percent">99%</span>
-        <div class="skill-bar">
-          <div style="width:99%;"></div>
+      <div class="row">
+        <div class="col-sm-6 col-md-4" data-aos="fade-up">
+          <div class="service">
+            <h4>Cloud Security</h4>
+            <p>AWS, Azure, GCP architecture hardening and multi-cloud governance</p>
+          </div>
         </div>
-      </div>
-
-      <div class="skill" data-percent="99" data-aos="fade-up">
-        <h4>HTML/CSS/Sass</h4>
-        <span class="percent">99%</span>
-        <div class="skill-bar">
-          <div style="width:99%;"></div>
+        <div class="col-sm-6 col-md-4" data-aos="fade-up">
+          <div class="service">
+            <h4>Zero Trust Architecture</h4>
+            <p>Identity-first security models, micro-segmentation, and continuous verification</p>
+          </div>
         </div>
-      </div>
-
-      <div class="skill" data-percent="98" data-aos="fade-up">
-        <h4>JavaScript</h4>
-        <span class="percent">98%</span>
-        <div class="skill-bar">
-          <div style="width:95%;"></div>
+        <div class="col-sm-6 col-md-4" data-aos="fade-up">
+          <div class="service">
+            <h4>DevSecOps</h4>
+            <p>Security automation in CI/CD pipelines, SAST/DAST, and supply chain security</p>
+          </div>
         </div>
-      </div>
-
-      <div class="skill" data-percent="100" data-aos="fade-up">
-        <h4>JQuery</h4>
-        <span class="percent">100%</span>
-        <div class="skill-bar">
-          <div style="width:100%;"></div>
+        <div class="col-sm-6 col-md-4" data-aos="fade-up">
+          <div class="service">
+            <h4>Threat Modeling</h4>
+            <p>Risk identification, attack surface analysis, and mitigation planning</p>
+          </div>
         </div>
-      </div>
-
-      <div class="skill" data-percent="90" data-aos="fade-up">
-        <h4>React</h4>
-        <span class="percent">90%</span>
-        <div class="skill-bar">
-          <div style="width:90%;"></div>
+        <div class="col-sm-6 col-md-4" data-aos="fade-up">
+          <div class="service">
+            <h4>AI &amp; LLM Security</h4>
+            <p>Securing generative AI workflows, prompt injection defense, and data protection</p>
+          </div>
         </div>
-      </div>
-
-      <div class="skill" data-percent="90" data-aos="fade-up">
-        <h4>Angular</h4>
-        <span class="percent">90%</span>
-        <div class="skill-bar">
-          <div style="width:90%;"></div>
+        <div class="col-sm-6 col-md-4" data-aos="fade-up">
+          <div class="service">
+            <h4>Compliance Frameworks</h4>
+            <p>SOC 2, ISO 27001, HIPAA, PCI-DSS, and NIST implementation</p>
+          </div>
         </div>
-      </div>
-
-      <div class="skill" data-percent="90" data-aos="fade-up">
-        <h4>TypeScript</h4>
-        <span class="percent">90%</span>
-        <div class="skill-bar">
-          <div style="width:90%;"></div>
+        <div class="col-sm-6 col-md-4" data-aos="fade-up">
+          <div class="service">
+            <h4>Incident Response</h4>
+            <p>IR planning, tabletop exercises, and post-incident analysis</p>
+          </div>
+        </div>
+        <div class="col-sm-6 col-md-4" data-aos="fade-up">
+          <div class="service">
+            <h4>Engineering Leadership</h4>
+            <p>Scaling teams, building security culture, and technical strategy</p>
+          </div>
+        </div>
+        <div class="col-sm-6 col-md-4" data-aos="fade-up">
+          <div class="service">
+            <h4>Full-Stack Development</h4>
+            <p>TypeScript, React, Angular, Node.js, and modern web architecture</p>
+          </div>
         </div>
       </div>
 
@@ -516,6 +538,39 @@ import SiteLayout from '../layouts/SiteLayout.astro';
   </section>
 
   <!--========================================
+    Latest Posts Section
+  =========================================-->
+  <section class="section" id="latest-posts">
+    <div class="container">
+
+      <div class="section-header" data-aos="fade-up">
+        <h2>Latest from the Blog</h2>
+      </div>
+
+      <div class="row">
+        {posts.map((post) => (
+          <div class="col-sm-6" data-aos="fade-up">
+            <a href={`/blog/${post.id}/`} class="post-preview">
+              <span class="post-preview-date">
+                {post.data.date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' })}
+                <span class="post-preview-sep">&middot;</span>
+                {getReadTime(post.body)} min read
+              </span>
+              <h4>{post.data.title}</h4>
+              <p>{post.data.excerpt}</p>
+            </a>
+          </div>
+        ))}
+      </div>
+
+      <div class="text-center" data-aos="fade-up" style="margin-top: 24px;">
+        <a href="/blog/" class="btn btn-custom">View All Posts</a>
+      </div>
+
+    </div>
+  </section>
+
+  <!--========================================
     Contact Section
   =========================================-->
   <section class="section contact-section" id="contact">
@@ -570,3 +625,60 @@ import SiteLayout from '../layouts/SiteLayout.astro';
   <script is:inline defer src="/js/waves.min.js"></script>
   <script is:inline defer src="/js/script.js"></script>
 </SiteLayout>
+
+<style>
+  .post-preview {
+    display: block;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .post-preview:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    border-color: #d1d5db;
+    transform: translateY(-2px);
+  }
+  .post-preview-date {
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    color: #9ca3af;
+    font-weight: 400;
+  }
+  .post-preview-sep { color: #d1d5db; }
+  .post-preview h4 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
+    margin: 8px 0 6px;
+    line-height: 1.35;
+  }
+  .post-preview p {
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  @media (prefers-color-scheme: dark) {
+    .post-preview { background: #1e293b; border-color: #334155; }
+    .post-preview:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.3); border-color: #475569; }
+    .post-preview h4 { color: #f1f5f9; }
+    .post-preview p { color: #94a3b8; }
+    .post-preview-date { color: #64748b; }
+    .post-preview-sep { color: #475569; }
+  }
+  :global(body.dark-mode) .post-preview { background: #1e293b; border-color: #334155; }
+  :global(body.dark-mode) .post-preview:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.3); border-color: #475569; }
+  :global(body.dark-mode) .post-preview h4 { color: #f1f5f9; }
+  :global(body.dark-mode) .post-preview p { color: #94a3b8; }
+  :global(body.dark-mode) .post-preview-date { color: #64748b; }
+</style>
