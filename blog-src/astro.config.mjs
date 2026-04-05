@@ -3,8 +3,8 @@ import sitemap from '@astrojs/sitemap';
 
 export default defineConfig({
   site: 'https://michaellaplante.com',
-  outDir: '../blog',
-  base: '/blog',
+  outDir: '../dist',
+  base: '/',
   output: 'static',
   build: {
     format: 'directory',

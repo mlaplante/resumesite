@@ -11,7 +11,7 @@ interface Props {
 import { SITE_URL, DEFAULT_OG_IMAGE } from '../config';
 
 const { title, description, image, ogType = 'website', noindex = false, showProgressBar = false } = Astro.props;
-const baseUrl = import.meta.env.BASE_URL;
+const baseUrl = '/blog';
 const siteUrl = SITE_URL;
 const defaultImage = DEFAULT_OG_IMAGE;
 const ogImage = image || defaultImage;

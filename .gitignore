@@ -4,6 +4,7 @@ node_modules
 npm-debug.log
 tmp/
 screenshots/
+dist/
 blog-src/node_modules/
 blog-src/.astro/
 blog/**/CLAUDE.md
