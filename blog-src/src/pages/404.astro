@@ -1,0 +1,88 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+---
+
+<SiteLayout title="404 - Page Not Found" description="The page you're looking for doesn't exist.">
+  <Fragment slot="head">
+    <meta name="robots" content="noindex" />
+    <link rel="preload" href="/css/fonts.css" as="style" />
+    <link rel="stylesheet" type="text/css" href="/css/fonts.css" />
+    <link rel="stylesheet" type="text/css" href="/css/style.css" />
+  </Fragment>
+  <div class="not-found">
+    <h1>404</h1>
+    <p class="not-found-message">Page not found</p>
+    <p class="not-found-description">The page you're looking for doesn't exist or has been moved.</p>
+    <div class="not-found-links">
+      <a href="/">Home</a>
+      <a href="/blog/">Blog</a>
+      <a href="/#contact">Contact</a>
+    </div>
+  </div>
+</SiteLayout>
+
+<style>
+  .not-found {
+    text-align: center;
+    padding: 120px 20px;
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .not-found h1 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 96px;
+    font-weight: 700;
+    color: #d1d5db;
+    margin: 0;
+    line-height: 1;
+  }
+
+  .not-found-message {
+    font-family: 'Poppins', sans-serif;
+    font-size: 24px;
+    font-weight: 600;
+    color: #374151;
+    margin: 16px 0 8px;
+  }
+
+  .not-found-description {
+    font-family: 'Poppins', sans-serif;
+    font-size: 16px;
+    color: #6b7280;
+    margin: 0 0 40px;
+  }
+
+  .not-found-links {
+    display: flex;
+    gap: 16px;
+  }
+
+  .not-found-links a {
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #2980b9;
+    text-decoration: none;
+    padding: 10px 24px;
+    border: 2px solid #2980b9;
+    border-radius: 8px;
+    transition: all 0.2s;
+  }
+
+  .not-found-links a:hover {
+    background: #2980b9;
+    color: #fff;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .not-found h1 { color: #334155; }
+    .not-found-message { color: #e2e8f0; }
+    .not-found-description { color: #94a3b8; }
+    .not-found-links a { color: #60a5fa; border-color: #60a5fa; }
+    .not-found-links a:hover { background: #1a5276; border-color: #1a5276; color: #fff; }
+  }
+</style>
