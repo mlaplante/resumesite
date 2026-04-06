@@ -109,7 +109,12 @@ const breadcrumbSchema = JSON.stringify({
           <span class="dot-sep">&middot;</span>
           <span>{readTime} min read</span>
           <span class="dot-sep">&middot;</span>
-          <span class="category">{post.data.category.replace(/-/g, ' ')}</span>
+          <a href={`/blog/category/${post.data.category}/`} class="category">{post.data.category.replace(/-/g, ' ')}</a>
+        </div>
+        <div class="post-tags">
+          {post.data.tags.map((tag) => (
+            <a href={`/blog/tags/${tag}/`} class="tag-link">{tag}</a>
+          ))}
         </div>
         <Content />
       </article>
@@ -365,6 +370,42 @@ const breadcrumbSchema = JSON.stringify({
     line-height: 1.4;
   }
 
+  /* Post tags */
+  .post-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+    margin-bottom: 24px;
+  }
+
+  .tag-link {
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: #2980b9;
+    background: rgba(41, 128, 185, 0.08);
+    padding: 4px 12px;
+    border-radius: 100px;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+
+  .tag-link:hover {
+    background: rgba(41, 128, 185, 0.15);
+  }
+
+  .blog-meta .category {
+    color: #6b7280;
+    text-decoration: none;
+    text-transform: capitalize;
+    transition: color 0.2s;
+  }
+
+  .blog-meta .category:hover {
+    color: #2980b9;
+  }
+
   /* Dark mode */
   @media (prefers-color-scheme: dark) {
     .toc-title { color: #e2e8f0; }
@@ -387,6 +428,10 @@ const breadcrumbSchema = JSON.stringify({
     .related-post-card:hover { border-color: #60a5fa; }
     .related-post-card h4 { color: #e2e8f0; }
     .related-post-date { color: #64748b; }
+    .tag-link { color: #60a5fa; background: rgba(96, 165, 250, 0.1); }
+    .tag-link:hover { background: rgba(96, 165, 250, 0.2); }
+    .blog-meta .category { color: #94a3b8; }
+    .blog-meta .category:hover { color: #60a5fa; }
   }
 </style>
 
