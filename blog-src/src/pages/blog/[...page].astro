@@ -61,7 +61,7 @@ const isFirstPage = page.currentPage === 1;
             </div>
             <h2>{post.data.title}</h2>
             <p>{post.data.excerpt}</p>
-            <span class="category-badge">{post.data.category.replace(/-/g, ' ')}</span>
+            <a href={`/blog/category/${post.data.category}/`} class="category-badge" onclick="event.stopPropagation();">{post.data.category.replace(/-/g, ' ')}</a>
           </a>
         );
       })}
