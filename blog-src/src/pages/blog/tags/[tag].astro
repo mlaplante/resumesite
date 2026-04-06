@@ -32,7 +32,7 @@ const breadcrumbSchema = JSON.stringify({
   "itemListElement": [
     { "@type": "ListItem", "position": 1, "name": "Home", "item": siteUrl },
     { "@type": "ListItem", "position": 2, "name": "Blog", "item": `${siteUrl}/blog/` },
-    { "@type": "ListItem", "position": 3, "name": `Tag: ${tag}`, "item": `${siteUrl}/blog/tags/${tag}/` },
+    { "@type": "ListItem", "position": 3, "name": tag, "item": `${siteUrl}/blog/tags/${tag}/` },
   ],
 });
 ---
@@ -72,7 +72,7 @@ const breadcrumbSchema = JSON.stringify({
             <p>{post.data.excerpt}</p>
             <div class="post-card-tags">
               {post.data.tags.map((t) => (
-                <a href={`/blog/tags/${t}/`} class="tag-badge">{t}</a>
+                <span class="tag-badge">{t}</span>
               ))}
             </div>
           </a>
@@ -215,10 +215,6 @@ const breadcrumbSchema = JSON.stringify({
     transition: all 0.2s;
   }
 
-  .tag-badge:hover {
-    background: rgba(41, 128, 185, 0.15);
-  }
-
   .back-link {
     margin-top: 40px;
     padding-top: 16px;
@@ -250,7 +246,6 @@ const breadcrumbSchema = JSON.stringify({
     .post-card-meta { color: #64748b; }
     .dot-sep { color: #475569; }
     .tag-badge { color: #60a5fa; background: rgba(96, 165, 250, 0.1); }
-    .tag-badge:hover { background: rgba(96, 165, 250, 0.2); }
     .back-link { border-top-color: #334155; }
     .back-link a { color: #60a5fa; }
   }
