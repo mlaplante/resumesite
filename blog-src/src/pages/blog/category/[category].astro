@@ -1,0 +1,241 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { getCollection } from 'astro:content';
+import BlogLayout from '../../../layouts/BlogLayout.astro';
+import { SITE_URL } from '../../../config';
+import { getReadTime } from '../../../utils/readTime';
+
+export const getStaticPaths = (async () => {
+  const posts = await getCollection('posts');
+  const categories = [...new Set(posts.map((p) => p.data.category))];
+  return categories.map((category) => ({
+    params: { category },
+    props: {
+      category,
+      posts: posts
+        .filter((p) => p.data.category === category)
+        .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()),
+    },
+  }));
+}) satisfies GetStaticPaths;
+
+const { category, posts } = Astro.props;
+const displayName = category.replace(/-/g, ' ');
+const siteUrl = SITE_URL;
+
+const breadcrumbSchema = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": siteUrl },
+    { "@type": "ListItem", "position": 2, "name": "Blog", "item": `${siteUrl}/blog/` },
+    { "@type": "ListItem", "position": 3, "name": displayName, "item": `${siteUrl}/blog/category/${category}/` },
+  ],
+});
+---
+
+<BlogLayout
+  title={`Category: ${displayName}`}
+  description={`${posts.length} post${posts.length === 1 ? '' : 's'} in ${displayName}.`}
+>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={breadcrumbSchema} />
+  </Fragment>
+  <div class="listing-wrapper">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+      <a href="/">Home</a>
+      <span class="breadcrumb-sep">/</span>
+      <a href="/blog/">Blog</a>
+      <span class="breadcrumb-sep">/</span>
+      <span class="breadcrumb-current">{displayName}</span>
+    </nav>
+
+    <h1>Category: <span class="taxonomy-name">{displayName}</span></h1>
+    <p class="taxonomy-count">{posts.length} post{posts.length === 1 ? '' : 's'}</p>
+
+    <div class="post-grid">
+      {posts.map((post) => {
+        const readTime = getReadTime(post.body);
+        return (
+          <a href={`/blog/${post.id}/`} class="post-card" data-category={post.data.category}>
+            <div class="post-card-meta">
+              <time datetime={post.data.date.toISOString()}>
+                {post.data.date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' })}
+              </time>
+              <span class="dot-sep">&middot;</span>
+              <span>{readTime} min read</span>
+            </div>
+            <h2>{post.data.title}</h2>
+            <p>{post.data.excerpt}</p>
+            <span class="category-badge">{post.data.category.replace(/-/g, ' ')}</span>
+          </a>
+        );
+      })}
+    </div>
+
+    <div class="back-link">
+      <a href="/blog/">&larr; All posts</a>
+    </div>
+  </div>
+</BlogLayout>
+
+<style>
+  .listing-wrapper {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  @media (min-width: 768px) {
+    .listing-wrapper { max-width: 900px; }
+  }
+
+  .breadcrumbs {
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    color: #9ca3af;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .breadcrumbs a {
+    color: #6b7280;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .breadcrumbs a:hover { color: #2980b9; }
+
+  .breadcrumb-sep { color: #d1d5db; }
+
+  .breadcrumb-current {
+    color: #374151;
+    font-weight: 500;
+    text-transform: capitalize;
+  }
+
+  h1 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 4px;
+  }
+
+  .taxonomy-name { text-transform: capitalize; }
+
+  .taxonomy-count {
+    font-family: 'Poppins', sans-serif;
+    font-size: 15px;
+    color: #6b7280;
+    margin-bottom: 32px;
+  }
+
+  .post-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  @media (min-width: 768px) {
+    .post-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  .post-card {
+    display: flex;
+    flex-direction: column;
+    padding: 24px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+
+  .post-card:hover {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    border-color: #d1d5db;
+    transform: translateY(-2px);
+  }
+
+  .post-card h2 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    margin: 8px 0;
+    line-height: 1.35;
+    letter-spacing: -0.2px;
+  }
+
+  .post-card p {
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0;
+    line-height: 1.6;
+    flex: 1;
+  }
+
+  .post-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    color: #9ca3af;
+    font-weight: 400;
+  }
+
+  .dot-sep { color: #d1d5db; }
+
+  .category-badge {
+    display: inline-block;
+    margin-top: 14px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: #2980b9;
+    background: rgba(41, 128, 185, 0.08);
+    padding: 4px 10px;
+    border-radius: 100px;
+    text-transform: capitalize;
+    width: fit-content;
+  }
+
+  .back-link {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  .back-link a {
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #2980b9;
+    text-decoration: none;
+  }
+
+  .back-link a:hover { opacity: 0.7; }
+
+  @media (prefers-color-scheme: dark) {
+    h1 { color: #f1f5f9; }
+    .taxonomy-count { color: #94a3b8; }
+    .breadcrumbs a { color: #94a3b8; }
+    .breadcrumbs a:hover { color: #60a5fa; }
+    .breadcrumb-sep { color: #475569; }
+    .breadcrumb-current { color: #e2e8f0; }
+    .post-card { background: #1e293b; border-color: #334155; }
+    .post-card:hover { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); border-color: #475569; }
+    .post-card h2 { color: #f1f5f9; }
+    .post-card p { color: #94a3b8; }
+    .post-card-meta { color: #64748b; }
+    .dot-sep { color: #475569; }
+    .category-badge { color: #60a5fa; background: rgba(96, 165, 250, 0.1); }
+    .back-link { border-top-color: #334155; }
+    .back-link a { color: #60a5fa; }
+  }
+</style>
