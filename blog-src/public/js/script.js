@@ -161,10 +161,23 @@
 		Material Design Ripples
 	==========================================*/
 	function initRipples() {
-		if (typeof Waves !== 'undefined') {
-			Waves.attach('.btn-custom, .menu li > a', 'waves-classic');
-			Waves.init();
-		}
+		var targets = document.querySelectorAll('.btn-custom, .menu li > a');
+		targets.forEach(function(el) {
+			el.classList.add('ripple-target');
+			el.addEventListener('click', function(e) {
+				var rect = el.getBoundingClientRect();
+				var ripple = document.createElement('span');
+				ripple.classList.add('ripple');
+				var size = Math.max(rect.width, rect.height);
+				ripple.style.width = ripple.style.height = size + 'px';
+				ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+				ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+				el.appendChild(ripple);
+				ripple.addEventListener('animationend', function() {
+					ripple.remove();
+				});
+			});
+		});
 	}
 
 	/*========================================
