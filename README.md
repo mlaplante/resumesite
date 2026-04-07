@@ -1,186 +1,121 @@
 # Michael LaPlante - Personal Portfolio & Resume Website
 
-[![Deploy via FTP](https://github.com/mlaplante/resumesite/actions/workflows/deploy.yml/badge.svg)](https://github.com/mlaplante/resumesite/actions/workflows/deploy.yml)
+[![Netlify Status](https://api.netlify.com/api/v1/badges/cc82aa66-21cb-4624-b987-153e08d064cd/deploy-status)](https://app.netlify.com/projects/laplanteresume)
 
-A modern, responsive personal portfolio website showcasing Michael LaPlante's professional experience, skills, and services as a Software Engineer, VP of Technology, and Chief Security Officer. Includes an Astro-powered blog subsection with AI-assisted draft generation.
+A modern, fully Astro-powered personal portfolio and security consulting website for Michael LaPlante. Features a unified build pipeline, blog with category/tag taxonomy, AI-assisted draft generation, and automated Netlify deployment with Cloudflare CDN.
 
-🌐 **Live Site:** [michaellaplante.com](https://michaellaplante.com)
+**Live Site:** [michaellaplante.com](https://michaellaplante.com)
 
-## 📋 Table of Contents
+## Features
 
-- [About](#about)
-- [Features](#features)
-- [Technology Stack](#technology-stack)
-- [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
-- [Blog](#blog)
-- [Deployment](#deployment)
-- [Sections Overview](#sections-overview)
-- [Analytics & Tracking](#analytics--tracking)
-- [Contributing](#contributing)
-- [License](#license)
-- [Contact](#contact)
+- **Unified Astro Build**: Entire site (portfolio + blog) built as a single Astro 6 project
+- **Responsive Design**: Works seamlessly across desktop, tablet, and mobile
+- **Blog with Taxonomy**: Category and tag pages, RSS feed, related posts, dark mode
+- **AI-Assisted Drafts**: Claude API integration for generating blog post drafts via GitHub Actions
+- **Automated Publishing**: GitHub Actions workflow to promote drafts and publish posts
+- **Performance Optimized**: Self-hosted assets, Cloudinary images, immutable cache headers, CSS-only effects
+- **Security Hardened**: CSP, HSTS, X-Frame-Options, and Permissions-Policy headers via Netlify
+- **SEO**: Auto-generated sitemap, structured breadcrumb data, meta tags, RSS feed
+- **Cloudflare CDN**: Automated cache purging on deploy via GitHub Actions
+- **Analytics**: Umami self-hosted analytics + Cloudflare Insights
 
-## 🎯 About
+## Technology Stack
 
-This website serves as a comprehensive digital resume and portfolio for Michael LaPlante, highlighting over 15 years of professional experience in software engineering, web design, and technology leadership. The site is designed to:
+| Layer | Technologies |
+|-------|-------------|
+| **Framework** | Astro 6, HTML5, CSS3, JavaScript |
+| **Content** | Markdown content collections with type-safe schemas |
+| **Styling** | Scoped Astro styles, Bootstrap (self-hosted), Linea & Ionicons |
+| **Hosting** | Netlify (auto-deploy on push to `master`) |
+| **CDN** | Cloudflare |
+| **Images** | Cloudinary (transformation & optimization) |
+| **CI/CD** | GitHub Actions (blog drafts, publishing, cache purge) |
+| **AI** | Anthropic Claude API (blog draft generation) |
+| **Runtime** | Node.js 22+ |
 
-- **Showcase Professional Experience**: Display a detailed timeline of career progression from Web Designer to SVP of Information Security and Operations
-- **Highlight Technical Skills**: Present expertise across multiple programming languages, frameworks, and design tools
-- **Present Services**: Communicate available consulting and development services
-- **Enable Contact**: Provide an easy way for potential clients and collaborators to get in touch
-- **Demonstrate Expertise**: Serve as a live example of front-end development and UX design capabilities
-- **Share Knowledge**: Blog subsection for technical writing and thought leadership
-
-## ✨ Features
-
-- **Responsive Design**: Fully responsive layout that works seamlessly across desktop, tablet, and mobile devices
-- **Modern UI/UX**: Clean, professional interface with smooth animations and transitions
-- **Animated Sections**: Scroll-based animations using AOS (Animate On Scroll) library
-- **Interactive Navigation**: Smooth scrolling navigation with mobile-friendly hamburger menu
-- **Skills Visualization**: Progress bars showing proficiency levels in various technologies
-- **Professional Timeline**: Chronological display of work experience with detailed descriptions
-- **Blog Subsection**: Astro-powered static blog with category filtering and dark mode support
-- **AI-Assisted Drafts**: Claude API integration for generating blog post drafts from git history or topics
-- **Contact Form Integration**: Embedded Typeform for easy communication
-- **Performance Optimized**: Preloader for smooth initial page load
-- **SEO Optimized**: Meta tags and structured content for search engine visibility
-- **Analytics Integration**: Custom analytics tracking and Google Analytics integration
-- **Social Media Links**: Direct links to professional social media profiles
-
-## 🛠 Technology Stack
-
-### Frontend Framework & Libraries
-- **HTML5**: Semantic markup structure
-- **CSS3**: Modern styling with custom properties
-- **Bootstrap 3**: Responsive grid system and components
-- **JavaScript/jQuery**: Interactive functionality and DOM manipulation
-
-### Blog
-- **Astro 6**: Static site generator for the blog subsection
-- **Content Collections**: Type-safe Markdown content management
-- **Node.js 22+**: Required for Astro 6
-
-### UI Components & Effects
-- **AOS (Animate On Scroll)**: Scroll-triggered animations
-- **Owl Carousel**: Touch-enabled carousels
-- **Waves**: Material Design ripple effects
-- **Linea Icons**: Line-style icon set
-- **Ionicons**: Icon font library
-
-### Third-Party Integrations
-- **Typeform**: Contact form integration
-- **Google Analytics**: User tracking and analytics
-- **Custom Analytics**: Self-hosted analytics solution
-- **Cloudinary**: Image hosting and optimization
-- **Anthropic Claude API**: Blog draft generation
-
-### Development & Deployment
-- **GitHub Actions**: Automated FTP deployment on push to master
-- **SamKirkland/FTP-Deploy-Action**: Incremental FTP uploads (only changed files)
-- **Git**: Version control
-- **Custom Domain**: michaellaplante.com
-
-## 📁 Project Structure
+## Project Structure
 
 ```
 resumesite/
-│
-├── index.html                 # Main portfolio HTML file
-├── README.md                  # This file
-├── CNAME                      # Custom domain configuration
-├── package.json               # NPM scripts for build & blog
-│
-├── .github/workflows/         # CI/CD
-│   └── deploy.yml             # GitHub Actions FTP deployment
-│
-├── blog-src/                  # Blog source (Astro project)
-│   ├── astro.config.mjs       # Astro configuration
-│   ├── package.json           # Blog dependencies
+├── blog-src/                    # Astro project (entire site)
+│   ├── astro.config.mjs         # Astro configuration
+│   ├── package.json             # Site dependencies
+│   ├── public/                  # Static assets (css, js, fonts, favicons)
+│   │   ├── css/                 # Portfolio stylesheets
+│   │   ├── js/                  # Portfolio JavaScript
+│   │   └── fonts/               # Icon and custom fonts
 │   └── src/
 │       ├── content/
-│       │   ├── posts/         # Published blog posts (Markdown)
-│       │   └── drafts/        # Draft posts (not built)
-│       ├── content.config.ts  # Content collection schema
-│       ├── layouts/           # Astro layout components
-│       ├── pages/             # Blog pages (index, [slug])
-│       └── styles/            # Blog-specific CSS
-│
-├── blog/                      # Built blog output (deployed)
-│
-├── scripts/                   # Utilities
-│   └── generate-post.js       # AI blog draft generator
-│
-├── css/                       # Portfolio stylesheets
-│   ├── style.css              # Main custom styles
-│   ├── linea.css              # Linea icons styles
-│   ├── ionicons.min.css       # Ionicons styles
-│   ├── waves.min.css          # Waves effect styles
-│   ├── owl.carousel.css       # Carousel styles
-│   └── aos.css                # Animation on scroll styles
-│
-├── js/                        # Portfolio JavaScript
-│   ├── script.js              # Main custom JavaScript
-│   ├── jquery.min.js          # jQuery library
-│   ├── smooth-scroll.min.js   # Smooth scrolling
-│   ├── jquery.shuffle.min.js  # Shuffle plugin
-│   ├── waves.min.js           # Material waves effect
-│   ├── owl.carousel.min.js    # Carousel functionality
-│   ├── validator.min.js       # Form validation
-│   └── aos.js                 # Animate on scroll
-│
-├── bootstrap/                 # Bootstrap framework
-├── fonts/                     # Icon and custom fonts
-└── img/                       # Image assets
+│       │   ├── posts/           # Published blog posts (Markdown)
+│       │   └── drafts/          # Draft posts (not built)
+│       ├── content.config.ts    # Content collection schema
+│       ├── layouts/
+│       │   ├── SiteLayout.astro # Shared layout for main pages
+│       │   └── BlogLayout.astro # Blog post layout
+│       ├── pages/
+│       │   ├── index.astro      # Homepage
+│       │   ├── uses.astro       # Uses page
+│       │   ├── thank-you.astro  # Thank you page
+│       │   ├── 404.astro        # Site-wide 404
+│       │   └── blog/            # Blog pages
+│       │       ├── [...page].astro    # Blog listing (paginated)
+│       │       ├── [slug].astro       # Individual post
+│       │       ├── category/          # Category pages
+│       │       ├── tags/              # Tag pages
+│       │       ├── about.astro        # Blog about page
+│       │       ├── 404.astro          # Blog 404
+│       │       └── rss.xml.ts         # RSS feed
+│       └── styles/
+│           └── blog.css         # Blog-specific styles
+├── scripts/                     # Utilities
+│   └── generate-post.js         # AI blog draft generator
+├── netlify.toml                 # Netlify build & header config
+├── package.json                 # Root NPM scripts
+└── .github/workflows/
+    ├── generate-blog-post.yml   # AI draft generation
+    ├── publish-blog-post.yml    # Draft-to-post promotion
+    └── purge-cloudflare-cache.yml # CDN cache invalidation
 ```
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
 - **Node.js 22+** (required for Astro 6)
-- A modern web browser
 - Git
 
 ### Installation
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/mlaplante/resumesite.git
-   cd resumesite
-   ```
+```bash
+git clone https://github.com/mlaplante/resumesite.git
+cd resumesite
+npm install
+cd blog-src && npm install && cd ..
+```
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   cd blog-src && npm install && cd ..
-   ```
+### Development
 
-3. **Run locally**
+```bash
+# Full site with hot reload (Astro dev server)
+npm run blog:dev
 
-   For the main portfolio site:
-   ```bash
-   npm run serve
-   ```
+# Preview production build locally
+npm run blog:build && npm run blog:preview
+```
 
-   For the blog in development mode:
-   ```bash
-   npm run blog:dev
-   ```
+The dev server runs at `http://localhost:4321`.
 
-4. **View the site** at `http://localhost:3000` (serve) or `http://localhost:4321` (Astro dev)
+## Blog
 
-## 📝 Blog
+The blog lives at [michaellaplante.com/blog](https://michaellaplante.com/blog).
 
-The blog lives at [michaellaplante.com/blog](https://michaellaplante.com/blog) and is built with Astro as a static subsection of the main site.
-
-### Blog Commands
+### Commands
 
 | Command | Description |
 |---------|-------------|
 | `npm run blog:dev` | Start Astro dev server with hot reload |
-| `npm run blog:build` | Build blog to `blog/` output directory |
-| `npm run blog:preview` | Preview the built blog locally |
+| `npm run blog:build` | Build entire site to `dist/` |
+| `npm run blog:preview` | Preview the built site locally |
 | `npm run blog:draft:git` | Generate a draft from recent git history |
 | `npm run blog:draft:topic` | Generate a draft on a given topic |
 
@@ -190,138 +125,47 @@ The blog lives at [michaellaplante.com/blog](https://michaellaplante.com/blog) a
 2. Add frontmatter: `title`, `date`, `category`, `tags`, `excerpt`
 3. Review and edit the draft
 4. Move to `blog-src/src/content/posts/` when ready
-5. Run `npm run blog:build` to generate static HTML
-6. Commit and push — GitHub Actions handles deployment
+5. Commit and push — Netlify builds and deploys automatically
 
 ### Categories
 
 - `dev-session` — Development session recaps and technical walkthroughs
 - `thought-leadership` — Industry trends, opinions, and insights
 
-## 🚢 Deployment
+## Deployment
 
-This site is automatically deployed via **GitHub Actions** whenever changes are pushed to the `master` branch. The workflow:
+The site deploys automatically to **Netlify** on every push to `master`:
 
-1. Checks out the repository
-2. Installs Node.js 22 and blog dependencies
-3. Builds the Astro blog to the `blog/` directory
-4. Deploys all site files to the FTP server (only changed files are uploaded)
+1. Netlify installs dependencies and builds the Astro project
+2. Output in `dist/` is deployed with optimized CSS/JS/image processing
+3. GitHub Actions triggers Cloudflare cache purge post-deploy
 
-The deployment status badge at the top of this README shows the current state.
+### GitHub Actions Workflows
 
-### FTP Configuration
-
-FTP credentials are stored as GitHub repository secrets:
-
-| Secret | Description |
-|--------|-------------|
-| `FTP_SERVER` | FTP hostname |
-| `FTP_USERNAME` | FTP username |
-| `FTP_PASSWORD` | FTP password |
-| `FTP_SERVER_DIR` | Remote directory (must end with `/`) |
+| Workflow | Trigger | Purpose |
+|----------|---------|---------|
+| `generate-blog-post.yml` | Manual / scheduled | Generate AI blog drafts via Claude API |
+| `publish-blog-post.yml` | Manual | Promote drafts to published posts |
+| `purge-cloudflare-cache.yml` | Post-deploy | Invalidate Cloudflare CDN cache |
 
 ### Custom Domain
 
-The site uses a custom domain configured via the `CNAME` file. DNS is configured to point `michaellaplante.com` to the hosting server.
+DNS for `michaellaplante.com` is managed through Cloudflare, pointing to Netlify.
 
-## 📄 Sections Overview
+## Contributing
 
-### Home
-- Eye-catching hero section with personal photo
-- Name and title introduction
-- Clean, minimalist design
-
-### About Me
-- Professional summary and introduction
-- Background and experience overview
-- Social media links (Facebook, Twitter, GitHub)
-
-### Fun Facts
-- Statistical highlights (clients served, languages mastered, speaking sessions)
-- Visual representation of achievements
-- Engaging metrics display
-
-### Services
-- **Programming**: Custom software development
-- **Creative**: Design and UX services
-- **Consulting**: Technology consulting and strategy
-- **SEO**: Search engine optimization services
-
-### Skills
-- Visual skill bars showing proficiency levels
-- Technologies covered:
-  - Adobe Design Suite (99%)
-  - HTML/CSS/Sass (99%)
-  - JavaScript (98%)
-  - jQuery (100%)
-  - React (90%)
-  - Angular (90%)
-  - TypeScript (90%)
-
-### Experience
-- Detailed chronological timeline of professional positions
-- Company names, titles, and date ranges
-- Comprehensive job descriptions
-- Covers 15+ years of experience from 2010 to present
-- Notable positions:
-  - Proforma - SVP of Information Security and Operations (2026-Present)
-  - Proforma - Vice President of Technology (2022-2026)
-  - FireEye - Senior Web Engineer (2015-2019)
-  - And more...
-
-### Blog
-- Technical articles and development session recaps
-- Category filtering and tag support
-- Dark mode support matching the main site
-- AI-assisted draft generation
-
-### Contact
-- Embedded Typeform for easy communication
-- Streamlined contact process
-- Professional inquiry handling
-
-## 📊 Analytics & Tracking
-
-The site implements multiple analytics solutions:
-
-1. **Custom Analytics**: Self-hosted analytics via `laplantedevanalytics.netlify.app`
-   - Website ID: `1432237e-7cf8-4b54-9b2d-2f8f5bde6e7c`
-
-2. **Google Analytics**:
-   - Tracking ID: `G-8NYWNGQRKS`
-   - Comprehensive user behavior tracking
-
-## 🤝 Contributing
-
-This is a personal portfolio website. However, if you find bugs or have suggestions for improvements:
+This is a personal portfolio website. If you find bugs or have suggestions:
 
 1. Open an issue describing the problem or suggestion
-2. If you'd like to contribute code:
-   - Fork the repository
-   - Create a feature branch (`git checkout -b feature/improvement`)
-   - Make your changes
-   - Test thoroughly
-   - Commit your changes (`git commit -am 'Add improvement'`)
-   - Push to the branch (`git push origin feature/improvement`)
-   - Open a Pull Request
+2. Fork, branch, and submit a pull request
 
-## 📝 License
+## License
 
-Copyright © LaPlante Web Development 2006-2026. All rights reserved.
+Copyright LaPlante Web Development 2006-2026. All rights reserved.
 
-This is a personal portfolio website. Please do not copy or redistribute without permission.
-
-## 📧 Contact
+## Contact
 
 **Michael LaPlante**
 
 - **Website**: [michaellaplante.com](https://michaellaplante.com)
 - **GitHub**: [@mlaplante](https://github.com/mlaplante)
-- **Twitter**: [@laplantewebdev](https://twitter.com/laplantewebdev)
-- **Facebook**: [Laplante.Michael](https://www.facebook.com/Laplante.Michael)
-
-For professional inquiries, please use the contact form on the website.
-
----
-
-**Built with ❤️ by Michael LaPlante**
