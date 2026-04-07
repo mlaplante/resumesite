@@ -256,6 +256,11 @@ body.show-menu .menu-btn .l3{
 	margin-bottom:55px;
 	box-shadow: 0 0 25px 0 rgba(0,0,0,.15);
 }
+.person-img img{
+	width:100%;
+	height:100%;
+	object-fit:cover;
+}
 .intro-name{
 	color:#FFF;
 	font-size:68px;
