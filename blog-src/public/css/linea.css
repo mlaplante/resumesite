@@ -2,14 +2,10 @@
 
 @font-face {
   font-family: "linea";
-  src:url("../fonts/linea.eot");
-  src:url("../fonts/linea-iefix.eot") format("embedded-opentype"),
-    url("../fonts/linea.woff") format("woff"),
-    url("../fonts/linea.ttf") format("truetype"),
-    url("../fonts/linea.svg") format("svg");
+  src:url("../fonts/linea.woff") format("woff");
   font-weight: normal;
   font-style: normal;
-
+  font-display: swap;
 }
 
 [data-icon]:before {
@@ -19,7 +15,7 @@
   font-weight: normal !important;
   font-variant: normal !important;
   text-transform: none !important;
-  speak: none;
+  speak: never;
   line-height: 1;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -32,7 +28,7 @@
   font-weight: normal !important;
   font-variant: normal !important;
   text-transform: none !important;
-  speak: none;
+  speak: never;
   line-height: 1;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

@@ -40,7 +40,7 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
     Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://laplantedevanalytics.netlify.app; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' https://res.cloudinary.com data:; font-src 'self'; connect-src 'self' https://laplantedevanalytics.netlify.app https://cdn.jsdelivr.net; frame-src 'none'; base-uri 'self'; form-action 'self' https://buttondown.com; upgrade-insecure-requests"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://laplantedevanalytics.netlify.app; style-src 'self' 'unsafe-inline'; img-src 'self' https://res.cloudinary.com data:; font-src 'self'; connect-src 'self' https://laplantedevanalytics.netlify.app; frame-src 'none'; base-uri 'self'; form-action 'self' https://buttondown.com; upgrade-insecure-requests"
 
 # Immutable cache for Astro hashed assets (filenames contain content hash)
 [[headers]]
@@ -52,19 +52,19 @@
 [[headers]]
   for = "/css/*"
   [headers.values]
-    Cache-Control = "public, max-age=604800, must-revalidate"
+    Cache-Control = "public, max-age=2592000, must-revalidate"
 
 # Long cache for static JS
 [[headers]]
   for = "/js/*"
   [headers.values]
-    Cache-Control = "public, max-age=604800, must-revalidate"
+    Cache-Control = "public, max-age=2592000, must-revalidate"
 
 # Long cache for images
 [[headers]]
   for = "/images/*"
   [headers.values]
-    Cache-Control = "public, max-age=604800, must-revalidate"
+    Cache-Control = "public, max-age=2592000, must-revalidate"
 
 # Long cache for fonts
 [[headers]]
