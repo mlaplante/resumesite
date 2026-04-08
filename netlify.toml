@@ -1,6 +1,7 @@
 # Netlify configuration for static site deployment
 
 [build]
+  ignore = "bash scripts/netlify-ignore.sh"
   command = "cd blog-src && npm ci && npm run build"
   publish = "dist"
 
