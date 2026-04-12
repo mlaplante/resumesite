@@ -28,6 +28,13 @@ excerpt: "One sentence summary..."
 ---
 ```
 
+## Content Focus (temporary — expires 2026-04-26)
+
+For the next two weeks, prioritize **technical deep dives and code-focused content**:
+- Favor topics like architecture decisions, debugging war stories, infrastructure automation, performance optimization, code patterns, DevOps tooling, and hands-on engineering walkthroughs
+- **Avoid AI-centric topics** (no posts primarily about AI, LLMs, or machine learning — mentioning AI incidentally is fine)
+- Include meaningful code snippets, configuration examples, or CLI commands whenever possible
+
 ## Guidelines
 
 - Write in first person from Michael's perspective

@@ -101,7 +101,8 @@ async function pickTopic(existingTitles) {
     },
     {
       role: 'user',
-      content: `Suggest one fresh, specific blog post topic about cybersecurity, DevSecOps, cloud security, AI security, or engineering leadership. Pick something timely and practical that a technical audience would find valuable.${titleList}`,
+      // TEMP content focus — revert after 2026-04-26
+      content: `Suggest one fresh, specific blog post topic focused on technical deep dives and hands-on code. Good areas: infrastructure automation, debugging techniques, performance optimization, DevOps tooling, security engineering (code-level), architecture patterns, or systems programming. AVOID topics primarily about AI, LLMs, or machine learning. Pick something timely and practical that a technical audience would find valuable.${titleList}`,
     },
   ]);
 
@@ -109,7 +110,8 @@ async function pickTopic(existingTitles) {
 }
 
 async function generatePost({ mode, topic, days }) {
-  const systemPrompt = `You are a skilled technical writer for Michael LaPlante's blog. Michael is an SVP of Information Security and Operations with 15+ years of experience. Write engaging, practical posts that share real insight. Use a professional but approachable tone. Include concrete examples and actionable takeaways.`;
+  // TEMP content focus — revert after 2026-04-26
+  const systemPrompt = `You are a skilled technical writer for Michael LaPlante's blog. Michael is an SVP of Information Security and Operations with 15+ years of experience. Write engaging, practical posts that share real insight. Use a professional but approachable tone. Include concrete examples and actionable takeaways. Focus on technical deep dives with meaningful code snippets, configuration examples, and hands-on engineering detail. Avoid making AI or machine learning the primary topic — keep the emphasis on code, infrastructure, and practical engineering.`;
 
   let userPrompt;
   if (mode === 'git') {

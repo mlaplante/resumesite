@@ -33,14 +33,16 @@ async function generatePost({ mode, topic, days }) {
       console.error('No git activity found in the last', days, 'days.');
       process.exit(1);
     }
-    prompt = `You are writing a blog post for Michael LaPlante's tech blog. Based on this recent git activity, write an engaging blog post about what was built or fixed. Focus on the "why" and interesting technical decisions, not just listing commits.
+    // TEMP content focus — revert after 2026-04-26
+    prompt = `You are writing a blog post for Michael LaPlante's tech blog. Based on this recent git activity, write an engaging technical deep dive about what was built or fixed. Focus on the "why" and interesting technical decisions, not just listing commits. Include meaningful code snippets, architecture details, or configuration examples. Keep the emphasis on hands-on engineering — avoid making AI the primary topic.
 
 Git log:
 ${log}
 
 Write the post in Markdown. Do NOT include frontmatter — I will add that separately.`;
   } else {
-    prompt = `You are writing a blog post for Michael LaPlante's tech blog. Write an engaging, informative post about the following topic. Michael is an SVP of Information Security and Operations with 15+ years of experience.
+    // TEMP content focus — revert after 2026-04-26
+    prompt = `You are writing a blog post for Michael LaPlante's tech blog. Write an engaging, technically detailed post about the following topic. Michael is an SVP of Information Security and Operations with 15+ years of experience. Include code snippets, configuration examples, or architecture diagrams where relevant. Focus on hands-on engineering depth — avoid making AI the primary topic.
 
 Topic: ${topic}
 
