@@ -54,12 +54,16 @@ export async function handleContact(request: Request, env: Env): Promise<Respons
     method: 'POST',
     headers: {
       Authorization: 'Basic ' + btoa(env.FE_API_KEY + ':'),
+      'Content-Type': 'application/x-www-form-urlencoded',
     },
-    body: mailBody,
+    body: mailBody.toString(),
   });
 
   if (!mailRes.ok) {
-    console.error('ForwardEmail failed', mailRes.status, await mailRes.text());
+    const errBody = await mailRes.text();
+    console.error('ForwardEmail failed', mailRes.status, 'from=', env.CONTACT_FROM, 'body-len=', mailBody.toString().length, 'err=', errBody);
+  } else {
+    console.log('ForwardEmail sent ok', mailRes.status);
   }
 
   return redirectTo(THANK_YOU);
