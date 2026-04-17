@@ -42,19 +42,20 @@ export async function handleContact(request: Request, env: Env): Promise<Respons
     'INSERT INTO submissions (name, email, message, ip, ts) VALUES (?1, ?2, ?3, ?4, ?5)'
   ).bind(name, email, message, ip, Date.now()).run();
 
+  const mailBody = new URLSearchParams({
+    from: env.CONTACT_FROM,
+    to: env.CONTACT_TO,
+    replyTo: `${name} <${email}>`,
+    subject: `Contact form: ${name}`,
+    text: `From: ${name} <${email}>\nIP: ${ip}\n\n${message}`,
+  });
+
   const mailRes = await fetch('https://api.forwardemail.net/v1/emails', {
     method: 'POST',
     headers: {
       Authorization: 'Basic ' + btoa(env.FE_API_KEY + ':'),
-      'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      from: env.CONTACT_FROM,
-      to: env.CONTACT_TO,
-      replyTo: `${name} <${email}>`,
-      subject: `Contact form: ${name}`,
-      text: `From: ${name} <${email}>\nIP: ${ip}\n\n${message}`,
-    }),
+    body: mailBody,
   });
 
   if (!mailRes.ok) {
