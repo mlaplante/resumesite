@@ -15,7 +15,9 @@
     "blog:build": "find blog-src/src -name 'CLAUDE.md' -delete && cd blog-src && npm run build && rm -rf ../blog/CLAUDE",
     "blog:preview": "cd blog-src && npm run preview",
     "blog:draft:git": "node scripts/generate-post.js git",
-    "blog:draft:topic": "node scripts/generate-post.js topic"
+    "blog:draft:topic": "node scripts/generate-post.js topic",
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
   },
   "repository": {
     "type": "git",
@@ -30,5 +32,8 @@
   ],
   "dependencies": {
     "@anthropic-ai/sdk": "^0.81.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.83.0"
   }
 }
