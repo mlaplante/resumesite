@@ -5,6 +5,7 @@ npm-debug.log
 tmp/
 screenshots/
 dist/
+.wrangler/
 blog-src/node_modules/
 blog-src/.astro/
 blog/**/CLAUDE.md

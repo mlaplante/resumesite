@@ -632,6 +632,11 @@ body.show-menu .menu-btn .l3{
 .contact-form > .form-group:last-of-type{
 	margin-bottom:0;
 }
+.contact-form .cf-turnstile{
+	margin:20px 0;
+	display:flex;
+	justify-content:flex-start;
+}
 .material-input > .form-control{
 	background:transparent;
 	border:none;
