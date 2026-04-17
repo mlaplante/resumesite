@@ -6,11 +6,17 @@ import BlogLayout from '../../layouts/BlogLayout.astro';
   <h1>About</h1>
 
   <div class="about-card">
-    <img
-      src="https://res.cloudinary.com/laplantedev/image/upload/w_200,h_200,c_fill,g_face,r_max,f_auto/v1732243228/2023-inductees-la-plante-square_wwy6ir.jpg"
-      alt="Michael LaPlante"
-      class="about-photo"
-    />
+    <picture>
+      <source srcset="/images/mike-laplante-200.webp" type="image/webp" />
+      <img
+        src="/images/mike-laplante-200.jpg"
+        alt="Michael LaPlante"
+        class="about-photo"
+        width="200"
+        height="200"
+        loading="lazy"
+      />
+    </picture>
     <div class="about-info">
       <h2>Michael LaPlante</h2>
       <p class="about-role">SVP of Information Security and Operations</p>

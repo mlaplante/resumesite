@@ -24,7 +24,7 @@ const posts = (await getCollection('posts'))
       "@type": "Person",
       "name": "Michael LaPlante",
       "url": "https://michaellaplante.com",
-      "image": "https://res.cloudinary.com/laplantedev/image/upload/v1732243228/2023-inductees-la-plante-square_wwy6ir.jpg",
+      "image": "https://michaellaplante.com/images/mike-laplante-400.jpg",
       "jobTitle": "SVP of Information Security and Operations",
       "worksFor": {
         "@type": "Organization",
@@ -61,20 +61,20 @@ const posts = (await getCollection('posts'))
     <meta property="og:description" content="Technology executive with 15+ years of experience in information security, operations, and software engineering.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://michaellaplante.com">
-    <meta property="og:image" content="https://res.cloudinary.com/laplantedev/image/upload/v1732243228/2023-inductees-la-plante-square_wwy6ir.jpg">
+    <meta property="og:image" content="https://michaellaplante.com/images/mike-laplante-400.jpg">
 
     <!-- Twitter Card Meta Tags -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="@laplantewebdev">
     <meta name="twitter:title" content="Michael LaPlante - Technology Leader & Security Executive">
     <meta name="twitter:description" content="Technology executive with 15+ years of experience in information security, operations, and software engineering.">
-    <meta name="twitter:image" content="https://res.cloudinary.com/laplantedev/image/upload/v1732243228/2023-inductees-la-plante-square_wwy6ir.jpg">
+    <meta name="twitter:image" content="https://michaellaplante.com/images/mike-laplante-400.jpg">
 
     <!-- Preload Critical Resources -->
     <link rel="preload" href="/fonts/poppins/poppins-400.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/fonts/poppins/poppins-700.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/css/style.css" as="style">
-    <link rel="preload" href="https://res.cloudinary.com/laplantedev/image/upload/f_auto,q_auto,w_400/v1732243228/2023-inductees-la-plante-square_wwy6ir.jpg" as="image" fetchpriority="high">
+    <link rel="preload" href="/images/mike-laplante-400.webp" as="image" type="image/webp" fetchpriority="high">
 
     <!-- CSS Stylesheets -->
     <link rel="stylesheet" type="text/css" href="/css/fonts.css">
@@ -147,7 +147,10 @@ const posts = (await getCollection('posts'))
 
       <!-- Person Image -->
       <div class="person-img" data-aos="zoom-out-up">
-        <img src="https://res.cloudinary.com/laplantedev/image/upload/f_auto,q_auto,w_400/v1732243228/2023-inductees-la-plante-square_wwy6ir.jpg" alt="Michael LaPlante" loading="eager" fetchpriority="high">
+        <picture>
+          <source srcset="/images/mike-laplante-400.webp" type="image/webp">
+          <img src="/images/mike-laplante-400.jpg" alt="Michael LaPlante" width="400" height="400" loading="eager" fetchpriority="high">
+        </picture>
       </div>
 
       <!-- Your Name -->
