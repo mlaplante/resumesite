@@ -579,9 +579,9 @@ const posts = (await getCollection('posts'))
         <h2>Contact Me</h2>
       </div>
 
-      <form name="contact" method="POST" action="/thank-you/" data-netlify="true" netlify-honeypot="bot-field" class="contact-form" data-aos="fade-up">
-        <p class="hidden" style="display:none">
-          <label>Don't fill this out: <input name="bot-field"></label>
+      <form name="contact" method="POST" action="/api/contact" class="contact-form" data-aos="fade-up">
+        <p class="hidden" style="display:none" aria-hidden="true">
+          <label>Don't fill this out: <input name="bot-field" tabindex="-1" autocomplete="off"></label>
         </p>
         <div class="form-group">
           <div class="material-input">
@@ -601,8 +601,10 @@ const posts = (await getCollection('posts'))
             <label>Message</label>
           </div>
         </div>
+        <div class="cf-turnstile" data-sitekey={import.meta.env.PUBLIC_TURNSTILE_SITE_KEY}></div>
         <button type="submit" class="btn btn-custom">Send Message</button>
       </form>
+      <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     </div>
   </section>
   </main>
