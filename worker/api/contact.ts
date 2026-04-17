@@ -1,15 +1,8 @@
-interface Env {
-  DB: D1Database;
-  FE_API_KEY: string;
-  TURNSTILE_SECRET: string;
-  CONTACT_FROM: string;
-  CONTACT_TO: string;
-}
+import type { Env } from '../index';
 
 const THANK_YOU = '/thank-you/';
-const HOME = '/#contact';
 
-export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
+export async function handleContact(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
   const redirectTo = (path: string) => Response.redirect(url.origin + path, 303);
 
@@ -32,6 +25,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   }
 
   const ip = request.headers.get('CF-Connecting-IP') ?? '';
+
   const tsBody = new FormData();
   tsBody.set('secret', env.TURNSTILE_SECRET);
   tsBody.set('response', token);
@@ -68,7 +62,4 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   }
 
   return redirectTo(THANK_YOU);
-};
-
-export const onRequest: PagesFunction<Env> = async () =>
-  new Response('Method not allowed', { status: 405, headers: { Allow: 'POST' } });
+}
