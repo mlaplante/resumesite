@@ -2,6 +2,8 @@
 
 [![Netlify Status](https://api.netlify.com/api/v1/badges/cc82aa66-21cb-4624-b987-153e08d064cd/deploy-status)](https://app.netlify.com/projects/laplanteresume)
 
+[!Cloudflare Status](https://img.shields.io/endpoint?url=https://cloudflare-pages-badges.laplantewebdevelopment.workers.dev/?projectName=resumesite)
+
 A modern, fully Astro-powered personal portfolio and security consulting website for Michael LaPlante. Features a unified build pipeline, blog with category/tag taxonomy, AI-assisted draft generation, and automated Netlify deployment with Cloudflare CDN.
 
 **Live Site:** [michaellaplante.com](https://michaellaplante.com)
