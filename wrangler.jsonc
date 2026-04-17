@@ -11,5 +11,12 @@
   },
   "observability": {
     "enabled": true
-  }
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "contact-submissions",
+      "database_id": "7d630334-b908-4819-bd9f-2ec6ff05c4e8"
+    }
+  ]
 }
