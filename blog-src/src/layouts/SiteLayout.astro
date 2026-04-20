@@ -5,6 +5,8 @@ interface Props {
 }
 
 const { title, description } = Astro.props;
+
+import { ClientRouter } from 'astro:transitions';
 ---
 
 <!DOCTYPE html>
@@ -35,6 +37,7 @@ const { title, description } = Astro.props;
     <script defer src="https://laplantedevanalytics.netlify.app/script.js" data-website-id="b7f548e1-c6ab-4900-8693-e500f5400f0f"></script>
 
     <slot name="head" />
+    <ClientRouter />
   </head>
   <body>
     <slot />
