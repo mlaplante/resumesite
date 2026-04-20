@@ -12,7 +12,7 @@
     "minify:js": "npx terser js/script.js -o js/script.min.js -c -m",
     "build": "npm run minify:css && npm run minify:js",
     "blog:dev": "cd blog-src && npm run dev",
-    "blog:build": "find blog-src/src -name 'CLAUDE.md' -delete && cd blog-src && npm run build && rm -rf ../blog/CLAUDE",
+    "blog:build": "find blog-src/src -name 'CLAUDE.md' -delete && cd blog-src && npm run build && node scripts/purge-css.mjs && rm -rf ../blog/CLAUDE",
     "blog:preview": "cd blog-src && npm run preview",
     "blog:draft:git": "node scripts/generate-post.js git",
     "blog:draft:topic": "node scripts/generate-post.js topic"
