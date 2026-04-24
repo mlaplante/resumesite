@@ -19,8 +19,11 @@ import { join } from 'path';
 
 const DRAFTS_DIR = join(import.meta.dirname, '..', 'blog-src', 'src', 'content', 'drafts');
 const POSTS_DIR = join(import.meta.dirname, '..', 'blog-src', 'src', 'content', 'posts');
-const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
+const PRIMARY_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const FALLBACK_MODELS = (process.env.GEMINI_FALLBACK_MODELS || 'gemini-2.0-flash,gemini-2.5-flash-lite')
+  .split(',').map(s => s.trim()).filter(Boolean);
+const MODELS = [PRIMARY_MODEL, ...FALLBACK_MODELS.filter(m => m !== PRIMARY_MODEL)];
+const apiUrlFor = (model) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
 function getGitLog(days = 7) {
   try {
@@ -77,31 +80,48 @@ async function callGemini({ system, user, maxTokens = 2500, temperature = 0.7 })
     },
   });
 
-  const delays = [2000, 5000, 15000, 30000];
+  const delays = [2000, 5000];
   let lastErr = '';
-  for (let attempt = 0; attempt <= delays.length; attempt++) {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-      body,
-    });
 
-    if (res.ok) {
-      const data = await res.json();
-      const text = data?.candidates?.[0]?.content?.parts?.map(p => p.text).filter(Boolean).join('') || '';
-      if (text) return text;
-      console.error('Gemini API returned no text. Full response:', JSON.stringify(data));
-      process.exit(1);
+  for (const model of MODELS) {
+    console.log(`Calling Gemini model: ${model}`);
+
+    for (let attempt = 0; attempt <= delays.length; attempt++) {
+      const res = await fetch(apiUrlFor(model), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+        body,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const text = data?.candidates?.[0]?.content?.parts?.map(p => p.text).filter(Boolean).join('') || '';
+        if (text) return text;
+        console.error('Gemini API returned no text. Full response:', JSON.stringify(data));
+        process.exit(1);
+      }
+
+      lastErr = `[${model}] ${res.status}: ${await res.text()}`;
+
+      // Non-retryable errors (e.g., 400 bad request, 401/403 auth) — fail fast.
+      if (!RETRYABLE_STATUS.has(res.status)) {
+        console.error(`Gemini API error ${lastErr}`);
+        process.exit(1);
+      }
+
+      // Retries exhausted for this model — fall through to the next fallback model.
+      if (attempt === delays.length) {
+        console.warn(`[${model}] retries exhausted, trying next fallback model...`);
+        break;
+      }
+
+      const wait = delays[attempt];
+      console.warn(`[${model}] ${res.status}, retrying in ${wait}ms (attempt ${attempt + 1}/${delays.length})...`);
+      await new Promise(r => setTimeout(r, wait));
     }
-
-    lastErr = `${res.status}: ${await res.text()}`;
-    if (!RETRYABLE_STATUS.has(res.status) || attempt === delays.length) break;
-    const wait = delays[attempt];
-    console.warn(`Gemini API ${res.status}, retrying in ${wait}ms (attempt ${attempt + 1}/${delays.length})...`);
-    await new Promise(r => setTimeout(r, wait));
   }
 
-  console.error(`Gemini API error ${lastErr}`);
+  console.error(`All Gemini models exhausted. Last error: ${lastErr}`);
   process.exit(1);
 }
 
