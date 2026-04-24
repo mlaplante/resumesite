@@ -14,7 +14,7 @@
  */
 
 import { execSync } from 'child_process';
-import { writeFileSync, readFileSync, mkdirSync, readdirSync } from 'fs';
+import { writeFileSync, readFileSync, mkdirSync, readdirSync, existsSync } from 'fs';
 import { join } from 'path';
 
 const DRAFTS_DIR = join(import.meta.dirname, '..', 'blog-src', 'src', 'content', 'drafts');
@@ -59,6 +59,43 @@ function slugify(title) {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '');
 }
+
+// Small English stopword set — enough to stop "the/and/with" from inflating similarity.
+const STOPWORDS = new Set([
+  'a','an','the','and','or','but','with','for','of','to','in','on','at','by','from',
+  'is','are','was','were','be','being','been','how','what','why','when','where','which',
+  'your','my','our','their','its','using','use','via','as','that','this','these','those',
+  'it','we','you','they','vs','into','out','up','down','about','over','under'
+]);
+
+function tokenize(title) {
+  return new Set(
+    title.toLowerCase()
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .split(/\s+/)
+      .filter(w => w.length > 2 && !STOPWORDS.has(w))
+  );
+}
+
+function jaccard(a, b) {
+  if (!a.size || !b.size) return 0;
+  let intersection = 0;
+  for (const t of a) if (b.has(t)) intersection++;
+  return intersection / (a.size + b.size - intersection);
+}
+
+function findMostSimilar(title, existingTitles) {
+  const a = tokenize(title);
+  let best = { score: 0, title: null };
+  for (const existing of existingTitles) {
+    const score = jaccard(a, tokenize(existing));
+    if (score > best.score) best = { score, title: existing };
+  }
+  return best;
+}
+
+// Tokens overlap >= 50% of the combined significant vocabulary → treat as duplicate.
+const DUPLICATE_THRESHOLD = 0.5;
 
 const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
 
@@ -126,18 +163,38 @@ async function callGemini({ system, user, maxTokens = 2500, temperature = 0.7 })
 }
 
 async function pickTopic(existingTitles) {
-  const titleList = existingTitles.length
-    ? `\nExisting posts (do NOT repeat these topics):\n${existingTitles.map(t => `- ${t}`).join('\n')}`
-    : '';
+  const maxAttempts = 4;
+  const rejected = [];
 
-  const content = await callGemini({
-    system: 'You suggest blog post topics for a tech blog by an SVP of Information Security and Operations. Respond with ONLY a single topic title, nothing else.',
-    // TEMP content focus — revert after 2026-04-26
-    user: `Suggest one fresh, specific blog post topic focused on technical deep dives and hands-on code. Good areas: infrastructure automation, debugging techniques, performance optimization, DevOps tooling, security engineering (code-level), architecture patterns, or systems programming. AVOID topics primarily about AI, LLMs, or machine learning. Pick something timely and practical that a technical audience would find valuable.${titleList}`,
-    maxTokens: 100,
-  });
+  for (let i = 0; i < maxAttempts; i++) {
+    const exclusions = [...existingTitles, ...rejected];
+    const titleList = exclusions.length
+      ? `\nAlready covered (do NOT repeat these topics or anything semantically similar — pick something in a genuinely different area):\n${exclusions.map(t => `- ${t}`).join('\n')}`
+      : '';
 
-  return content.trim().replace(/^["']|["']$/g, '');
+    const content = await callGemini({
+      system: 'You suggest blog post topics for a tech blog by an SVP of Information Security and Operations. Respond with ONLY a single topic title, nothing else.',
+      // TEMP content focus — revert after 2026-04-26
+      user: `Suggest one fresh, specific blog post topic focused on technical deep dives and hands-on code. Good areas: infrastructure automation, debugging techniques, performance optimization, DevOps tooling, security engineering (code-level), architecture patterns, or systems programming. AVOID topics primarily about AI, LLMs, or machine learning. Pick something timely and practical that a technical audience would find valuable.${titleList}`,
+      maxTokens: 100,
+    });
+
+    const candidate = content.trim().replace(/^["']|["']$/g, '');
+    const similar = findMostSimilar(candidate, existingTitles);
+
+    if (similar.score < DUPLICATE_THRESHOLD) {
+      if (i > 0) console.log(`Accepted unique topic on attempt ${i + 1}.`);
+      return candidate;
+    }
+
+    console.warn(
+      `Rejected candidate "${candidate}" — ${(similar.score * 100).toFixed(0)}% similar to existing "${similar.title}".`
+    );
+    rejected.push(candidate);
+  }
+
+  console.error(`Could not find a sufficiently unique topic after ${maxAttempts} attempts. Aborting.`);
+  process.exit(1);
 }
 
 async function generatePost({ mode, topic, days }) {
@@ -170,6 +227,18 @@ async function generatePost({ mode, topic, days }) {
 
   const titleMatch = content.match(/^#\s+(.+)/m);
   const title = titleMatch ? titleMatch[1] : topic || 'Untitled Post';
+
+  // Final guard: even for topic/git modes (or if the LLM drifts from the picked topic),
+  // refuse to overwrite or duplicate an existing post.
+  const existingTitles = getExistingPostTitles();
+  const similar = findMostSimilar(title, existingTitles);
+  if (similar.score >= DUPLICATE_THRESHOLD) {
+    console.error(
+      `Refusing to write duplicate post. Generated title "${title}" is ${(similar.score * 100).toFixed(0)}% similar to existing "${similar.title}".`
+    );
+    process.exit(1);
+  }
+
   const slug = slugify(title);
   const date = new Date().toISOString().split('T')[0];
   const category = mode === 'git' ? 'project-update' : 'thought-leadership';
@@ -192,8 +261,14 @@ excerpt: "${excerpt.replace(/"/g, '\\"')}"
   const fullPost = `${frontmatter}\n\n${content}`;
 
   mkdirSync(DRAFTS_DIR, { recursive: true });
-  const filename = `${date}-${slug}.md`;
-  const filepath = join(DRAFTS_DIR, filename);
+  // Collision-safe filename: identical slug on the same day (or from a prior day in posts/)
+  // gets a numeric suffix so we never silently overwrite an existing draft or post.
+  let filename = `${date}-${slug}.md`;
+  let filepath = join(DRAFTS_DIR, filename);
+  for (let n = 2; existsSync(filepath) || existsSync(join(POSTS_DIR, filename)); n++) {
+    filename = `${date}-${slug}-${n}.md`;
+    filepath = join(DRAFTS_DIR, filename);
+  }
   writeFileSync(filepath, fullPost);
 
   console.log(`Draft saved: blog-src/src/content/drafts/${filename}`);
