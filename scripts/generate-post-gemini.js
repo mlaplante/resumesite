@@ -57,6 +57,8 @@ function slugify(title) {
     .replace(/(^-|-$)/g, '');
 }
 
+const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
+
 async function callGemini({ system, user, maxTokens = 2500, temperature = 0.7 }) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
@@ -64,35 +66,43 @@ async function callGemini({ system, user, maxTokens = 2500, temperature = 0.7 })
     process.exit(1);
   }
 
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-goog-api-key': apiKey,
+  const body = JSON.stringify({
+    systemInstruction: { parts: [{ text: system }] },
+    contents: [{ role: 'user', parts: [{ text: user }] }],
+    generationConfig: {
+      maxOutputTokens: maxTokens,
+      temperature,
+      // Disable Gemini 2.5 Flash "thinking" so reasoning tokens don't eat the output budget.
+      thinkingConfig: { thinkingBudget: 0 },
     },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: system }] },
-      contents: [{ role: 'user', parts: [{ text: user }] }],
-      generationConfig: {
-        maxOutputTokens: maxTokens,
-        temperature,
-      },
-    }),
   });
 
-  if (!res.ok) {
-    const body = await res.text();
-    console.error(`Gemini API error ${res.status}: ${body}`);
-    process.exit(1);
+  const delays = [2000, 5000, 15000, 30000];
+  let lastErr = '';
+  for (let attempt = 0; attempt <= delays.length; attempt++) {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+      body,
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const text = data?.candidates?.[0]?.content?.parts?.map(p => p.text).filter(Boolean).join('') || '';
+      if (text) return text;
+      console.error('Gemini API returned no text. Full response:', JSON.stringify(data));
+      process.exit(1);
+    }
+
+    lastErr = `${res.status}: ${await res.text()}`;
+    if (!RETRYABLE_STATUS.has(res.status) || attempt === delays.length) break;
+    const wait = delays[attempt];
+    console.warn(`Gemini API ${res.status}, retrying in ${wait}ms (attempt ${attempt + 1}/${delays.length})...`);
+    await new Promise(r => setTimeout(r, wait));
   }
 
-  const data = await res.json();
-  const text = data?.candidates?.[0]?.content?.parts?.map(p => p.text).filter(Boolean).join('') || '';
-  if (!text) {
-    console.error('Gemini API returned no text. Full response:', JSON.stringify(data));
-    process.exit(1);
-  }
-  return text;
+  console.error(`Gemini API error ${lastErr}`);
+  process.exit(1);
 }
 
 async function pickTopic(existingTitles) {
