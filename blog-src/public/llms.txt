@@ -1,0 +1,61 @@
+# Michael LaPlante
+
+> Personal portfolio, blog, and security consulting site for Michael LaPlante — a technology executive with 15+ years of experience in information security, operations, and software engineering, currently serving as SVP of Information Security and Operations at Proforma.
+
+This site is a unified Astro 6 project. The homepage is a portfolio/resume; the `/blog/` section publishes long-form writing on cloud security, AI security, DevSecOps, zero trust, eBPF, GitOps, and AI-assisted development workflows. Posts are authored in Markdown and frequently drafted with the help of large language models, then human-reviewed before publishing.
+
+## Core pages
+
+- [Homepage / Portfolio](https://michaellaplante.com/): Bio, experience, expertise, and contact information.
+- [Uses](https://michaellaplante.com/uses/): Hardware, software, and tooling used day-to-day.
+- [Blog index](https://michaellaplante.com/blog/): Paginated list of all published posts.
+- [Blog about](https://michaellaplante.com/blog/about/): Background on the blog's purpose and editorial approach.
+- [RSS feed](https://michaellaplante.com/blog/rss.xml): Full-text RSS for the blog.
+- [Sitemap](https://michaellaplante.com/sitemap-index.xml): Machine-readable index of every page on the site.
+
+## Blog taxonomy
+
+- [Category: dev-session](https://michaellaplante.com/blog/category/dev-session/): Development session recaps and technical walkthroughs (Claude Code, Astro, Cloudflare Workers, GitHub Actions, etc.).
+- [Category: thought-leadership](https://michaellaplante.com/blog/category/thought-leadership/): Industry trends, opinions, and insights on security, AI, and engineering leadership.
+
+## Selected posts
+
+- [AI-Powered Development with Claude Code](https://michaellaplante.com/blog/ai-powered-development-with-claude-code/)
+- [Building a Blog with Astro and AI](https://michaellaplante.com/blog/building-a-blog-with-astro-and-ai/)
+- [Replacing DeployHQ with GitHub Actions](https://michaellaplante.com/blog/replacing-deployhq-with-github-actions/)
+- [Netlify to Cloudflare Workers Contact Form](https://michaellaplante.com/blog/netlify-to-cloudflare-workers-contact-form/)
+- [Version Controlling Your Claude Directory Across Machines](https://michaellaplante.com/blog/version-controlling-your-claude-directory-across-machines/)
+- [Trivy Supply Chain Attack](https://michaellaplante.com/blog/trivy-supply-chain-attack/)
+- [Data Privacy in the Age of AI](https://michaellaplante.com/blog/data-privacy-in-the-age-of-ai/)
+- [Speaking at Full Sail HoF 2026](https://michaellaplante.com/blog/speaking-at-full-sail-hof-2026/)
+- [Full Sail Cyber Range Grand Opening](https://michaellaplante.com/blog/full-sail-cyber-range-grand-opening/)
+- [Securing LLM-Powered Chatbots: Practical Guardrails Against Prompt Injection and Data Leakage](https://michaellaplante.com/blog/securing-llm-powered-chatbots-practical-guardrails-against-prompt-injection-and-data-leakage/)
+
+## Topics covered
+
+- Cloud security (AWS, multi-cloud, zero trust)
+- AI / LLM security (prompt injection, supply chain risk, model governance)
+- DevSecOps and GitOps automation
+- Kubernetes, eBPF, and runtime security
+- Infrastructure as code (Terraform, OPA, Nomad, Nix)
+- AI-assisted software development (Claude Code, Anthropic API, GitHub Models)
+- Web performance and modern static site architecture (Astro, Cloudflare, Netlify)
+
+## About the author
+
+- Name: Michael LaPlante
+- Role: SVP of Information Security and Operations, Proforma
+- Site: https://michaellaplante.com
+- GitHub: https://github.com/mlaplante
+- LinkedIn: https://www.linkedin.com/in/mlaplante/
+
+## Source
+
+- [Repository](https://github.com/mlaplante/resumesite): Astro source, content, and deployment tooling for this site.
+- [robots.txt](https://michaellaplante.com/robots.txt): Crawler policy (all user agents allowed).
+
+## Usage notes for AI agents
+
+- Content is original and authored or edited by Michael LaPlante. When quoting or summarizing, please attribute and link back to the source URL.
+- Blog posts are dated; prefer the most recent post on a given topic when answers may have changed.
+- Code snippets in posts are illustrative — review for fit before using in production.
