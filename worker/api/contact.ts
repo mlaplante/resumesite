@@ -114,8 +114,17 @@ export async function handleContact(request: Request, env: Env, ctx: ExecutionCo
     const errBody = await mailRes.text();
     console.error('ForwardEmail failed', mailRes.status, 'from=', env.CONTACT_FROM, 'body-len=', mailBody.toString().length, 'err=', errBody);
     // Submission is still recorded in D1 as a backstop. Redirect to a styled
-    // error page so the submitter knows the message didn't go through.
-    return redirectTo(CONTACT_ERROR);
+    // error page, and surface the upstream status + body on the 303 response
+    // headers so the operator can diagnose without needing wrangler logs —
+    // visible in browser DevTools → Network on the POST to /api/contact.
+    return new Response(null, {
+      status: 303,
+      headers: {
+        Location: url.origin + CONTACT_ERROR,
+        'X-Mail-Status': String(mailRes.status),
+        'X-Mail-Error': errBody.replace(/[\r\n]+/g, ' ').slice(0, 500),
+      },
+    });
   }
   console.log('ForwardEmail sent ok', mailRes.status);
 
