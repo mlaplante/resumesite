@@ -1,6 +1,7 @@
 import type { Env } from '../index';
 
 const THANK_YOU = '/thank-you/';
+const CONTACT_ERROR = '/contact-error/';
 // Rate limit: at most this many submissions from one IP within the window.
 const RATE_LIMIT_MAX = 5;
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
@@ -112,12 +113,18 @@ export async function handleContact(request: Request, env: Env, ctx: ExecutionCo
   if (!mailRes.ok) {
     const errBody = await mailRes.text();
     console.error('ForwardEmail failed', mailRes.status, 'from=', env.CONTACT_FROM, 'body-len=', mailBody.toString().length, 'err=', errBody);
-    // Don't redirect to thank-you on email failure — the submitter would think
-    // the message went through. Submission is still recorded in D1 as a backstop.
-    return new Response(
-      "Sorry — we couldn't send your message right now. Please try again in a few minutes, or email me directly.",
-      { status: 502, headers: { 'Content-Type': 'text/plain; charset=utf-8' } },
-    );
+    // Submission is still recorded in D1 as a backstop. Redirect to a styled
+    // error page, and surface the upstream status + body on the 303 response
+    // headers so the operator can diagnose without needing wrangler logs —
+    // visible in browser DevTools → Network on the POST to /api/contact.
+    return new Response(null, {
+      status: 303,
+      headers: {
+        Location: url.origin + CONTACT_ERROR,
+        'X-Mail-Status': String(mailRes.status),
+        'X-Mail-Error': errBody.replace(/[\r\n]+/g, ' ').slice(0, 500),
+      },
+    });
   }
   console.log('ForwardEmail sent ok', mailRes.status);
 
