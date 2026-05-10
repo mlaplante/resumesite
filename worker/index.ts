@@ -9,6 +9,9 @@ export interface Env {
   CONTACT_TO: string;
 }
 
+// Submissions older than this are purged on the scheduled trigger.
+const RETENTION_DAYS = 90;
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
@@ -22,5 +25,14 @@ export default {
     }
 
     return env.ASSETS.fetch(request);
+  },
+
+  async scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+    const cutoff = Date.now() - RETENTION_DAYS * 86400000;
+    ctx.waitUntil(
+      env.DB.prepare('DELETE FROM submissions WHERE ts < ?1').bind(cutoff).run()
+        .then(r => console.log('retention purge:', r.meta?.changes ?? 0, 'rows older than', new Date(cutoff).toISOString()))
+        .catch(err => console.error('retention purge failed:', err))
+    );
   },
 } satisfies ExportedHandler<Env>;

@@ -13,6 +13,10 @@
   "observability": {
     "enabled": true
   },
+  "triggers": {
+    // Daily at 03:17 UTC: purge submissions older than the retention window.
+    "crons": ["17 3 * * *"]
+  },
   "d1_databases": [
     {
       "binding": "DB",

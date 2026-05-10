@@ -1,10 +1,30 @@
 import type { Env } from '../index';
 
 const THANK_YOU = '/thank-you/';
+// Rate limit: at most this many submissions from one IP within the window.
+const RATE_LIMIT_MAX = 5;
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+
+// Strip CR/LF and other control characters that could be used to inject
+// extra email headers downstream when name/email are interpolated into
+// replyTo / subject / body.
+const stripControl = (s: string) => s.replace(/[\x00-\x1f\x7f]/g, '');
+
+// Stricter email validation than \S+@\S+\.\S+ — requires a 2+ char TLD,
+// rejects whitespace, multiple @, leading/trailing dots, etc.
+const EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,63}$/;
 
 export async function handleContact(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
   const redirectTo = (path: string) => Response.redirect(url.origin + path, 303);
+
+  // Same-origin enforcement: the browser sends Origin on POST, and a legitimate
+  // form submission from this site will match. This blocks naive cross-site
+  // forms even before Turnstile runs.
+  const origin = request.headers.get('Origin');
+  if (origin && origin !== url.origin) {
+    return new Response('Forbidden', { status: 403 });
+  }
 
   let form: FormData;
   try {
@@ -15,16 +35,29 @@ export async function handleContact(request: Request, env: Env): Promise<Respons
 
   if (form.get('bot-field')) return redirectTo(THANK_YOU);
 
-  const name = String(form.get('name') ?? '').trim().slice(0, 200);
-  const email = String(form.get('email') ?? '').trim().slice(0, 200);
+  const name = stripControl(String(form.get('name') ?? '').trim()).slice(0, 200);
+  const email = stripControl(String(form.get('email') ?? '').trim()).slice(0, 200);
   const message = String(form.get('message') ?? '').trim().slice(0, 5000);
   const token = String(form.get('cf-turnstile-response') ?? '');
 
-  if (!name || !message || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  if (!name || !message || !EMAIL_RE.test(email)) {
     return new Response('Invalid submission', { status: 400 });
   }
 
   const ip = request.headers.get('CF-Connecting-IP') ?? '';
+
+  if (ip) {
+    const since = Date.now() - RATE_LIMIT_WINDOW_MS;
+    const recent = await env.DB.prepare(
+      'SELECT COUNT(*) AS n FROM submissions WHERE ip = ?1 AND ts > ?2'
+    ).bind(ip, since).first<{ n: number }>();
+    if (recent && recent.n >= RATE_LIMIT_MAX) {
+      return new Response('Too many submissions; please try again later.', {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil(RATE_LIMIT_WINDOW_MS / 1000)) },
+      });
+    }
+  }
 
   const tsBody = new FormData();
   tsBody.set('secret', env.TURNSTILE_SECRET);

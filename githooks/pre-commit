@@ -1,2 +1,7 @@
 #!/usr/bin/env bash
-/opt/homebrew/bin/gitleaks git --pre-commit --staged
+set -e
+if command -v gitleaks >/dev/null 2>&1; then
+  exec gitleaks git --pre-commit --staged
+fi
+echo "warning: gitleaks not found on PATH; skipping secret scan." >&2
+echo "  install: https://github.com/gitleaks/gitleaks (brew install gitleaks)" >&2
