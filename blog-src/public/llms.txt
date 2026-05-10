@@ -12,6 +12,7 @@ This site is a unified Astro 6 project. The homepage is a portfolio/resume; the 
 - [Blog about](https://michaellaplante.com/blog/about/): Background on the blog's purpose and editorial approach.
 - [RSS feed](https://michaellaplante.com/blog/rss.xml): Full-text RSS for the blog.
 - [Sitemap](https://michaellaplante.com/sitemap-index.xml): Machine-readable index of every page on the site.
+- [llms-full.txt](https://michaellaplante.com/llms-full.txt): Full-text concatenation of every blog post for ingestion by AI agents.
 
 ## Blog taxonomy
 
