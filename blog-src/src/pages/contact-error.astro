@@ -1,0 +1,163 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+---
+
+<SiteLayout title="Couldn't send your message - Michael LaPlante">
+  <Fragment slot="head">
+    <meta name="robots" content="noindex">
+    <link rel="stylesheet" type="text/css" href="/css/fonts.css">
+    <link rel="stylesheet" href="/css/bootstrap-reboot.min.css">
+    <link rel="stylesheet" type="text/css" href="/css/style.css">
+  </Fragment>
+  <div class="contact-error">
+    <div>
+      <svg class="robot" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 220" fill="none">
+        <defs>
+          <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ebf4fc"/>
+            <stop offset="100%" stop-color="#dde1e7"/>
+          </linearGradient>
+        </defs>
+        <ellipse class="robot-shadow" cx="100" cy="200" rx="50" ry="10" fill="#c3c3c3" opacity="0.4"/>
+        <g class="robot-body">
+          <ellipse cx="100" cy="155" rx="40" ry="12" fill="#d0d0d0"/>
+          <path d="M60,110 Q60,155 100,158 Q140,155 140,110 Q140,90 100,88 Q60,90 60,110Z" fill="url(#bodyGrad)" stroke="#ccd0d5" stroke-width="1.5"/>
+          <ellipse class="robot-ear-left" cx="52" cy="60" rx="14" ry="22" fill="#e1e1e1" stroke="#ccc" stroke-width="1"/>
+          <ellipse class="robot-ear-right" cx="148" cy="60" rx="14" ry="22" fill="#e1e1e1" stroke="#ccc" stroke-width="1"/>
+          <path d="M58,30 Q58,10 100,8 Q142,10 142,30 L142,85 Q142,95 100,97 Q58,95 58,85Z" fill="url(#bodyGrad)" stroke="#ccd0d5" stroke-width="1.5"/>
+          <rect x="68" y="35" width="64" height="48" rx="16" fill="#212121"/>
+          <rect class="robot-eye-left" x="78" y="42" width="10" height="28" rx="5" fill="#ff8a8a"/>
+          <rect class="robot-eye-right" x="112" y="42" width="10" height="28" rx="5" fill="#ff8a8a"/>
+          <path d="M88,77 Q100,71 112,77" stroke="#3a3a3a" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+        </g>
+        <g class="robot-arm-left">
+          <path d="M58,105 Q38,110 30,130 Q26,140 32,145 Q40,148 44,138 L55,115" fill="url(#bodyGrad)" stroke="#ccd0d5" stroke-width="1.5"/>
+          <circle cx="32" cy="145" r="8" fill="url(#bodyGrad)" stroke="#ccd0d5" stroke-width="1"/>
+        </g>
+        <g class="robot-arm-right">
+          <path d="M142,105 Q162,110 170,130 Q174,140 168,145 Q160,148 156,138 L145,115" fill="url(#bodyGrad)" stroke="#ccd0d5" stroke-width="1.5"/>
+          <circle cx="168" cy="145" r="8" fill="url(#bodyGrad)" stroke="#ccd0d5" stroke-width="1"/>
+        </g>
+      </svg>
+      <h1>Something went wrong</h1>
+      <p>I couldn't send your message right now. Please try again in a few minutes &mdash; or reach out on <a href="https://www.linkedin.com/in/mlaplante/" rel="noopener noreferrer">LinkedIn</a>.</p>
+      <a href="/#contact" class="btn btn-custom">Back to the form</a>
+    </div>
+  </div>
+  <script is:inline defer src="/js/script.js"></script>
+</SiteLayout>
+
+<style>
+  .contact-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .contact-error h1 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    animation: fadeSlideUp 0.6s ease 1.2s both;
+  }
+  .contact-error p {
+    font-size: 1.1rem;
+    color: #666;
+    margin-bottom: 30px;
+    animation: fadeSlideUp 0.6s ease 1.5s both;
+    max-width: 460px;
+  }
+  .contact-error a:not(.btn) {
+    color: inherit;
+    text-decoration: underline;
+  }
+  .contact-error .btn {
+    animation: fadeSlideUp 0.6s ease 1.8s both;
+  }
+  :global(body.dark-mode) .contact-error p {
+    color: #b0b0b0;
+  }
+
+  .robot {
+    width: 160px;
+    height: 180px;
+    margin: 0 auto 28px;
+    display: block;
+    opacity: 0;
+    animation: fadeIn 0.6s ease 0.2s forwards;
+  }
+
+  .robot-body {
+    animation: sadBob 3s ease-in-out infinite;
+  }
+
+  .robot-shadow {
+    animation: shadowPulse 3s ease-in-out infinite;
+  }
+
+  .robot-eye-left, .robot-eye-right {
+    animation: eyeBlink 4s ease-in-out 1s infinite;
+  }
+
+  .robot-arm-left {
+    transform-origin: 58px 105px;
+    animation: armSlump 3s ease-in-out infinite;
+  }
+
+  .robot-arm-right {
+    transform-origin: 142px 105px;
+    animation: armSlump 3s ease-in-out 0.4s infinite;
+  }
+
+  .robot-ear-left {
+    transform-origin: 52px 60px;
+    animation: earDroop 3s ease-in-out 0.3s infinite;
+  }
+  .robot-ear-right {
+    transform-origin: 148px 60px;
+    animation: earDroop 3s ease-in-out 0.6s infinite;
+  }
+
+  @keyframes fadeIn { to { opacity: 1; } }
+
+  @keyframes sadBob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-2px); }
+  }
+
+  @keyframes shadowPulse {
+    0%, 100% { transform: scaleX(1); opacity: 0.4; }
+    50% { transform: scaleX(0.95); opacity: 0.3; }
+  }
+
+  @keyframes eyeBlink {
+    0%, 42%, 48%, 100% { transform: scaleY(1); }
+    45% { transform: scaleY(0.1); }
+  }
+
+  @keyframes armSlump {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(3deg); }
+  }
+
+  @keyframes earDroop {
+    0%, 100% { transform: scaleY(1); }
+    50% { transform: scaleY(0.92); }
+  }
+
+  @keyframes fadeSlideUp {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .robot-eye-left, .robot-eye-right { fill: #ff9b9b; }
+  }
+</style>
