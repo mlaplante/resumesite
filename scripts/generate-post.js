@@ -2,10 +2,11 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 import { execSync } from 'child_process';
-import { writeFileSync, mkdirSync } from 'fs';
+import { writeFileSync, mkdirSync, existsSync } from 'fs';
 import { join } from 'path';
 
 const DRAFTS_DIR = join(import.meta.dirname, '..', 'blog-src', 'src', 'content', 'drafts');
+const POSTS_DIR = join(import.meta.dirname, '..', 'blog-src', 'src', 'content', 'posts');
 
 function getGitLog(days = 7) {
   try {
@@ -80,8 +81,13 @@ excerpt: "${excerpt.replace(/"/g, '\\"')}"
   const fullPost = `${frontmatter}\n\n${content}`;
 
   mkdirSync(DRAFTS_DIR, { recursive: true });
-  const filename = `${date}-${slug}.md`;
-  const filepath = join(DRAFTS_DIR, filename);
+  // Never silently overwrite an existing draft or published post with the same slug.
+  let filename = `${date}-${slug}.md`;
+  let filepath = join(DRAFTS_DIR, filename);
+  for (let n = 2; existsSync(filepath) || existsSync(join(POSTS_DIR, filename)); n++) {
+    filename = `${date}-${slug}-${n}.md`;
+    filepath = join(DRAFTS_DIR, filename);
+  }
   writeFileSync(filepath, fullPost);
 
   console.log(`Draft saved to: blog-src/src/content/drafts/${filename}`);
