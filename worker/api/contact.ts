@@ -4,6 +4,8 @@ const THANK_YOU = '/thank-you/';
 // Rate limit: at most this many submissions from one IP within the window.
 const RATE_LIMIT_MAX = 5;
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+// Submissions older than this are purged opportunistically on each accepted request.
+const RETENTION_MS = 90 * 86400000;
 
 // Strip CR/LF and other control characters that could be used to inject
 // extra email headers downstream when name/email are interpolated into
@@ -14,7 +16,7 @@ const stripControl = (s: string) => s.replace(/[\x00-\x1f\x7f]/g, '');
 // rejects whitespace, multiple @, leading/trailing dots, etc.
 const EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,63}$/;
 
-export async function handleContact(request: Request, env: Env): Promise<Response> {
+export async function handleContact(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const url = new URL(request.url);
   const redirectTo = (path: string) => Response.redirect(url.origin + path, 303);
 
@@ -74,6 +76,15 @@ export async function handleContact(request: Request, env: Env): Promise<Respons
   await env.DB.prepare(
     'INSERT INTO submissions (name, email, message, ip, ts) VALUES (?1, ?2, ?3, ?4, ?5)'
   ).bind(name, email, message, ip, Date.now()).run();
+
+  // Opportunistic retention purge — kept off the response path via waitUntil.
+  // Cloudflare's free Workers plan caps cron triggers per account, so we
+  // piggy-back on accepted submissions instead of using a scheduled handler.
+  const retentionCutoff = Date.now() - RETENTION_MS;
+  ctx.waitUntil(
+    env.DB.prepare('DELETE FROM submissions WHERE ts < ?1').bind(retentionCutoff).run()
+      .catch(err => console.error('retention purge failed:', err))
+  );
 
   const mailBody = new URLSearchParams({
     from: env.CONTACT_FROM,
