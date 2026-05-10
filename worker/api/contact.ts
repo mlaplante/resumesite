@@ -25,6 +25,7 @@ export async function handleContact(request: Request, env: Env, ctx: ExecutionCo
   // forms even before Turnstile runs.
   const origin = request.headers.get('Origin');
   if (origin && origin !== url.origin) {
+    console.warn('contact: rejected on origin mismatch', { origin, expected: url.origin });
     return new Response('Forbidden', { status: 403 });
   }
 
@@ -43,6 +44,7 @@ export async function handleContact(request: Request, env: Env, ctx: ExecutionCo
   const token = String(form.get('cf-turnstile-response') ?? '');
 
   if (!name || !message || !EMAIL_RE.test(email)) {
+    console.warn('contact: rejected on validation', { hasName: !!name, hasMessage: !!message, emailOk: EMAIL_RE.test(email) });
     return new Response('Invalid submission', { status: 400 });
   }
 
@@ -54,6 +56,7 @@ export async function handleContact(request: Request, env: Env, ctx: ExecutionCo
       'SELECT COUNT(*) AS n FROM submissions WHERE ip = ?1 AND ts > ?2'
     ).bind(ip, since).first<{ n: number }>();
     if (recent && recent.n >= RATE_LIMIT_MAX) {
+      console.warn('contact: rejected on rate limit', { ip, recent: recent.n });
       return new Response('Too many submissions; please try again later.', {
         status: 429,
         headers: { 'Retry-After': String(Math.ceil(RATE_LIMIT_WINDOW_MS / 1000)) },
@@ -70,8 +73,11 @@ export async function handleContact(request: Request, env: Env, ctx: ExecutionCo
     method: 'POST',
     body: tsBody,
   });
-  const tsJson = (await tsRes.json()) as { success: boolean };
-  if (!tsJson.success) return new Response('Challenge failed', { status: 403 });
+  const tsJson = (await tsRes.json()) as { success: boolean; 'error-codes'?: string[] };
+  if (!tsJson.success) {
+    console.warn('contact: rejected on turnstile', { errors: tsJson['error-codes'] });
+    return new Response('Challenge failed', { status: 403 });
+  }
 
   await env.DB.prepare(
     'INSERT INTO submissions (name, email, message, ip, ts) VALUES (?1, ?2, ?3, ?4, ?5)'
@@ -106,9 +112,14 @@ export async function handleContact(request: Request, env: Env, ctx: ExecutionCo
   if (!mailRes.ok) {
     const errBody = await mailRes.text();
     console.error('ForwardEmail failed', mailRes.status, 'from=', env.CONTACT_FROM, 'body-len=', mailBody.toString().length, 'err=', errBody);
-  } else {
-    console.log('ForwardEmail sent ok', mailRes.status);
+    // Don't redirect to thank-you on email failure — the submitter would think
+    // the message went through. Submission is still recorded in D1 as a backstop.
+    return new Response(
+      "Sorry — we couldn't send your message right now. Please try again in a few minutes, or email me directly.",
+      { status: 502, headers: { 'Content-Type': 'text/plain; charset=utf-8' } },
+    );
   }
+  console.log('ForwardEmail sent ok', mailRes.status);
 
   return redirectTo(THANK_YOU);
 }
