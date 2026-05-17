@@ -24,9 +24,16 @@ permissions:
   contents: write
   pull-requests: write
 
+# Avoid two scheduled runs and a manual dispatch racing each other into
+# duplicate PRs against `master`.
+concurrency:
+  group: blog-post-generator
+  cancel-in-progress: false
+
 jobs:
   generate:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
