@@ -136,20 +136,10 @@ export async function handleContact(request: Request, env: Env, ctx: ExecutionCo
     const errBody = await mailRes.text();
     const requestId = mailRes.headers.get('X-Request-Id') ?? '';
     console.error('ForwardEmail failed', mailRes.status, 'request-id=', requestId, 'body-len=', mailBody.length, 'err=', errBody);
-    // Submission is still recorded in D1 as a backstop. Surface the upstream
-    // status + truncated body on the redirect URL so the contact-error page
-    // can display them without the operator needing DevTools/wrangler tail.
-    const params = new URLSearchParams({
-      s: String(mailRes.status),
-      e: errBody.replace(/[\r\n]+/g, ' ').slice(0, 300),
-    });
-    if (requestId) params.set('rid', requestId);
+    // Submission is still recorded in D1 as a backstop.
     return new Response(null, {
       status: 303,
-      headers: {
-        Location: `${url.origin}${CONTACT_ERROR}?${params.toString()}`,
-        ...NO_STORE,
-      },
+      headers: { Location: url.origin + CONTACT_ERROR, ...NO_STORE },
     });
   }
   console.log('ForwardEmail sent ok', mailRes.status);
