@@ -7,4 +7,8 @@ CREATE TABLE IF NOT EXISTS submissions (
   ts INTEGER NOT NULL
 );
 
+-- Used by retention purge.
 CREATE INDEX IF NOT EXISTS idx_submissions_ts ON submissions (ts DESC);
+
+-- Used by per-IP rate limit lookup; covers the (ip, ts > ?) predicate.
+CREATE INDEX IF NOT EXISTS idx_submissions_ip_ts ON submissions (ip, ts DESC);
