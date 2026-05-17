@@ -114,6 +114,9 @@ npm run worker:dev
 
 # Type-check the Astro project
 npm run typecheck
+
+# Run the full test suite (Worker integration tests + shared-lib unit tests)
+npm test
 ```
 
 The Astro dev server runs at `http://localhost:4321`. The Worker dev server runs the static site + `/api/contact` together.
@@ -139,9 +142,10 @@ The blog lives at [michaellaplante.com/blog](https://michaellaplante.com/blog).
 | Command                         | Description |
 |---------------------------------|-------------|
 | `npm run dev`                   | Start Astro dev server with hot reload |
-| `npm run build`                 | Build entire site to `dist/` (includes PurgeCSS pass) |
+| `npm run build`                 | Build entire site to `dist/` (includes PurgeCSS + per-post OG images) |
 | `npm run preview`               | Preview the built site locally |
 | `npm run typecheck`             | Run `astro check` for TS / content-schema validation |
+| `npm test`                      | Run Worker integration tests + shared-lib unit tests |
 | `npm run worker:dev`            | Run Wrangler dev (Worker + assets together) |
 | `npm run worker:deploy`         | Deploy the Worker + assets to Cloudflare |
 | `npm run blog:draft:git`        | Generate a draft from recent git history (Anthropic) |
@@ -160,6 +164,62 @@ The blog lives at [michaellaplante.com/blog](https://michaellaplante.com/blog).
 - `dev-session` — Development session recaps and technical walkthroughs
 - `thought-leadership` — Industry trends, opinions, and insights
 - `project-update` — Reserved for git-log-derived posts (auto-categorized by the AI draft pipeline)
+
+### Social cards (OG images)
+
+Every blog post automatically gets a unique 1200×630 PNG social card at
+`/og/<slug>.png`, rendered at build time by `blog-src/src/pages/og/[slug].png.ts`
+using [satori](https://github.com/vercel/satori) + [resvg-js](https://github.com/yisibl/resvg-js).
+The card pulls the post title, category, and date from the content collection
+and renders against the brand gradient. To override with a hand-made image,
+set `image: /path/to/hero.png` in the post's frontmatter — that takes
+precedence over the auto-generated card.
+
+### AI draft dedupe
+
+The `auto` mode of `generate-post-gemini.js` and `generate-post-gh-models.js`
+uses **embedding cosine similarity** (Gemini `text-embedding-004` /
+GitHub Models `text-embedding-3-small`) against every existing title +
+excerpt to reject near-duplicate topic suggestions like "Zero-Trust with eBPF"
+vs "Zero-Trust with Istio". Cosine cutoff is tunable via the
+`SEMANTIC_THRESHOLD` env var (default 0.85). The pipeline falls back to
+lexical Jaccard if the embedding call fails. Embeddings are cached in
+`scripts/.embeddings-cache.json` (git-ignored) so daily runs only embed the
+new candidate.
+
+The LLM is also required to emit a `TITLE:` directive on the first line
+of every draft; `extractTitle` validates that it isn't a file path, code
+identifier, or single-word fragment, and retries the call once with stronger
+instructions before failing.
+
+### Backfilling `updated:` on heavily-edited posts
+
+```bash
+node scripts/backfill-updated.js          # dry-run report
+node scripts/backfill-updated.js --apply  # rewrite frontmatter in place
+```
+
+The helper inspects each post's git history, ignores the initial import
+commit and pure renames, and adds an `updated: YYYY-MM-DD` line when the
+most recent content edit is later than the frontmatter `date:`. This drives
+the `dateModified` field in BlogPosting JSON-LD.
+
+## Testing
+
+```bash
+npm test          # runs both projects below
+```
+
+Two vitest projects:
+
+- **worker** — runs inside the real Cloudflare Workers runtime via
+  `@cloudflare/vitest-pool-workers`, with a Miniflare-backed D1. Covers the
+  contact handler end-to-end: origin enforcement, validation, honeypot,
+  Turnstile, rate-limit, upstream-failure path, OPTIONS / 405 routing.
+- **lib** — plain Node project. Covers the shared blog-post lib: title
+  extraction & validation, lexical + semantic dedupe, frontmatter rendering,
+  excerpt extraction, embedding cache behaviour, and `pickUniqueTopic`
+  retry / fallback semantics.
 
 ## Deployment
 
