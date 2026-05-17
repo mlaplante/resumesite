@@ -115,7 +115,7 @@ export async function handleContact(request: Request, env: Env, ctx: ExecutionCo
       .catch(err => console.error('retention purge failed:', err))
   );
 
-  const mailBody = new URLSearchParams({
+  const mailBody = JSON.stringify({
     from: env.CONTACT_FROM,
     to: env.CONTACT_TO,
     replyTo: `${name} <${email}>`,
@@ -127,14 +127,15 @@ export async function handleContact(request: Request, env: Env, ctx: ExecutionCo
     method: 'POST',
     headers: {
       Authorization: 'Basic ' + btoa(env.FE_API_KEY + ':'),
-      'Content-Type': 'application/x-www-form-urlencoded',
+      'Content-Type': 'application/json',
     },
-    body: mailBody.toString(),
+    body: mailBody,
   });
 
   if (!mailRes.ok) {
     const errBody = await mailRes.text();
-    console.error('ForwardEmail failed', mailRes.status, 'body-len=', mailBody.toString().length, 'err=', errBody);
+    const requestId = mailRes.headers.get('X-Request-Id') ?? '';
+    console.error('ForwardEmail failed', mailRes.status, 'request-id=', requestId, 'body-len=', mailBody.length, 'err=', errBody);
     // Submission is still recorded in D1 as a backstop. Redirect to a styled
     // error page, and surface the upstream status + body on the 303 response
     // headers so the operator can diagnose without needing wrangler logs —
@@ -145,6 +146,7 @@ export async function handleContact(request: Request, env: Env, ctx: ExecutionCo
         Location: url.origin + CONTACT_ERROR,
         'X-Mail-Status': String(mailRes.status),
         'X-Mail-Error': errBody.replace(/[\r\n]+/g, ' ').slice(0, 500),
+        'X-Mail-Request-Id': requestId,
         ...NO_STORE,
       },
     });
