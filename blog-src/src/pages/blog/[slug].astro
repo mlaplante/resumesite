@@ -2,7 +2,7 @@
 import { getCollection, render } from 'astro:content';
 import BlogLayout from '../../layouts/BlogLayout.astro';
 import NewsletterSignup from '../../components/NewsletterSignup.astro';
-import { SITE_URL, DEFAULT_OG_IMAGE } from '../../config';
+import { SITE_URL } from '../../config';
 import { getReadTime, getWordCount } from '../../utils/readTime';
 import { formatDateLong, formatDateShort } from '../../utils/format';
 
@@ -22,7 +22,10 @@ const wordCount = getWordCount(post.body);
 const readTime = getReadTime(post.body);
 const siteUrl = SITE_URL;
 const postUrl = `${siteUrl}/blog/${post.id}/`;
-const heroImage = post.data.image ?? DEFAULT_OG_IMAGE;
+// Social-card image: prefer the post's explicit `image:` frontmatter, otherwise
+// fall back to the auto-generated `/og/<slug>.png` rendered at build time by
+// src/pages/og/[slug].png.ts.
+const heroImage = post.data.image ?? `${siteUrl}/og/${post.id}.png`;
 const updated = post.data.updated ?? post.data.date;
 
 // Related posts: same category first, then recent, exclude current
