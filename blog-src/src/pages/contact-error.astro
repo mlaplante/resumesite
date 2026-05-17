@@ -41,8 +41,28 @@ import SiteLayout from '../layouts/SiteLayout.astro';
       <h1>Something went wrong</h1>
       <p>I couldn't send your message right now. Please try again in a few minutes &mdash; or reach out on <a href="https://www.linkedin.com/in/mlaplante/" rel="noopener noreferrer">LinkedIn</a>.</p>
       <a href="/#contact" class="btn btn-custom">Back to the form</a>
+      <details id="diag" hidden class="diag">
+        <summary>Diagnostic info</summary>
+        <dl>
+          <dt>Upstream status</dt><dd id="diag-status">—</dd>
+          <dt>Request ID</dt><dd id="diag-rid">—</dd>
+          <dt>Error</dt><dd id="diag-err">—</dd>
+        </dl>
+      </details>
     </div>
   </div>
+  <script is:inline>
+    (() => {
+      const q = new URLSearchParams(location.search);
+      const s = q.get('s'), rid = q.get('rid'), e = q.get('e');
+      if (!s && !rid && !e) return;
+      const d = document.getElementById('diag');
+      if (s) document.getElementById('diag-status').textContent = s;
+      if (rid) document.getElementById('diag-rid').textContent = rid;
+      if (e) document.getElementById('diag-err').textContent = e;
+      d.hidden = false;
+    })();
+  </script>
   <script is:inline defer src="/js/script.js"></script>
 </SiteLayout>
 
@@ -74,6 +94,35 @@ import SiteLayout from '../layouts/SiteLayout.astro';
   .contact-error .btn {
     animation: fadeSlideUp 0.6s ease 1.8s both;
   }
+  .diag {
+    margin: 28px auto 0;
+    max-width: 460px;
+    text-align: left;
+    font-size: 0.85rem;
+    color: #555;
+    animation: fadeSlideUp 0.6s ease 2.1s both;
+  }
+  .diag summary {
+    cursor: pointer;
+    color: #888;
+    font-weight: 500;
+  }
+  .diag dl {
+    margin: 12px 0 0;
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 4px 12px;
+  }
+  .diag dt {
+    font-weight: 600;
+  }
+  .diag dd {
+    margin: 0;
+    word-break: break-word;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  :global(body.dark-mode) .diag { color: #b0b0b0; }
+  :global(body.dark-mode) .diag summary { color: #888; }
   :global(body.dark-mode) .contact-error p {
     color: #b0b0b0;
   }
