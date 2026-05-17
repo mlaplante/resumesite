@@ -15,7 +15,10 @@
   "dependencies": {
     "@astrojs/rss": "^4.0.18",
     "@astrojs/sitemap": "^3.7.2",
-    "astro": "^6.3.1"
+    "@resvg/resvg-js": "^2.6.2",
+    "astro": "^6.3.1",
+    "satori": "^0.26.0",
+    "wawoff2": "^2.0.1"
   },
   "devDependencies": {
     "bootstrap": "^5.3.8",

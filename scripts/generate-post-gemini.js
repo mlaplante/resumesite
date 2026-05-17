@@ -9,8 +9,10 @@
  *   node scripts/generate-post-gemini.js auto          # AI picks a topic
  *
  * Environment:
- *   GEMINI_API_KEY  - required
- *   GEMINI_MODEL    - optional, defaults to "gemini-2.5-flash"
+ *   GEMINI_API_KEY        - required
+ *   GEMINI_MODEL          - optional, defaults to "gemini-2.5-flash"
+ *   GEMINI_EMBED_MODEL    - optional, defaults to "text-embedding-004"
+ *   SEMANTIC_THRESHOLD    - optional, cosine cutoff for dedupe (default 0.85)
  */
 
 import { runGenerator } from './lib/blog-post.js';
@@ -19,7 +21,9 @@ const PRIMARY_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 const FALLBACK_MODELS = (process.env.GEMINI_FALLBACK_MODELS || 'gemini-2.0-flash,gemini-2.5-flash-lite')
   .split(',').map(s => s.trim()).filter(Boolean);
 const MODELS = [PRIMARY_MODEL, ...FALLBACK_MODELS.filter(m => m !== PRIMARY_MODEL)];
+const EMBED_MODEL = process.env.GEMINI_EMBED_MODEL || 'text-embedding-004';
 const apiUrlFor = (model) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+const embedUrlFor = (model) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:embedContent`;
 
 const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
 const RETRY_DELAYS = [2000, 5000];
@@ -84,9 +88,34 @@ async function generate({ system, user, maxTokens = 2500, temperature = 0.7 }) {
   process.exit(1);
 }
 
+// Embedding adapter: a tiny single-shot fetch — no retry, no fallback to a
+// different embedding model, since `findMostSimilarSemantic` already falls
+// back to lexical Jaccard if this throws.
+async function embed(text) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error('GEMINI_API_KEY missing');
+  const res = await fetch(embedUrlFor(EMBED_MODEL), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+    body: JSON.stringify({
+      content: { parts: [{ text }] },
+    }),
+  });
+  if (!res.ok) {
+    throw new Error(`embed ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  }
+  const data = await res.json();
+  const values = data?.embedding?.values;
+  if (!Array.isArray(values) || values.length === 0) {
+    throw new Error('embed response missing values');
+  }
+  return values;
+}
+
 runGenerator({
   argv: process.argv,
   providerName: 'scripts/generate-post-gemini.js',
   generate,
+  embed,
   supportsAuto: true,
 });

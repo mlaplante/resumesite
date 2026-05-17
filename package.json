@@ -11,6 +11,8 @@
     "typecheck": "cd blog-src && npx astro check",
     "worker:dev": "npx wrangler dev",
     "worker:deploy": "npx wrangler deploy",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "blog:draft:git": "node scripts/generate-post.js git",
     "blog:draft:topic": "node scripts/generate-post.js topic"
   },
@@ -27,5 +29,9 @@
   ],
   "dependencies": {
     "@anthropic-ai/sdk": "^0.96.0"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.16.6",
+    "vitest": "^4.1.6"
   }
 }

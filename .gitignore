@@ -8,6 +8,9 @@ dist/
 .wrangler/
 blog-src/node_modules/
 blog-src/.astro/
+
+# Local cache of LLM embeddings used by the auto-blog-draft dedupe pipeline.
+scripts/.embeddings-cache.json
 blog/**/CLAUDE.md
 blog/CLAUDE/
 blog-src/**/CLAUDE.md

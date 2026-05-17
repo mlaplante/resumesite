@@ -9,6 +9,7 @@
 
 import { execSync } from 'node:child_process';
 import { writeFileSync, readFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
@@ -16,10 +17,15 @@ import { dirname } from 'node:path';
 const here = dirname(fileURLToPath(import.meta.url));
 export const DRAFTS_DIR = join(here, '..', '..', 'blog-src', 'src', 'content', 'drafts');
 export const POSTS_DIR = join(here, '..', '..', 'blog-src', 'src', 'content', 'posts');
+const EMBEDDING_CACHE_PATH = join(here, '..', '.embeddings-cache.json');
 
 export const DEFAULT_DAYS = 7;
 // Tokens overlap >= this fraction of the combined significant vocabulary → treat as duplicate.
 export const DUPLICATE_THRESHOLD = 0.5;
+// Cosine similarity threshold for semantic embedding-based duplicate detection.
+// Empirically: ~0.85 catches "X with eBPF" vs "X with Istio" but not unrelated
+// posts. Tune via SEMANTIC_THRESHOLD env var.
+export const SEMANTIC_THRESHOLD = Number(process.env.SEMANTIC_THRESHOLD ?? 0.85);
 const PICK_TOPIC_MAX_ATTEMPTS = 4;
 
 export const SYSTEM_PROMPT =
@@ -35,12 +41,23 @@ export function topicPickerPrompt(exclusions) {
   return `Suggest one fresh, specific blog post topic focused on technical deep dives and hands-on code. Good areas: infrastructure automation, debugging techniques, performance optimization, DevOps tooling, security engineering (code-level), architecture patterns, or systems programming. AVOID topics primarily about AI, LLMs, or machine learning. Pick something timely and practical that a technical audience would find valuable.${list}`;
 }
 
+// Both user prompts share the same title-format instructions so every provider
+// emits a parseable, well-formed title on the first non-empty line.
+const TITLE_FORMAT_INSTRUCTIONS = [
+  'Output exactly this structure:',
+  '  Line 1: `TITLE: <your title>` — a clear, human-readable title in Title Case.',
+  '            No slashes, no file extensions, no code identifiers. 4–14 words.',
+  '  Line 2: blank',
+  '  Line 3+: the post body in Markdown, starting with a single `# <title>` heading.',
+  'Do NOT include YAML frontmatter; the toolchain adds it.',
+].join('\n');
+
 export function gitUserPrompt(log) {
-  return `Based on this recent git activity, write an engaging blog post about what was built or fixed. Focus on the "why" and interesting technical decisions.\n\nGit log:\n${log}\n\nWrite in Markdown. Do NOT include frontmatter.`;
+  return `Based on this recent git activity, write an engaging blog post about what was built or fixed. Focus on the "why" and interesting technical decisions.\n\nGit log:\n${log}\n\n${TITLE_FORMAT_INSTRUCTIONS}`;
 }
 
 export function topicUserPrompt(topic) {
-  return `Write an engaging, informative blog post about the following topic.\n\nTopic: ${topic}\n\nWrite in Markdown. Do NOT include frontmatter.`;
+  return `Write an engaging, informative blog post about the following topic.\n\nTopic: ${topic}\n\n${TITLE_FORMAT_INSTRUCTIONS}`;
 }
 
 export function getGitLog(days = DEFAULT_DAYS) {
@@ -52,23 +69,26 @@ export function getGitLog(days = DEFAULT_DAYS) {
   }
 }
 
+// Read the frontmatter of every published post and draft. Returns a richer
+// shape than `getExistingPostTitles` so semantic comparisons can use the
+// excerpt as well as the title.
+export function getExistingPosts() {
+  const dirs = [POSTS_DIR, DRAFTS_DIR].filter(existsSync);
+  if (dirs.length === 0) return [];
+  const files = dirs.flatMap(d => readdirSync(d).map(f => join(d, f)));
+  return files
+    .filter(f => f.endsWith('.md'))
+    .map(f => {
+      const content = readFileSync(f, 'utf-8');
+      const title = content.match(/^title:\s*"?(.+?)"?\s*$/m)?.[1] ?? null;
+      const excerpt = content.match(/^excerpt:\s*"?(.+?)"?\s*$/m)?.[1] ?? '';
+      return title ? { title, excerpt, file: f } : null;
+    })
+    .filter(Boolean);
+}
+
 export function getExistingPostTitles() {
-  try {
-    const files = [
-      ...readdirSync(POSTS_DIR).map(f => join(POSTS_DIR, f)),
-      ...(existsSync(DRAFTS_DIR) ? readdirSync(DRAFTS_DIR).map(f => join(DRAFTS_DIR, f)) : []),
-    ];
-    return files
-      .filter(f => f.endsWith('.md'))
-      .map(f => {
-        const content = readFileSync(f, 'utf-8');
-        const match = content.match(/^title:\s*"?(.+?)"?\s*$/m);
-        return match ? match[1] : null;
-      })
-      .filter(Boolean);
-  } catch {
-    return [];
-  }
+  return getExistingPosts().map(p => p.title);
 }
 
 export function slugify(title) {
@@ -76,6 +96,73 @@ export function slugify(title) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '');
+}
+
+// File extensions / code identifiers that a title must NOT end with, and
+// patterns that strongly suggest the LLM regurgitated a code identifier
+// instead of a human title (e.g. `templates/k8srequiredlabels.yaml`).
+const FILE_EXTENSIONS = /\.(?:yaml|yml|json|md|markdown|html?|xml|toml|ini|css|scss|sh|bash|zsh|ts|tsx|js|jsx|mjs|cjs|py|rb|go|rs|c|h|cpp|hpp|java|kt|swift|sql|conf|env|lock|dockerfile)$/i;
+const STRIPPABLE_WRAPPERS = /^[\s"'`*_#\-:>]+|[\s"'`*_#\-:>]+$/g;
+
+export function isValidTitle(title) {
+  if (!title || typeof title !== 'string') return false;
+  const t = title.trim();
+  // Plausible length: ban very short ("AWS Side") and very long (rambling) outputs.
+  if (t.length < 12 || t.length > 160) return false;
+  // No path separators — file paths shouldn't become article titles.
+  if (/[\/\\]/.test(t)) return false;
+  // No file extension suffix.
+  if (FILE_EXTENSIONS.test(t)) return false;
+  // Must contain at least one letter and at least one space (multi-word).
+  if (!/[A-Za-z]/.test(t) || !/\s/.test(t)) return false;
+  // No leading "title:" / "TITLE:" / "Topic:" residue from prompt confusion.
+  if (/^(?:title|topic|heading|subject)\s*:/i.test(t)) return false;
+  // Doesn't look like a code identifier (snake_case, kebab-case dominated, dotted).
+  // Reject if 75%+ of words are lowercase with underscores/dots/dashes-only.
+  const words = t.split(/\s+/);
+  const codey = words.filter(w => /[._]/.test(w) || (/^[a-z0-9-]+$/.test(w) && w.length > 6)).length;
+  if (codey / words.length >= 0.75) return false;
+  return true;
+}
+
+// Try, in order:
+//   1. An explicit `TITLE: <title>` line near the top of the document.
+//   2. The first H1 heading.
+// Both candidates are stripped of common Markdown wrappers (backticks, *, _)
+// and passed through `isValidTitle` so a bad LLM output (file path, snake_case
+// identifier, slash-bearing code) is rejected.
+export function extractTitle(content) {
+  if (typeof content !== 'string') return null;
+
+  // 1. TITLE: directive on its own line — search only the first ~20 lines so
+  //    a later log/code block that mentions "TITLE:" doesn't accidentally win.
+  const head = content.split('\n', 20).join('\n');
+  const titleDirective = head.match(/^\s*TITLE:\s*(.+?)\s*$/m);
+  if (titleDirective) {
+    const cleaned = titleDirective[1].replace(STRIPPABLE_WRAPPERS, '');
+    if (isValidTitle(cleaned)) return cleaned;
+  }
+
+  // 2. First H1 heading — but only if it sits at the top-level, not inside a
+  //    fenced code block. We track fence state line by line.
+  let inFence = false;
+  for (const line of content.split('\n')) {
+    if (/^```/.test(line)) {
+      inFence = !inFence;
+      continue;
+    }
+    if (inFence) continue;
+    const m = line.match(/^#\s+(.+)$/);
+    if (m) {
+      const cleaned = m[1].replace(STRIPPABLE_WRAPPERS, '');
+      if (isValidTitle(cleaned)) return cleaned;
+      // First H1 was malformed — don't fall through to subsequent ones either,
+      // since downstream H1s are unusual in well-formed posts and likely also
+      // bogus.
+      return null;
+    }
+  }
+  return null;
 }
 
 // Small English stopword set — enough to stop "the/and/with" from inflating similarity.
@@ -112,32 +199,155 @@ export function findMostSimilar(title, existingTitles) {
   return best;
 }
 
-export async function pickUniqueTopic(generate, existingTitles) {
+// === Semantic dedupe ========================================================
+//
+// Lexical Jaccard misses near-duplicates that only differ in surface tokens
+// ("Zero-Trust Segmentation with eBPF" vs "Zero-Trust Segmentation with
+// Istio"). The semantic path embeds both the candidate and every existing
+// post (title + excerpt) and uses cosine similarity instead.
+//
+// Embeddings are cached on disk keyed by SHA-256 of the input text, so a
+// daily run only embeds the new candidate (~1 API call) instead of all 70+
+// posts again.
+
+function loadEmbeddingCache() {
+  try {
+    return JSON.parse(readFileSync(EMBEDDING_CACHE_PATH, 'utf-8'));
+  } catch {
+    return {};
+  }
+}
+
+function saveEmbeddingCache(cache) {
+  try {
+    writeFileSync(EMBEDDING_CACHE_PATH, JSON.stringify(cache));
+  } catch (err) {
+    console.warn('Could not persist embedding cache:', err.message);
+  }
+}
+
+function textKey(text) {
+  return createHash('sha256').update(text).digest('hex').slice(0, 24);
+}
+
+function cosine(a, b) {
+  if (!a || !b || a.length !== b.length) return 0;
+  let dot = 0, na = 0, nb = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    na += a[i] * a[i];
+    nb += b[i] * b[i];
+  }
+  const denom = Math.sqrt(na) * Math.sqrt(nb);
+  return denom === 0 ? 0 : dot / denom;
+}
+
+// Combine a post's title and excerpt into one embedding input. Excerpt may be
+// missing (older drafts) — fall back gracefully.
+function postText(post) {
+  const excerpt = post.excerpt ? `\n\n${post.excerpt}` : '';
+  return `${post.title}${excerpt}`;
+}
+
+// Get the embedding for `text`, hitting the on-disk cache first.
+export async function getEmbedding(text, embed, cache) {
+  const key = textKey(text);
+  if (cache[key]) return cache[key];
+  const vec = await embed(text);
+  if (!Array.isArray(vec) || vec.length === 0) {
+    throw new Error('Embedding function returned a non-vector');
+  }
+  cache[key] = vec;
+  return vec;
+}
+
+// Find the most semantically similar existing post to `candidate`.
+//   candidate:    { title, excerpt? }
+//   existing:     Array<{ title, excerpt? }>
+//   embed:        async (text) => number[]
+// Returns { score, title }. Persists the cache on completion.
+export async function findMostSimilarSemantic(candidate, existing, embed) {
+  if (typeof embed !== 'function') {
+    throw new TypeError('findMostSimilarSemantic requires an `embed` function');
+  }
+  const cache = loadEmbeddingCache();
+  let best = { score: 0, title: null };
+  try {
+    const candVec = await getEmbedding(postText(candidate), embed, cache);
+    for (const post of existing) {
+      const vec = await getEmbedding(postText(post), embed, cache);
+      const score = cosine(candVec, vec);
+      if (score > best.score) best = { score, title: post.title };
+    }
+  } finally {
+    saveEmbeddingCache(cache);
+  }
+  return best;
+}
+
+// Pick a candidate topic from the LLM, retrying up to N times if it duplicates
+// an existing post. When an `embed` adapter is supplied, dedupe is done via
+// embedding cosine similarity (catches "with eBPF" vs "with Istio" rewrites);
+// without it, falls back to lexical Jaccard.
+export async function pickUniqueTopic(generate, existingPosts, embed) {
+  // Tolerate either a list of titles (legacy) or a list of { title, excerpt }.
+  const posts = existingPosts.map(p => (typeof p === 'string' ? { title: p, excerpt: '' } : p));
+  const titles = posts.map(p => p.title);
   const rejected = [];
+
   for (let i = 0; i < PICK_TOPIC_MAX_ATTEMPTS; i++) {
     const candidate = (
       await generate({
         system: TOPIC_PICKER_SYSTEM,
-        user: topicPickerPrompt([...existingTitles, ...rejected]),
+        user: topicPickerPrompt([...titles, ...rejected]),
         maxTokens: 100,
       })
     ).trim().replace(/^["']|["']$/g, '');
 
-    const similar = findMostSimilar(candidate, existingTitles);
-    if (similar.score < DUPLICATE_THRESHOLD) {
+    const { score, title: similarTo, mode } = await scoreSimilarity(
+      { title: candidate, excerpt: '' },
+      posts,
+      embed,
+    );
+    const threshold = mode === 'semantic' ? SEMANTIC_THRESHOLD : DUPLICATE_THRESHOLD;
+
+    if (score < threshold) {
       if (i > 0) console.log(`Accepted unique topic on attempt ${i + 1}.`);
       return candidate;
     }
     console.warn(
-      `Rejected candidate "${candidate}" — ${(similar.score * 100).toFixed(0)}% similar to existing "${similar.title}".`
+      `Rejected candidate "${candidate}" — ${(score * 100).toFixed(0)}% ${mode} similarity to existing "${similarTo}".`,
     );
     rejected.push(candidate);
   }
   throw new Error(`Could not find a sufficiently unique topic after ${PICK_TOPIC_MAX_ATTEMPTS} attempts.`);
 }
 
+// Pick the best similarity signal we can compute. If embedding fails (rate
+// limit, transient error), fall back to lexical Jaccard so the pipeline
+// degrades gracefully instead of aborting.
+async function scoreSimilarity(candidate, posts, embed) {
+  if (typeof embed === 'function') {
+    try {
+      const { score, title } = await findMostSimilarSemantic(candidate, posts, embed);
+      return { score, title, mode: 'semantic' };
+    } catch (err) {
+      console.warn(`Semantic similarity failed (${err.message}); falling back to lexical.`);
+    }
+  }
+  const { score, title } = findMostSimilar(candidate.title, posts.map(p => p.title));
+  return { score, title, mode: 'lexical' };
+}
+
+// Strip the leading `TITLE: ...` directive and any immediately-following
+// blank line so it doesn't leak into the published post body.
+export function stripTitleDirective(content) {
+  if (typeof content !== 'string') return '';
+  return content.replace(/^\s*TITLE:\s*.+?(?:\r?\n\s*\r?\n|\r?\n|$)/, '');
+}
+
 export function makeExcerpt(content) {
-  return content
+  return stripTitleDirective(content)
     .replace(/^#.+\n+/, '')
     .replace(/[#*`\[\]]/g, '')
     .trim()
@@ -172,7 +382,11 @@ export function writeDraftCollisionSafe({ slug, date, content }) {
 //   - 'git' — use recent git log; falls back to 'auto' when there's no activity.
 //   - 'auto' — pick a fresh topic, then write a post.
 //   - 'topic' — write on the supplied topic.
-export async function runGenerator({ argv, providerName, generate, supportsAuto = true }) {
+//
+// Providers may pass an `embed` adapter (async fn that returns an embedding
+// vector for a string). When supplied, dedupe is done semantically; otherwise
+// the cheap lexical Jaccard check is used.
+export async function runGenerator({ argv, providerName, generate, embed, supportsAuto = true }) {
   const args = argv.slice(2);
   let mode = args[0] || (supportsAuto ? 'auto' : 'git');
   const topicArg = args.slice(1).join(' ');
@@ -205,8 +419,8 @@ export async function runGenerator({ argv, providerName, generate, supportsAuto 
   }
 
   if (mode === 'auto') {
-    const existing = getExistingPostTitles();
-    topic = await pickUniqueTopic(generate, existing);
+    const existing = getExistingPosts();
+    topic = await pickUniqueTopic(generate, existing, embed);
     console.log(`Auto-selected topic: ${topic}`);
     mode = 'topic';
   }
@@ -215,18 +429,38 @@ export async function runGenerator({ argv, providerName, generate, supportsAuto 
     userPrompt = topicUserPrompt(topic);
   }
 
-  const content = await generate({ system: SYSTEM_PROMPT, user: userPrompt });
+  // Try once, and if the LLM emits an unparseable / file-path-style title,
+  // give it one more shot with a stronger nudge before giving up.
+  let content = await generate({ system: SYSTEM_PROMPT, user: userPrompt });
+  let title = extractTitle(content);
+  if (!title) {
+    console.warn('First response had no parseable title; retrying with stricter instructions.');
+    content = await generate({
+      system: SYSTEM_PROMPT,
+      user: `${userPrompt}\n\nIMPORTANT: Your previous response did not begin with a "TITLE: ..." line. Start your response with exactly:\nTITLE: <a clear, human-readable title in Title Case, with no slashes, no file extensions, and no code identifiers>`,
+    });
+    title = extractTitle(content);
+  }
+  if (!title) {
+    console.error('Refusing to write post: could not extract a valid title from the LLM response.');
+    process.exit(1);
+  }
 
-  const titleMatch = content.match(/^#\s+(.+)/m);
-  const title = titleMatch ? titleMatch[1] : topic || 'Untitled Post';
-
-  // Final guard against semantic duplicates the LLM may have drifted into.
+  // Final guard against duplicates the LLM may have drifted into, even when
+  // the originally-picked topic was unique. Uses the post body's excerpt to
+  // give the semantic check more signal than the title alone.
   if (supportsAuto && !fromGit) {
-    const existing = getExistingPostTitles();
-    const similar = findMostSimilar(title, existing);
-    if (similar.score >= DUPLICATE_THRESHOLD) {
+    const existing = getExistingPosts();
+    const excerpt = makeExcerpt(content);
+    const { score, title: similarTo, mode: simMode } = await scoreSimilarity(
+      { title, excerpt },
+      existing,
+      embed,
+    );
+    const threshold = simMode === 'semantic' ? SEMANTIC_THRESHOLD : DUPLICATE_THRESHOLD;
+    if (score >= threshold) {
       console.error(
-        `Refusing to write duplicate post. Generated title "${title}" is ${(similar.score * 100).toFixed(0)}% similar to existing "${similar.title}".`
+        `Refusing to write duplicate post. Generated title "${title}" is ${(score * 100).toFixed(0)}% ${simMode} similarity to existing "${similarTo}".`,
       );
       process.exit(1);
     }
@@ -235,9 +469,10 @@ export async function runGenerator({ argv, providerName, generate, supportsAuto 
   const slug = slugify(title);
   const date = new Date().toISOString().split('T')[0];
   const category = fromGit ? 'project-update' : 'thought-leadership';
-  const excerpt = makeExcerpt(content);
+  const body = stripTitleDirective(content);
+  const excerpt = makeExcerpt(body);
   const frontmatter = buildFrontmatter({ title, date, category, excerpt });
-  const fullPost = `${frontmatter}\n\n${content}`;
+  const fullPost = `${frontmatter}\n\n${body}`;
 
   const { filename, filepath } = writeDraftCollisionSafe({ slug, date, content: fullPost });
   console.log(`Draft saved: blog-src/src/content/drafts/${filename}`);
