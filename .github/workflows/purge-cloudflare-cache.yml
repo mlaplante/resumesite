@@ -23,6 +23,16 @@ jobs:
       - name: Purge Cloudflare cache
         run: |
           set -euo pipefail
+          # Validate secrets are populated; otherwise curl hits /zones//purge_cache
+          # and Cloudflare returns a confusing 7003 "could not route" error.
+          missing=()
+          [ -n "${CF_ZONE_ID}" ] || missing+=(CLOUDFLARE_ZONE_ID)
+          [ -n "${CF_API_TOKEN}" ] || missing+=(CLOUDFLARE_API_TOKEN)
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "Missing required repository secret(s): ${missing[*]}" >&2
+            echo "Set them under Settings → Secrets and variables → Actions." >&2
+            exit 1
+          fi
           response=$(curl -sS -X POST \
             "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache" \
             -H "Authorization: Bearer ${CF_API_TOKEN}" \
