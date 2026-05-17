@@ -4,6 +4,7 @@ import BlogLayout from '../../layouts/BlogLayout.astro';
 import NewsletterSignup from '../../components/NewsletterSignup.astro';
 import { SITE_URL, DEFAULT_OG_IMAGE } from '../../config';
 import { getReadTime, getWordCount } from '../../utils/readTime';
+import { formatDateLong, formatDateShort } from '../../utils/format';
 
 export async function getStaticPaths() {
   const posts = await getCollection('posts');
@@ -21,6 +22,8 @@ const wordCount = getWordCount(post.body);
 const readTime = getReadTime(post.body);
 const siteUrl = SITE_URL;
 const postUrl = `${siteUrl}/blog/${post.id}/`;
+const heroImage = post.data.image ?? DEFAULT_OG_IMAGE;
+const updated = post.data.updated ?? post.data.date;
 
 // Related posts: same category first, then recent, exclude current
 const relatedPosts = allPosts
@@ -32,7 +35,6 @@ const relatedPosts = allPosts
     return b.data.date.valueOf() - a.data.date.valueOf();
   })
   .slice(0, 3);
-const defaultImage = DEFAULT_OG_IMAGE;
 
 const blogPostingSchema = JSON.stringify({
   "@context": "https://schema.org",
@@ -40,6 +42,7 @@ const blogPostingSchema = JSON.stringify({
   "headline": post.data.title,
   "description": post.data.excerpt,
   "datePublished": post.data.date.toISOString(),
+  "dateModified": updated.toISOString(),
   "author": {
     "@type": "Person",
     "name": "Michael LaPlante",
@@ -50,7 +53,7 @@ const blogPostingSchema = JSON.stringify({
     "name": "Michael LaPlante",
   },
   "url": postUrl,
-  "image": defaultImage,
+  "image": heroImage,
   "wordCount": wordCount,
   "keywords": post.data.tags.join(', '),
   "articleSection": post.data.category.replace(/-/g, ' '),
@@ -86,7 +89,13 @@ const breadcrumbSchema = JSON.stringify({
 });
 ---
 
-<BlogLayout title={post.data.title} description={post.data.excerpt} ogType="article" showProgressBar={true}>
+<BlogLayout
+  title={post.data.title}
+  description={post.data.excerpt}
+  image={heroImage}
+  ogType="article"
+  showProgressBar={true}
+>
   <Fragment slot="head">
     <script type="application/ld+json" set:html={blogPostingSchema} />
     <script type="application/ld+json" set:html={breadcrumbSchema} />
@@ -104,7 +113,7 @@ const breadcrumbSchema = JSON.stringify({
         <h1>{post.data.title}</h1>
         <div class="blog-meta">
           <time datetime={post.data.date.toISOString()}>
-            {post.data.date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' })}
+            {formatDateLong(post.data.date)}
           </time>
           <span class="dot-sep">&middot;</span>
           <span>{readTime} min read</span>
@@ -140,7 +149,7 @@ const breadcrumbSchema = JSON.stringify({
             {relatedPosts.map((rp) => (
               <a href={`/blog/${rp.id}/`} class="related-post-card">
                 <span class="related-post-date">
-                  {rp.data.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}
+                  {formatDateShort(rp.data.date)}
                 </span>
                 <h4>{rp.data.title}</h4>
               </a>

@@ -2,6 +2,7 @@
 import SiteLayout from '../layouts/SiteLayout.astro';
 import { getCollection } from 'astro:content';
 import { getReadTime } from '../utils/readTime';
+import { formatDateShort } from '../utils/format';
 
 const posts = (await getCollection('posts'))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
@@ -10,12 +11,8 @@ const posts = (await getCollection('posts'))
 
 <SiteLayout title="Michael LaPlante - SVP of Information Security and Operations | Technology Leader | Security Executive | Software Engineer" description="Michael LaPlante - Technology executive with 15+ years of experience in information security, operations, and software engineering. SVP of Information Security and Operations.">
   <Fragment slot="head">
-    <!-- SEO Meta Tags -->
     <meta name="keywords" content="Michael LaPlante, Information Security, Technology Leader, Software Engineer, SVP, Chief Security Officer, Web Development">
     <meta name="author" content="Michael LaPlante">
-
-    <!-- Canonical URL -->
-    <link rel="canonical" href="https://michaellaplante.com/">
 
     <!-- Structured Data - Person -->
     <script type="application/ld+json">
@@ -56,27 +53,13 @@ const posts = (await getCollection('posts'))
     }
     </script>
 
-    <!-- Open Graph Meta Tags -->
-    <meta property="og:title" content="Michael LaPlante - Technology Leader & Security Executive">
-    <meta property="og:description" content="Technology executive with 15+ years of experience in information security, operations, and software engineering.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://michaellaplante.com">
-    <meta property="og:image" content="https://michaellaplante.com/images/mike-laplante-400.jpg">
-
-    <!-- Twitter Card Meta Tags -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="@laplantewebdev">
-    <meta name="twitter:title" content="Michael LaPlante - Technology Leader & Security Executive">
-    <meta name="twitter:description" content="Technology executive with 15+ years of experience in information security, operations, and software engineering.">
-    <meta name="twitter:image" content="https://michaellaplante.com/images/mike-laplante-400.jpg">
-
-    <!-- Preload Critical Resources -->
+    <!-- Preload critical resources for the portfolio page only -->
     <link rel="preload" href="/fonts/poppins/poppins-400.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/fonts/poppins/poppins-700.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/css/style.css" as="style">
     <link rel="preload" href="/images/mike-laplante-400.webp" as="image" type="image/webp" fetchpriority="high">
 
-    <!-- CSS Stylesheets -->
+    <!-- CSS bundles for the portfolio page -->
     <link rel="stylesheet" type="text/css" href="/css/fonts.css">
     <link rel="stylesheet" href="/css/bootstrap-reboot.min.css">
     <link rel="stylesheet" href="/css/bootstrap-grid.min.css">
@@ -554,7 +537,7 @@ const posts = (await getCollection('posts'))
           <div class="col-sm-6" data-aos="fade-up">
             <a href={`/blog/${post.id}/`} class="post-preview">
               <span class="post-preview-date">
-                {post.data.date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' })}
+                {formatDateShort(post.data.date)}
                 <span class="post-preview-sep">&middot;</span>
                 {getReadTime(post.body)} min read
               </span>
