@@ -64,12 +64,12 @@ export async function handleContact(request: Request, env: Env, ctx: ExecutionCo
 
   if (!name || !message || !EMAIL_RE.test(email)) {
     console.warn('contact: rejected on validation', { hasName: !!name, hasMessage: !!message, emailOk: EMAIL_RE.test(email) });
-    return plain(400, 'Invalid submission');
+    return redirectTo(CONTACT_ERROR);
   }
 
   if (!token) {
     console.warn('contact: rejected on missing turnstile token');
-    return plain(403, 'Challenge missing');
+    return redirectTo(CONTACT_ERROR);
   }
 
   const ip = request.headers.get('CF-Connecting-IP') ?? '';
@@ -81,9 +81,7 @@ export async function handleContact(request: Request, env: Env, ctx: ExecutionCo
     ).bind(ip, since).first<{ n: number }>();
     if (recent && recent.n >= RATE_LIMIT_MAX) {
       console.warn('contact: rejected on rate limit', { ip, recent: recent.n });
-      return plain(429, 'Too many submissions; please try again later.', {
-        'Retry-After': String(Math.ceil(RATE_LIMIT_WINDOW_MS / 1000)),
-      });
+      return redirectTo(CONTACT_ERROR);
     }
   }
 
@@ -99,7 +97,7 @@ export async function handleContact(request: Request, env: Env, ctx: ExecutionCo
   const tsJson = (await tsRes.json()) as { success: boolean; 'error-codes'?: string[] };
   if (!tsJson.success) {
     console.warn('contact: rejected on turnstile', { errors: tsJson['error-codes'] });
-    return plain(403, 'Challenge failed');
+    return redirectTo(CONTACT_ERROR);
   }
 
   await env.DB.prepare(
@@ -137,10 +135,7 @@ export async function handleContact(request: Request, env: Env, ctx: ExecutionCo
     const requestId = mailRes.headers.get('X-Request-Id') ?? '';
     console.error('ForwardEmail failed', mailRes.status, 'request-id=', requestId, 'body-len=', mailBody.length, 'err=', errBody);
     // Submission is still recorded in D1 as a backstop.
-    return new Response(null, {
-      status: 303,
-      headers: { Location: url.origin + CONTACT_ERROR, ...NO_STORE },
-    });
+    return redirectTo(CONTACT_ERROR);
   }
   console.log('ForwardEmail sent ok', mailRes.status);
 
