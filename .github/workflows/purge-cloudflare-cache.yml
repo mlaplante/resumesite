@@ -5,13 +5,33 @@ on:
   push:
     branches: [master]
 
+# Many pushes in quick succession only need one cache purge — collapse them.
+concurrency:
+  group: purge-cloudflare-cache
+  cancel-in-progress: true
+
+permissions: {}
+
 jobs:
   purge:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      CF_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+      CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     steps:
       - name: Purge Cloudflare cache
         run: |
-          curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
-            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+          set -euo pipefail
+          response=$(curl -sS -X POST \
+            "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache" \
+            -H "Authorization: Bearer ${CF_API_TOKEN}" \
             -H "Content-Type: application/json" \
-            --data '{"purge_everything":true}'
+            --data '{"purge_everything":true}')
+          echo "Cloudflare response: $response"
+          # Cloudflare returns { "success": true, ... } on accepted purges.
+          # Anything else (network error, auth failure, malformed JSON) should fail the job.
+          echo "$response" | grep -q '"success":true' || {
+            echo "Cache purge failed." >&2
+            exit 1
+          }

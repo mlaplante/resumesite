@@ -6,7 +6,10 @@ const CONTACT_ERROR = '/contact-error/';
 const RATE_LIMIT_MAX = 5;
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
 // Submissions older than this are purged opportunistically on each accepted request.
-const RETENTION_MS = 90 * 86400000;
+const RETENTION_MS = 90 * 86_400_000;
+const MAX_NAME_LEN = 200;
+const MAX_EMAIL_LEN = 200;
+const MAX_MESSAGE_LEN = 5000;
 
 // Strip CR/LF and other control characters that could be used to inject
 // extra email headers downstream when name/email are interpolated into
@@ -17,36 +20,56 @@ const stripControl = (s: string) => s.replace(/[\x00-\x1f\x7f]/g, '');
 // rejects whitespace, multiple @, leading/trailing dots, etc.
 const EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,63}$/;
 
+const NO_STORE: HeadersInit = {
+  'Cache-Control': 'no-store',
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+};
+
+function plain(status: number, body: string, extra: HeadersInit = {}): Response {
+  return new Response(body, {
+    status,
+    headers: { 'Content-Type': 'text/plain; charset=utf-8', ...NO_STORE, ...extra },
+  });
+}
+
 export async function handleContact(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const url = new URL(request.url);
-  const redirectTo = (path: string) => Response.redirect(url.origin + path, 303);
+  const redirectTo = (path: string) =>
+    new Response(null, { status: 303, headers: { Location: url.origin + path, ...NO_STORE } });
 
-  // Same-origin enforcement: the browser sends Origin on POST, and a legitimate
-  // form submission from this site will match. This blocks naive cross-site
-  // forms even before Turnstile runs.
+  // Same-origin enforcement: every modern browser sends `Origin` on POST.
+  // A legitimate form submission from this site matches `url.origin`.
+  // Reject anything else — including requests with NO Origin — to close the
+  // cross-site form bypass that the prior `if (origin && ...)` left open.
   const origin = request.headers.get('Origin');
-  if (origin && origin !== url.origin) {
+  if (origin !== url.origin) {
     console.warn('contact: rejected on origin mismatch', { origin, expected: url.origin });
-    return new Response('Forbidden', { status: 403 });
+    return plain(403, 'Forbidden');
   }
 
   let form: FormData;
   try {
     form = await request.formData();
   } catch {
-    return new Response('Bad request', { status: 400 });
+    return plain(400, 'Bad request');
   }
 
   if (form.get('bot-field')) return redirectTo(THANK_YOU);
 
-  const name = stripControl(String(form.get('name') ?? '').trim()).slice(0, 200);
-  const email = stripControl(String(form.get('email') ?? '').trim()).slice(0, 200);
-  const message = String(form.get('message') ?? '').trim().slice(0, 5000);
+  const name = stripControl(String(form.get('name') ?? '').trim()).slice(0, MAX_NAME_LEN);
+  const email = stripControl(String(form.get('email') ?? '').trim()).slice(0, MAX_EMAIL_LEN);
+  const message = String(form.get('message') ?? '').trim().slice(0, MAX_MESSAGE_LEN);
   const token = String(form.get('cf-turnstile-response') ?? '');
 
   if (!name || !message || !EMAIL_RE.test(email)) {
     console.warn('contact: rejected on validation', { hasName: !!name, hasMessage: !!message, emailOk: EMAIL_RE.test(email) });
-    return new Response('Invalid submission', { status: 400 });
+    return plain(400, 'Invalid submission');
+  }
+
+  if (!token) {
+    console.warn('contact: rejected on missing turnstile token');
+    return plain(403, 'Challenge missing');
   }
 
   const ip = request.headers.get('CF-Connecting-IP') ?? '';
@@ -58,9 +81,8 @@ export async function handleContact(request: Request, env: Env, ctx: ExecutionCo
     ).bind(ip, since).first<{ n: number }>();
     if (recent && recent.n >= RATE_LIMIT_MAX) {
       console.warn('contact: rejected on rate limit', { ip, recent: recent.n });
-      return new Response('Too many submissions; please try again later.', {
-        status: 429,
-        headers: { 'Retry-After': String(Math.ceil(RATE_LIMIT_WINDOW_MS / 1000)) },
+      return plain(429, 'Too many submissions; please try again later.', {
+        'Retry-After': String(Math.ceil(RATE_LIMIT_WINDOW_MS / 1000)),
       });
     }
   }
@@ -77,7 +99,7 @@ export async function handleContact(request: Request, env: Env, ctx: ExecutionCo
   const tsJson = (await tsRes.json()) as { success: boolean; 'error-codes'?: string[] };
   if (!tsJson.success) {
     console.warn('contact: rejected on turnstile', { errors: tsJson['error-codes'] });
-    return new Response('Challenge failed', { status: 403 });
+    return plain(403, 'Challenge failed');
   }
 
   await env.DB.prepare(
@@ -112,7 +134,7 @@ export async function handleContact(request: Request, env: Env, ctx: ExecutionCo
 
   if (!mailRes.ok) {
     const errBody = await mailRes.text();
-    console.error('ForwardEmail failed', mailRes.status, 'from=', env.CONTACT_FROM, 'body-len=', mailBody.toString().length, 'err=', errBody);
+    console.error('ForwardEmail failed', mailRes.status, 'body-len=', mailBody.toString().length, 'err=', errBody);
     // Submission is still recorded in D1 as a backstop. Redirect to a styled
     // error page, and surface the upstream status + body on the 303 response
     // headers so the operator can diagnose without needing wrangler logs —
@@ -123,6 +145,7 @@ export async function handleContact(request: Request, env: Env, ctx: ExecutionCo
         Location: url.origin + CONTACT_ERROR,
         'X-Mail-Status': String(mailRes.status),
         'X-Mail-Error': errBody.replace(/[\r\n]+/g, ' ').slice(0, 500),
+        ...NO_STORE,
       },
     });
   }

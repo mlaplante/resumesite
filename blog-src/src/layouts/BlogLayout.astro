@@ -1,72 +1,52 @@
 ---
+import BaseHead from '../components/BaseHead.astro';
+
 interface Props {
   title: string;
   description?: string;
   image?: string;
-  ogType?: string;
+  ogType?: 'website' | 'article';
   noindex?: boolean;
   showProgressBar?: boolean;
 }
 
-import { SITE_URL, DEFAULT_OG_IMAGE } from '../config';
-
-const { title, description, image, ogType = 'website', noindex = false, showProgressBar = false } = Astro.props;
+const {
+  title,
+  description,
+  image,
+  ogType = 'website',
+  noindex = false,
+  showProgressBar = false,
+} = Astro.props;
 const baseUrl = '/blog';
-const siteUrl = SITE_URL;
-const defaultImage = DEFAULT_OG_IMAGE;
-const ogImage = image || defaultImage;
 const fullTitle = `${title} | Michael LaPlante`;
-const ogDescription = description || 'Thoughts on security, engineering, and building things.';
 ---
 
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{fullTitle}</title>
-    <meta name="description" content={ogDescription} />
-    {noindex && <meta name="robots" content="noindex" />}
-
-    <!-- Open Graph -->
-    <meta property="og:title" content={fullTitle} />
-    <meta property="og:description" content={ogDescription} />
-    <meta property="og:type" content={ogType} />
-    <meta property="og:url" content={siteUrl + Astro.url.pathname} />
-    <meta property="og:image" content={ogImage} />
-
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@laplantewebdev" />
-    <meta name="twitter:title" content={fullTitle} />
-    <meta name="twitter:description" content={ogDescription} />
-    <meta name="twitter:image" content={ogImage} />
-
-    <!-- RSS autodiscovery -->
-    <link rel="alternate" type="application/rss+xml" title="Michael LaPlante's Blog" href={`${siteUrl}/blog/rss.xml`} />
-
+    <BaseHead
+      title={fullTitle}
+      description={description}
+      image={image}
+      ogType={ogType}
+      noindex={noindex}
+    />
     <link rel="preload" href="/fonts/poppins/poppins-400.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/poppins/poppins-700.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" type="text/css" href="/css/fonts.css" />
     <link rel="stylesheet" href="/css/bootstrap-reboot.min.css" />
     <link rel="stylesheet" href="/css/bootstrap-grid.min.css" />
-    <link rel="icon" href="/favicon.ico" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <meta name="theme-color" content="#2980b9" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#1a5276" media="(prefers-color-scheme: dark)" />
-    <script defer src="https://laplantedevanalytics.netlify.app/script.js" data-website-id="b7f548e1-c6ab-4900-8693-e500f5400f0f"></script>
     <slot name="head" />
   </head>
   <body>
+    <a href="#blog-main-content" class="skip-to-content">Skip to main content</a>
     {showProgressBar && (
       <div class="reading-progress-container" aria-hidden="true">
         <div class="reading-progress-bar"></div>
       </div>
     )}
-    <nav class="blog-nav">
+    <nav class="blog-nav" aria-label="Blog navigation">
       <div class="container">
         <a href="/">Michael LaPlante</a>
         <div class="nav-links">
@@ -77,12 +57,30 @@ const ogDescription = description || 'Thoughts on security, engineering, and bui
         </div>
       </div>
     </nav>
-    <div class="blog-content">
+    <main id="blog-main-content" class="blog-content">
       <slot />
-    </div>
+    </main>
   </body>
 </html>
 
 <style is:global>
   @import '../styles/blog.css';
+
+  /* Skip link — hidden until focused, then anchored top-left. */
+  .skip-to-content {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: 200;
+    background: #1a5276;
+    color: #fff;
+    padding: 8px 16px;
+    text-decoration: none;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    border-radius: 0 0 6px 0;
+  }
+  .skip-to-content:focus {
+    left: 0;
+  }
 </style>

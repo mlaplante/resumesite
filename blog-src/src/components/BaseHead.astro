@@ -1,0 +1,62 @@
+---
+import { SITE_URL, DEFAULT_OG_IMAGE } from '../config';
+
+interface Props {
+  title: string;
+  description?: string;
+  image?: string;
+  ogType?: 'website' | 'article';
+  noindex?: boolean;
+  canonical?: string;
+}
+
+const {
+  title,
+  description = "Thoughts on security, engineering, and building things.",
+  image = DEFAULT_OG_IMAGE,
+  ogType = 'website',
+  noindex = false,
+  canonical,
+} = Astro.props;
+
+// Canonical URL: prefer explicit prop, otherwise build from the current path.
+const canonicalUrl = canonical ?? `${SITE_URL}${Astro.url.pathname}`;
+---
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>{title}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={canonicalUrl} />
+{noindex && <meta name="robots" content="noindex" />}
+
+<!-- Open Graph -->
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:type" content={ogType} />
+<meta property="og:url" content={canonicalUrl} />
+<meta property="og:image" content={image} />
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site" content="@laplantewebdev" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={image} />
+
+<!-- Favicons -->
+<link rel="icon" href="/favicon.ico" />
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+<link rel="manifest" href="/site.webmanifest" />
+<meta name="theme-color" content="#2980b9" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#1a5276" media="(prefers-color-scheme: dark)" />
+
+<!-- RSS autodiscovery -->
+<link rel="alternate" type="application/rss+xml" title="Michael LaPlante's Blog" href="/blog/rss.xml" />
+
+<!-- Self-hosted Umami analytics -->
+<link rel="preconnect" href="https://laplantedevanalytics.netlify.app" crossorigin />
+<script defer src="https://laplantedevanalytics.netlify.app/script.js" data-website-id="b7f548e1-c6ab-4900-8693-e500f5400f0f"></script>

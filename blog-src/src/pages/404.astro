@@ -2,9 +2,8 @@
 import SiteLayout from '../layouts/SiteLayout.astro';
 ---
 
-<SiteLayout title="404 - Page Not Found" description="The page you're looking for doesn't exist.">
+<SiteLayout title="404 - Page Not Found" description="The page you're looking for doesn't exist." noindex>
   <Fragment slot="head">
-    <meta name="robots" content="noindex" />
     <link rel="preload" href="/css/fonts.css" as="style" />
     <link rel="stylesheet" type="text/css" href="/css/fonts.css" />
     <link rel="stylesheet" type="text/css" href="/css/style.css" />

@@ -5,10 +5,17 @@ on:
     types: [closed]
     branches: [master]
 
+# If two blog-draft PRs merge in quick succession, the second job will queue
+# behind the first so the `git push` won't race a stale base.
+concurrency:
+  group: publish-blog-post
+  cancel-in-progress: false
+
 jobs:
   publish:
     if: github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'blog-draft')
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       contents: write
       actions: write

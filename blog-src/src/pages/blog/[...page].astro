@@ -4,6 +4,7 @@ import { getCollection } from 'astro:content';
 import BlogLayout from '../../layouts/BlogLayout.astro';
 import NewsletterSignup from '../../components/NewsletterSignup.astro';
 import { getReadTime } from '../../utils/readTime';
+import { formatDateShort } from '../../utils/format';
 
 export const getStaticPaths = (async ({ paginate }) => {
   const posts = (await getCollection('posts')).sort(
@@ -54,7 +55,7 @@ const isFirstPage = page.currentPage === 1;
           <a href={`/blog/${post.id}/`} class="post-card" data-category={post.data.category}>
             <div class="post-card-meta">
               <time datetime={post.data.date.toISOString()}>
-                {post.data.date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' })}
+                {formatDateShort(post.data.date)}
               </time>
               <span class="dot-sep">&middot;</span>
               <span>{readTime} min read</span>
