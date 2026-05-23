@@ -28,7 +28,7 @@
     "personal-website"
   ],
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.97.1"
+    "@anthropic-ai/sdk": "^0.98.0"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.16.6",
