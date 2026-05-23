@@ -4,16 +4,24 @@ on:
   pull_request:
     types: [closed]
     branches: [master]
+  # Safety net: also run on direct pushes to master so a draft that lands
+  # without the `blog-draft` label (manual PR, direct push, squash from a
+  # differently-labeled PR) still gets published.
+  push:
+    branches: [master]
+    paths:
+      - 'blog-src/src/content/drafts/**'
 
 # If two blog-draft PRs merge in quick succession, the second job will queue
-# behind the first so the `git push` won't race a stale base.
+# behind the first so the `git push` won't race a stale base. The same group
+# also serializes the push-triggered runs against PR-merge runs.
 concurrency:
   group: publish-blog-post
   cancel-in-progress: false
 
 jobs:
   publish:
-    if: github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'blog-draft')
+    if: github.event_name == 'push' || (github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'blog-draft'))
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
