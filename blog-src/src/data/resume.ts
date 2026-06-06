@@ -11,6 +11,7 @@ export interface ProfileLink {
 export const profile = {
   name: 'Michael LaPlante',
   title: 'SVP of Information Security and Operations',
+  email: 'michael@michaellaplante.com',
   website: 'michaellaplante.com',
   websiteUrl: 'https://michaellaplante.com',
   links: [

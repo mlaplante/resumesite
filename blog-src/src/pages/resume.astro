@@ -60,13 +60,9 @@ import { profile, summary, stats, skills, experience } from '../data/resume';
         <h1>{profile.name}</h1>
         <p class="resume-title">{profile.title}</p>
         <p class="resume-contact">
+          <a href={`mailto:${profile.email}`}>{profile.email}</a>
+          <span class="resume-contact-sep">&middot;</span>
           <a href={profile.websiteUrl}>{profile.website}</a>
-          {profile.links.map((link) => (
-            <Fragment>
-              <span class="resume-contact-sep">&middot;</span>
-              <a href={link.url} target="_blank" rel="noopener noreferrer">{link.label}</a>
-            </Fragment>
-          ))}
         </p>
       </header>
 
