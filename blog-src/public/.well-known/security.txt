@@ -1,0 +1,7 @@
+# Security policy for michaellaplante.com (RFC 9116)
+# If you believe you've found a security issue, please reach out.
+
+Contact: https://michaellaplante.com/#contact
+Expires: 2027-06-06T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://michaellaplante.com/.well-known/security.txt

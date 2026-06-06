@@ -48,7 +48,11 @@ const isFirstPage = page.currentPage === 1;
       </div>
     </div>
 
-    <div class="post-grid">
+    <p class="search-status" id="search-status" hidden></p>
+
+    <div class="post-grid" id="search-results" hidden></div>
+
+    <div class="post-grid" id="page-grid">
       {posts.map((post) => {
         const readTime = getReadTime(post.body);
         return (
@@ -115,6 +119,13 @@ const isFirstPage = page.currentPage === 1;
 
   .search-box {
     margin-bottom: 20px;
+  }
+
+  .search-status {
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    color: #9ca3af;
+    margin: -8px 0 24px;
   }
 
   #blog-search {
@@ -377,6 +388,7 @@ const isFirstPage = page.currentPage === 1;
     #blog-search::placeholder { color: #64748b; }
     #blog-search:focus { border-color: #1a5276; box-shadow: 0 0 0 3px rgba(26, 82, 118, 0.2); }
     .blog-subtitle { color: #94a3b8; }
+    .search-status { color: #64748b; }
     .filter-btn { border-color: #334155; color: #94a3b8; }
     .filter-btn:hover { border-color: #1a5276; color: #60a5fa; }
     .filter-btn.active { background: #1a5276; border-color: #1a5276; color: #fff; }
@@ -401,31 +413,122 @@ const isFirstPage = page.currentPage === 1;
 </style>
 
 <script>
-  // Category filter
+  interface IndexedPost {
+    title: string;
+    excerpt: string;
+    category: string;
+    tags: string[];
+    url: string;
+    dateShort: string;
+    dateISO: string;
+    readTime: number;
+  }
+
+  const searchInput = document.getElementById('blog-search') as HTMLInputElement | null;
+  const pageGrid = document.getElementById('page-grid');
+  const resultsGrid = document.getElementById('search-results');
+  const status = document.getElementById('search-status');
+  const featuredBanner = document.querySelector('.featured-banner') as HTMLElement | null;
+  const pagination = document.querySelector('.pagination') as HTMLElement | null;
+
+  // The blog is paginated 10 posts at a time, so the rendered cards only cover
+  // the current page. Searching loads a static index of every post and renders
+  // matches across the whole archive; clearing it restores the paged view.
+  let indexPromise: Promise<IndexedPost[]> | null = null;
+  function loadIndex(): Promise<IndexedPost[]> {
+    if (!indexPromise) {
+      indexPromise = fetch('/blog/search.json')
+        .then((res) => (res.ok ? res.json() : []))
+        .catch(() => []);
+    }
+    return indexPromise;
+  }
+
+  function activeCategory(): string {
+    const activeBtn = document.querySelector('.filter-btn.active') as HTMLElement | null;
+    return activeBtn?.getAttribute('data-category') || 'all';
+  }
+
+  function escapeHtml(value: string): string {
+    const div = document.createElement('div');
+    div.textContent = value;
+    return div.innerHTML;
+  }
+
+  function renderResults(posts: IndexedPost[], query: string) {
+    const cat = activeCategory();
+    const matches = posts.filter((post) => {
+      const matchesCat = cat === 'all' || post.category === cat;
+      const haystack = [post.title, post.excerpt, post.category, ...post.tags]
+        .join(' ')
+        .toLowerCase();
+      return matchesCat && (!query || haystack.includes(query));
+    });
+
+    if (resultsGrid) {
+      resultsGrid.innerHTML = matches
+        .map(
+          (post) => `
+            <a href="${post.url}" class="post-card" data-category="${escapeHtml(post.category)}">
+              <div class="post-card-meta">
+                <time datetime="${post.dateISO}">${escapeHtml(post.dateShort)}</time>
+                <span class="dot-sep">&middot;</span>
+                <span>${post.readTime} min read</span>
+              </div>
+              <h2>${escapeHtml(post.title)}</h2>
+              <p>${escapeHtml(post.excerpt)}</p>
+              <span class="category-badge">${escapeHtml(post.category.replace(/-/g, ' '))}</span>
+            </a>`
+        )
+        .join('');
+    }
+
+    if (status) {
+      status.hidden = false;
+      status.textContent = matches.length
+        ? `${matches.length} result${matches.length === 1 ? '' : 's'} across the whole blog`
+        : 'No posts found.';
+    }
+  }
+
+  // Filter just the cards on the current page (used when there's no query, so
+  // category buttons still work on the default paged view).
+  function filterCurrentPage() {
+    const cat = activeCategory();
+    pageGrid?.querySelectorAll('.post-card').forEach((card) => {
+      const el = card as HTMLElement;
+      el.style.display = cat === 'all' || el.getAttribute('data-category') === cat ? '' : 'none';
+    });
+  }
+
+  function showSearchView(show: boolean) {
+    if (pageGrid) pageGrid.hidden = show;
+    if (resultsGrid) resultsGrid.hidden = !show;
+    if (featuredBanner) featuredBanner.hidden = show;
+    if (pagination) pagination.hidden = show;
+    if (status && !show) status.hidden = true;
+  }
+
+  async function update() {
+    const query = searchInput?.value.toLowerCase().trim() || '';
+    if (query) {
+      const posts = await loadIndex();
+      showSearchView(true);
+      renderResults(posts, query);
+    } else {
+      showSearchView(false);
+      filterCurrentPage();
+    }
+  }
+
   document.querySelectorAll('.filter-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.filter-btn').forEach((b) => b.classList.remove('active'));
       btn.classList.add('active');
-      applyFilters();
+      update();
     });
   });
   document.querySelector('.filter-btn')?.classList.add('active');
 
-  // Search filter
-  const searchInput = document.getElementById('blog-search') as HTMLInputElement;
-  searchInput?.addEventListener('input', () => applyFilters());
-
-  function applyFilters() {
-    const activeBtn = document.querySelector('.filter-btn.active') as HTMLElement;
-    const cat = activeBtn?.getAttribute('data-category') || 'all';
-    const query = searchInput?.value.toLowerCase().trim() || '';
-
-    document.querySelectorAll('.post-card').forEach((card) => {
-      const el = card as HTMLElement;
-      const matchesCat = cat === 'all' || el.getAttribute('data-category') === cat;
-      const text = el.textContent?.toLowerCase() || '';
-      const matchesSearch = !query || text.includes(query);
-      el.style.display = matchesCat && matchesSearch ? '' : 'none';
-    });
-  }
+  searchInput?.addEventListener('input', () => update());
 </script>
