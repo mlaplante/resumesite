@@ -1,0 +1,253 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+
+const lastUpdated = 'June 6, 2026';
+---
+
+<SiteLayout
+  title="Privacy Policy | Michael LaPlante"
+  description="How michaellaplante.com collects, uses, and protects your data — contact form submissions, newsletter signups, and privacy-respecting analytics."
+>
+  <Fragment slot="head">
+    <meta name="author" content="Michael LaPlante">
+    <link rel="stylesheet" type="text/css" href="/css/fonts.css">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/css/linea.css">
+    <link rel="stylesheet" type="text/css" href="/css/style.css">
+  </Fragment>
+
+  <!-- Skip to Content Link for Accessibility -->
+  <a href="#main-content" class="skip-to-content">Skip to main content</a>
+
+  <!--========================================
+    Menu
+  =========================================-->
+  <nav class="top-nav" aria-label="Main navigation">
+    <div class="container">
+
+      <a href="#" class="menu-btn" aria-label="Toggle menu" aria-expanded="false">
+        <span class="lines">
+          <span class="l1"></span>
+          <span class="l2"></span>
+          <span class="l3"></span>
+        </span>
+      </a>
+
+      <button class="dark-mode-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+        <span class="sun-icon">☀️</span>
+        <span class="moon-icon">🌙</span>
+      </button>
+
+      <div class="menu" role="menu">
+        <ul>
+          <li><a href="/">Home</a></li>
+          <li><a href="/blog/">Blog</a></li>
+          <li><a href="/uses/">Uses</a></li>
+          <li><a href="/resume/">Resume</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!--========================================
+    Main Content
+  =========================================-->
+  <main id="main-content">
+
+  <section class="section" id="privacy-header" style="padding-top: 120px;">
+    <div class="container">
+      <div class="section-header" data-aos="fade-up">
+        <h1 style='font-size: 18px; font-weight: 700; font-family: "Roboto Mono", monospace; text-transform: lowercase; letter-spacing: 2px; position: relative; display: inline-block;'>privacy</h1>
+      </div>
+      <p data-aos="fade-up" class="updated">Last updated: {lastUpdated}</p>
+    </div>
+  </section>
+
+  <section class="section" id="privacy-body">
+    <div class="container">
+      <div class="legal" data-aos="fade-up">
+
+        <p>
+          This site (<strong>michaellaplante.com</strong>) is the personal
+          portfolio and blog of Michael LaPlante. I keep data collection to a
+          minimum and don't sell or share your personal information. This page
+          explains exactly what's collected, why, and who processes it.
+        </p>
+
+        <h2>Information I collect</h2>
+        <ul>
+          <li>
+            <strong>Contact form.</strong> When you submit the contact form, I
+            collect the name, email address, and message you provide. A hidden
+            anti-spam field and a Cloudflare Turnstile challenge are used to
+            verify you're not a bot.
+          </li>
+          <li>
+            <strong>Newsletter.</strong> If you subscribe to the newsletter, I
+            collect the email address you submit so I can send new-post
+            notifications. You can unsubscribe at any time via the link in
+            every email.
+          </li>
+          <li>
+            <strong>Analytics.</strong> I use privacy-respecting, aggregate
+            analytics to understand which pages are popular. These do not use
+            tracking cookies and do not build advertising profiles of you.
+          </li>
+          <li>
+            <strong>Server logs.</strong> Like any website, my hosting provider
+            records standard request metadata (IP address, user agent,
+            timestamp) for security and abuse prevention.
+          </li>
+        </ul>
+
+        <h2>How I use it</h2>
+        <ul>
+          <li>To respond to messages you send me through the contact form.</li>
+          <li>To deliver the newsletter you asked for.</li>
+          <li>To protect the site from spam, abuse, and security threats.</li>
+          <li>To understand, in aggregate, how the site is used so I can improve it.</li>
+        </ul>
+        <p>
+          I do <strong>not</strong> sell, rent, or trade your personal
+          information, and I don't use it for third-party advertising.
+        </p>
+
+        <h2>Third-party processors</h2>
+        <p>To run the site I rely on a small set of service providers, each of which processes data on my behalf:</p>
+        <ul>
+          <li><strong>Cloudflare</strong> — hosting, CDN, server-side storage of contact-form submissions, and the Turnstile bot challenge.</li>
+          <li><strong>ForwardEmail</strong> — delivery of contact-form submissions to my inbox.</li>
+          <li><strong>Buttondown</strong> — newsletter list management and email delivery.</li>
+          <li><strong>Umami</strong> — self-hosted, cookieless analytics.</li>
+        </ul>
+        <p>Each provider handles your data under its own privacy policy and only for the purpose described above.</p>
+
+        <h2>Cookies &amp; tracking</h2>
+        <p>
+          This site does not use advertising or cross-site tracking cookies.
+          Analytics are cookieless and aggregate. Your browser may store a local
+          preference (such as light/dark mode) on your device; that data never
+          leaves your browser.
+        </p>
+
+        <h2>Data retention</h2>
+        <p>
+          Contact-form submissions are kept only as long as needed to respond
+          to and follow up on your inquiry. Newsletter subscriptions are kept
+          until you unsubscribe. You can ask me to delete your data at any time
+          (see below).
+        </p>
+
+        <h2>Your rights</h2>
+        <p>
+          Depending on where you live, you may have the right to access,
+          correct, or delete the personal information I hold about you, or to
+          object to its processing. To exercise any of these rights — or to ask
+          a question about this policy — just <a href="/#contact">get in touch</a>.
+        </p>
+
+        <h2>Children</h2>
+        <p>This site is not directed at children under 13, and I don't knowingly collect their personal information.</p>
+
+        <h2>Changes to this policy</h2>
+        <p>
+          I may update this policy from time to time. When I do, I'll revise the
+          "Last updated" date at the top of this page. Material changes will be
+          reflected here.
+        </p>
+
+        <h2>Contact</h2>
+        <p>
+          Questions about privacy or your data? Reach out through the
+          <a href="/#contact">contact form</a>.
+        </p>
+
+      </div>
+    </div>
+  </section>
+
+  </main>
+
+  <!--========================================
+    Footer
+  =========================================-->
+  <footer>
+    <div class="container">
+      <p class="copyright" data-aos="fade-up">
+        Copyright &copy; LaPlante Web Development 2006-<span id="copyright-year"></span>.
+        <a href="/privacy/">Privacy</a>
+      </p>
+    </div>
+  </footer>
+
+  <!--========================================
+    JavaScript Files
+  =========================================-->
+  <script is:inline src="/js/script.js"></script>
+</SiteLayout>
+
+<style>
+  .updated {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 13px;
+    color: #6b7280;
+    letter-spacing: 0.5px;
+  }
+
+  .legal {
+    max-width: 760px;
+  }
+
+  .legal p,
+  .legal li {
+    font-family: 'Poppins', sans-serif;
+    font-size: 16px;
+    line-height: 1.8;
+    color: #374151;
+  }
+
+  .legal p {
+    margin-bottom: 18px;
+  }
+
+  .legal h2 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #111827;
+    margin: 36px 0 12px;
+  }
+
+  .legal ul {
+    margin: 0 0 18px;
+    padding-left: 22px;
+  }
+
+  .legal li {
+    margin-bottom: 10px;
+  }
+
+  .legal a {
+    color: #2980b9;
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .legal a:hover {
+    opacity: 0.7;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .updated { color: #94a3b8; }
+    .legal p,
+    .legal li { color: #cbd5e1; }
+    .legal h2 { color: #f1f5f9; }
+    .legal a { color: #60a5fa; }
+  }
+
+  :global(body.dark-mode) .updated { color: #94a3b8; }
+  :global(body.dark-mode) .legal p,
+  :global(body.dark-mode) .legal li { color: #cbd5e1; }
+  :global(body.dark-mode) .legal h2 { color: #f1f5f9; }
+  :global(body.dark-mode) .legal a { color: #60a5fa; }
+</style>

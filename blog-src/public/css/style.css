@@ -718,6 +718,14 @@ footer .copyright{
 	font-size:16px;
 	color:rgba(0,0,0,.6);
 }
+footer .copyright a{
+	color:inherit;
+	text-decoration:underline;
+	margin-left:8px;
+}
+footer .copyright a:hover{
+	opacity:.7;
+}
 
 
 /*==================================================
@@ -1280,6 +1288,32 @@ body.dark-mode .material-input > label {
 body.dark-mode .btn-custom:hover {
 	color: #3F51B5;
 	background: transparent;
+}
+
+/* Secondary "ghost" button — pairs with .btn-custom in the hero actions. */
+.btn-ghost {
+	background: transparent;
+	color: #3F51B5;
+	box-shadow: none;
+}
+.btn-ghost:hover {
+	background: #3F51B5;
+	color: #fff;
+}
+body.dark-mode .btn-ghost {
+	color: #fff;
+	border-color: #fff;
+}
+body.dark-mode .btn-ghost:hover {
+	background: #fff;
+	color: #3F51B5;
+	border-color: #fff;
+}
+.intro-actions a {
+	margin-top: 10px;
+}
+.intro-actions a + a {
+	margin-left: 14px;
 }
 
 /*==================================================
