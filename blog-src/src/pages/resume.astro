@@ -1,0 +1,358 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import { profile, summary, stats, skills, experience } from '../data/resume';
+---
+
+<SiteLayout
+  title="Résumé | Michael LaPlante"
+  description="Résumé of Michael LaPlante — SVP of Information Security and Operations. 15+ years across information security, engineering leadership, and software development."
+>
+  <Fragment slot="head">
+    <meta name="author" content="Michael LaPlante">
+    <link rel="stylesheet" type="text/css" href="/css/fonts.css">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/css/linea.css">
+    <link rel="stylesheet" type="text/css" href="/css/style.css">
+  </Fragment>
+
+  <!-- Skip to Content Link for Accessibility -->
+  <a href="#main-content" class="skip-to-content">Skip to main content</a>
+
+  <!--========================================
+    Menu
+  =========================================-->
+  <nav class="top-nav" aria-label="Main navigation">
+    <div class="container">
+
+      <a href="#" class="menu-btn" aria-label="Toggle menu" aria-expanded="false">
+        <span class="lines">
+          <span class="l1"></span>
+          <span class="l2"></span>
+          <span class="l3"></span>
+        </span>
+      </a>
+
+      <button class="dark-mode-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+        <span class="sun-icon">☀️</span>
+        <span class="moon-icon">🌙</span>
+      </button>
+
+      <div class="menu" role="menu">
+        <ul>
+          <li><a href="/">Home</a></li>
+          <li><a href="/blog/">Blog</a></li>
+          <li><a href="/uses/">Uses</a></li>
+          <li><a href="/resume/">Resume</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <main id="main-content" class="resume-page">
+    <div class="resume-toolbar">
+      <a href="/" class="resume-back">&larr; Back to site</a>
+      <button type="button" id="resume-print" class="resume-print-btn">Download PDF</button>
+    </div>
+
+    <article class="resume-paper">
+
+      <header class="resume-header">
+        <h1>{profile.name}</h1>
+        <p class="resume-title">{profile.title}</p>
+        <p class="resume-contact">
+          <a href={profile.websiteUrl}>{profile.website}</a>
+          {profile.links.map((link) => (
+            <Fragment>
+              <span class="resume-contact-sep">&middot;</span>
+              <a href={link.url} target="_blank" rel="noopener noreferrer">{link.label}</a>
+            </Fragment>
+          ))}
+        </p>
+      </header>
+
+      <section class="resume-section">
+        <h2>Summary</h2>
+        {summary.map((para) => <p class="resume-summary">{para}</p>)}
+      </section>
+
+      <section class="resume-section">
+        <h2>Highlights</h2>
+        <div class="resume-stats">
+          {stats.map((stat) => (
+            <div class="resume-stat">
+              <strong>{stat.value}</strong>
+              <span>{stat.label}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section class="resume-section">
+        <h2>Areas of Expertise</h2>
+        <div class="resume-skills">
+          {skills.map((skill) => (
+            <div class="resume-skill">
+              <h3>{skill.name}</h3>
+              <p>{skill.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section class="resume-section">
+        <h2>Experience</h2>
+        {experience.map((job) => (
+          <div class="resume-job">
+            <div class="resume-job-head">
+              <h3>{job.role} <span class="resume-job-company">&middot; {job.company}</span></h3>
+              <span class="resume-job-date">{job.date}</span>
+            </div>
+            <p>{job.description}</p>
+          </div>
+        ))}
+      </section>
+
+    </article>
+  </main>
+
+  <!--========================================
+    Footer
+  =========================================-->
+  <footer>
+    <div class="container">
+      <p class="copyright" data-aos="fade-up">
+        Copyright &copy; LaPlante Web Development 2006-<span id="copyright-year"></span>.
+        <a href="/privacy/">Privacy</a>
+      </p>
+    </div>
+  </footer>
+
+  <script is:inline src="/js/script.js"></script>
+  <script is:inline>
+    document.getElementById('resume-print')?.addEventListener('click', () => window.print());
+  </script>
+</SiteLayout>
+
+<style>
+  .resume-page {
+    padding: 110px 16px 40px;
+    background: #f1f3f5;
+    min-height: 100vh;
+  }
+
+  .resume-toolbar {
+    max-width: 820px;
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .resume-back {
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #2980b9;
+    text-decoration: none;
+  }
+  .resume-back:hover { opacity: 0.7; }
+
+  .resume-print-btn {
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 22px;
+    border: none;
+    border-radius: 8px;
+    background: #2980b9;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .resume-print-btn:hover { background: #1a6da3; }
+
+  /* The résumé "paper" — kept light in both color schemes so it reads like a
+     printed document and the on-screen view matches the PDF. */
+  .resume-paper {
+    max-width: 820px;
+    margin: 0 auto;
+    background: #fff;
+    color: #1f2937;
+    padding: 56px 60px;
+    border-radius: 10px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  }
+
+  .resume-header {
+    border-bottom: 2px solid #1a5276;
+    padding-bottom: 18px;
+    margin-bottom: 26px;
+  }
+
+  .resume-header h1 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 4px;
+    letter-spacing: -0.5px;
+  }
+
+  .resume-title {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 14px;
+    color: #1a5276;
+    margin: 0 0 12px;
+    letter-spacing: 0.5px;
+  }
+
+  .resume-contact {
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    margin: 0;
+    color: #6b7280;
+  }
+  .resume-contact a { color: #2980b9; text-decoration: none; }
+  .resume-contact a:hover { opacity: 0.7; }
+  .resume-contact-sep { margin: 0 8px; color: #d1d5db; }
+
+  .resume-section { margin-bottom: 30px; }
+
+  .resume-section > h2 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #1a5276;
+    margin: 0 0 14px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .resume-summary {
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #374151;
+    margin: 0 0 12px;
+  }
+
+  .resume-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .resume-stat {
+    flex: 1 1 140px;
+    text-align: center;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 14px 10px;
+  }
+  .resume-stat strong {
+    display: block;
+    font-family: 'Poppins', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a5276;
+  }
+  .resume-stat span {
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    color: #6b7280;
+  }
+
+  .resume-skills {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 28px;
+  }
+  .resume-skill h3 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 2px;
+  }
+  .resume-skill p {
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #6b7280;
+    margin: 0;
+  }
+
+  .resume-job {
+    margin-bottom: 20px;
+  }
+  .resume-job-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .resume-job-head h3 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+  }
+  .resume-job-company { font-weight: 500; color: #1a5276; }
+  .resume-job-date {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 12px;
+    color: #6b7280;
+    white-space: nowrap;
+  }
+  .resume-job p {
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #374151;
+    margin: 4px 0 0;
+  }
+
+  @media (max-width: 600px) {
+    .resume-paper { padding: 32px 22px; }
+    .resume-skills { grid-template-columns: 1fr; }
+    .resume-job-head { flex-direction: column; gap: 2px; }
+  }
+
+  /* Page chrome (background) follows dark mode; the paper stays light. */
+  @media (prefers-color-scheme: dark) {
+    .resume-page { background: #0f172a; }
+  }
+  :global(body.dark-mode) .resume-page { background: #0f172a; }
+
+  /* Print: strip chrome, flatten the paper to the page. */
+  @media print {
+    @page { margin: 0.5in; }
+    .top-nav,
+    .resume-toolbar,
+    .skip-to-content,
+    footer {
+      display: none !important;
+    }
+    .resume-page {
+      padding: 0 !important;
+      background: #fff !important;
+      min-height: 0 !important;
+    }
+    .resume-paper {
+      max-width: none !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      box-shadow: none !important;
+      border-radius: 0 !important;
+    }
+    .resume-section,
+    .resume-job,
+    .resume-skill,
+    .resume-stat { break-inside: avoid; }
+    .resume-contact a,
+    .resume-job-company { color: #1a5276 !important; }
+  }
+</style>

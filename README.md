@@ -12,10 +12,12 @@ A modern, fully Astro-powered personal portfolio and security consulting website
 - **Cloudflare Workers Runtime**: Static assets + a Worker that handles `/api/contact` (D1 storage, Turnstile, ForwardEmail)
 - **Responsive Design**: Works seamlessly across desktop, tablet, and mobile
 - **Blog with Taxonomy**: Category and tag pages, RSS feed, related posts, dark mode, in-page reading progress
+- **Full-Archive Blog Search**: Client-side search over a build-time JSON index (`/blog/search.json`) covering every post, not just the current page
+- **Printable Résumé**: `/resume` renders a print-optimized résumé (browser "Save as PDF") from a single shared data module (`src/data/resume.ts`) that also powers the homepage experience/skills sections — one source of truth, no separate file to maintain
 - **AI-Assisted Drafts**: Anthropic / Gemini / GitHub Models integrations for generating blog post drafts
 - **Automated Publishing**: GitHub Actions workflows to draft, promote, and deploy posts
 - **Performance Optimized**: Self-hosted assets, immutable cache headers for hashed bundles, CSS-only effects
-- **Security Hardened**: CSP, HSTS, X-Frame-Options, and Permissions-Policy headers served via the Cloudflare `_headers` file
+- **Security Hardened**: CSP, HSTS, X-Frame-Options, and Permissions-Policy headers served via the Cloudflare `_headers` file; RFC 9116 `/.well-known/security.txt`; privacy policy at `/privacy`
 - **SEO**: Auto-generated sitemap, canonical URLs, structured data (Person, WebSite, BlogPosting, BreadcrumbList), RSS feed, llms.txt + llms-full.txt
 - **Analytics**: Umami self-hosted analytics + Cloudflare Insights
 
