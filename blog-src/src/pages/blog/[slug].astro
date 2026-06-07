@@ -2,9 +2,11 @@
 import { getCollection, render } from 'astro:content';
 import BlogLayout from '../../layouts/BlogLayout.astro';
 import NewsletterSignup from '../../components/NewsletterSignup.astro';
+import AuthorBio from '../../components/AuthorBio.astro';
 import { SITE_URL } from '../../config';
 import { getReadTime, getWordCount } from '../../utils/readTime';
 import { formatDateLong, formatDateShort } from '../../utils/format';
+import { slugify } from '../../utils/slug';
 
 export async function getStaticPaths() {
   const posts = await getCollection('posts');
@@ -27,6 +29,21 @@ const postUrl = `${siteUrl}/blog/${post.id}/`;
 // src/pages/og/[slug].png.ts.
 const heroImage = post.data.image ?? `${siteUrl}/og/${post.id}.png`;
 const updated = post.data.updated ?? post.data.date;
+
+// Series: sibling posts sharing this post's `series`, ordered by seriesOrder
+// (ascending), then date. Empty unless this post opts into a series.
+const seriesName = post.data.series;
+const seriesPosts = seriesName
+  ? allPosts
+      .filter((p) => p.data.series === seriesName)
+      .sort((a, b) => {
+        const ao = a.data.seriesOrder ?? Number.POSITIVE_INFINITY;
+        const bo = b.data.seriesOrder ?? Number.POSITIVE_INFINITY;
+        if (ao !== bo) return ao - bo;
+        return a.data.date.valueOf() - b.data.date.valueOf();
+      })
+  : [];
+const seriesIndex = seriesPosts.findIndex((p) => p.id === post.id);
 
 // Related posts: same category first, then recent, exclude current
 const relatedPosts = allPosts
@@ -128,8 +145,39 @@ const breadcrumbSchema = JSON.stringify({
             <a href={`/blog/tags/${tag}/`} class="tag-link">{tag}</a>
           ))}
         </div>
+
+        {seriesPosts.length > 1 && (
+          <nav class="series-box" aria-label="Posts in this series">
+            <span class="series-box-label">
+              Part {seriesIndex + 1} of {seriesPosts.length} in the series
+            </span>
+            <a class="series-box-title" href={`/blog/series/${slugify(seriesName!)}/`}>{seriesName}</a>
+            <ol class="series-box-list">
+              {seriesPosts.map((p, i) => (
+                <li class={p.id === post.id ? 'series-current' : undefined}>
+                  {p.id === post.id ? (
+                    <span><span class="series-num">{i + 1}.</span> {p.data.title}</span>
+                  ) : (
+                    <a href={`/blog/${p.id}/`}><span class="series-num">{i + 1}.</span> {p.data.title}</a>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </nav>
+        )}
+
+        <!-- Inline table of contents (mobile / narrow viewports where the
+             sidebar TOC is hidden). Populated and toggled by the TOC script. -->
+        <details class="toc-inline">
+          <summary>Table of Contents</summary>
+          <nav class="toc-inline-nav" id="toc-inline-nav" aria-label="Table of contents"></nav>
+        </details>
+
         <Content />
       </article>
+
+      <!-- Author Bio -->
+      <AuthorBio />
 
       <!-- Newsletter CTA -->
       <NewsletterSignup showAlt={true} />
@@ -241,6 +289,110 @@ const breadcrumbSchema = JSON.stringify({
   .toc-nav :global(a.toc-h3) {
     padding-left: 24px;
     font-size: 12px;
+  }
+
+  /* Inline TOC — only shown where the sidebar TOC is hidden (< 960px). */
+  .toc-inline {
+    margin: 0 0 28px;
+    padding: 4px 18px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+  }
+
+  @media (min-width: 960px) {
+    .toc-inline { display: none; }
+  }
+
+  .toc-inline summary {
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #111827;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 12px 0;
+    cursor: pointer;
+  }
+
+  .toc-inline-nav {
+    padding: 0 0 12px;
+  }
+
+  .toc-inline-nav :global(a) {
+    display: block;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    color: #6b7280;
+    text-decoration: none;
+    padding: 5px 0 5px 12px;
+    border-left: 2px solid #e5e7eb;
+    line-height: 1.5;
+  }
+
+  .toc-inline-nav :global(a.toc-h3) {
+    padding-left: 24px;
+    font-size: 12px;
+  }
+
+  /* Series box */
+  .series-box {
+    margin: 0 0 28px;
+    padding: 18px 22px;
+    background: rgba(41, 128, 185, 0.05);
+    border: 1px solid rgba(41, 128, 185, 0.18);
+    border-radius: 10px;
+  }
+
+  .series-box-label {
+    display: block;
+    font-family: 'Poppins', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #2980b9;
+  }
+
+  .series-box-title {
+    display: inline-block;
+    font-family: 'Poppins', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: #111827;
+    text-decoration: none;
+    margin: 4px 0 10px;
+  }
+  .series-box-title:hover { color: #2980b9; }
+
+  .series-box-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: none;
+  }
+
+  .series-box-list li {
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 4px 0;
+  }
+
+  .series-box-list .series-num {
+    color: #9ca3af;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .series-box-list a {
+    color: #2980b9;
+    text-decoration: none;
+  }
+  .series-box-list a:hover { text-decoration: underline; }
+
+  .series-box-list .series-current {
+    color: #374151;
+    font-weight: 600;
   }
 
   .blog-meta .dot-sep {
@@ -424,6 +576,16 @@ const breadcrumbSchema = JSON.stringify({
     .toc-nav :global(a) { color: #94a3b8; border-left-color: #334155; }
     .toc-nav :global(a:hover) { color: #60a5fa; }
     .toc-nav :global(a.active) { color: #60a5fa; border-left-color: #60a5fa; }
+    .toc-inline { background: #1e293b; border-color: #334155; }
+    .toc-inline summary { color: #e2e8f0; }
+    .toc-inline-nav :global(a) { color: #94a3b8; border-left-color: #334155; }
+    .series-box { background: rgba(96, 165, 250, 0.08); border-color: rgba(96, 165, 250, 0.2); }
+    .series-box-label { color: #60a5fa; }
+    .series-box-title { color: #f1f5f9; }
+    .series-box-title:hover { color: #60a5fa; }
+    .series-box-list .series-num { color: #64748b; }
+    .series-box-list a { color: #60a5fa; }
+    .series-box-list .series-current { color: #e2e8f0; }
     .blog-meta .dot-sep { color: #475569; }
     .breadcrumbs a { color: #94a3b8; }
     .breadcrumbs a:hover { color: #60a5fa; }
@@ -448,34 +610,50 @@ const breadcrumbSchema = JSON.stringify({
 </style>
 
 <script>
-  // Generate TOC from article headings
+  // Generate TOC from article headings — populates both the desktop sidebar
+  // and the inline (mobile) collapsible TOC from one heading pass.
   function buildTOC() {
     const article = document.querySelector('.article-main article');
     const tocNav = document.getElementById('toc-nav');
-    if (!article || !tocNav) return;
+    const tocInlineNav = document.getElementById('toc-inline-nav');
+    const tocInline = document.querySelector('.toc-inline') as HTMLElement | null;
+    if (!article) return;
 
     const headings = article.querySelectorAll('h2, h3');
     if (headings.length === 0) {
       const sidebar = document.querySelector('.toc-sidebar') as HTMLElement;
       if (sidebar) sidebar.style.display = 'none';
+      if (tocInline) tocInline.style.display = 'none';
       return;
     }
 
+    const makeLink = (heading: Element) => {
+      const link = document.createElement('a');
+      link.href = `#${heading.id}`;
+      link.textContent = heading.textContent || '';
+      if (heading.tagName === 'H3') link.classList.add('toc-h3');
+      return link;
+    };
+
+    const inlineDetails = tocInline as HTMLDetailsElement | null;
     headings.forEach((heading, i) => {
       if (!heading.id) {
         heading.id = `heading-${i}`;
       }
-
-      const link = document.createElement('a');
-      link.href = `#${heading.id}`;
-      link.textContent = heading.textContent || '';
-      if (heading.tagName === 'H3') {
-        link.classList.add('toc-h3');
+      tocNav?.appendChild(makeLink(heading));
+      if (tocInlineNav) {
+        const inlineLink = makeLink(heading);
+        // Collapse the inline TOC after a jump so it doesn't cover the content.
+        inlineLink.addEventListener('click', () => {
+          if (inlineDetails) inlineDetails.open = false;
+        });
+        tocInlineNav.appendChild(inlineLink);
       }
-      tocNav.appendChild(link);
     });
 
-    // Scroll-spy: highlight current section
+    if (!tocNav) return;
+
+    // Scroll-spy: highlight current section (desktop sidebar only)
     const tocLinks = tocNav.querySelectorAll('a');
     const observer = new IntersectionObserver(
       (entries) => {

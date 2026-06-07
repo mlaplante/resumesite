@@ -1,0 +1,269 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import { stats } from '../data/resume';
+import { SITE_URL } from '../config';
+
+const services = [
+  {
+    icon: 'icon-basic-shield',
+    title: 'Security Architecture Reviews',
+    description:
+      'Assess your infrastructure, identify gaps, and design defense-in-depth strategies tailored to your risk profile and compliance requirements.',
+  },
+  {
+    icon: 'icon-basic-cloud',
+    title: 'Cloud Security Strategy',
+    description:
+      'Build secure multi-cloud architectures across AWS, Azure, and GCP with zero-trust principles, least-privilege access, and continuous monitoring.',
+  },
+  {
+    icon: 'icon-basic-lock',
+    title: 'Compliance & Risk Assessment',
+    description:
+      'Navigate SOC 2, ISO 27001, HIPAA, and PCI-DSS with practical frameworks that satisfy auditors without slowing your teams down.',
+  },
+  {
+    icon: 'icon-basic-lightbulb',
+    title: 'Engineering Leadership Advisory',
+    description:
+      'Scale engineering organizations, establish DevSecOps practices, and build the security culture that keeps your company out of the headlines.',
+  },
+];
+
+const process = [
+  {
+    step: '01',
+    title: 'Discovery',
+    description:
+      'A focused conversation about your systems, risks, and goals — so any engagement starts grounded in your actual environment, not a template.',
+  },
+  {
+    step: '02',
+    title: 'Assessment',
+    description:
+      'A hands-on review of architecture, controls, and processes, surfacing the gaps that matter most and the ones safe to defer.',
+  },
+  {
+    step: '03',
+    title: 'Roadmap',
+    description:
+      'A prioritized, pragmatic plan your team can actually execute — sequenced by risk reduction and business impact, not checklist completeness.',
+  },
+  {
+    step: '04',
+    title: 'Partnership',
+    description:
+      'Ongoing advisory through implementation: design reviews, threat modeling, and leadership support as the plan becomes reality.',
+  },
+];
+
+const professionalServiceSchema = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "ProfessionalService",
+  "name": "LaPlante Web Development",
+  "image": "https://michaellaplante.com/images/mike-laplante-400.jpg",
+  "url": `${SITE_URL}/services/`,
+  "description":
+    "Independent security consulting: security architecture reviews, cloud security strategy, compliance & risk assessment, and engineering leadership advisory.",
+  "areaServed": "Worldwide",
+  "availableLanguage": "English",
+  "serviceType": services.map((s) => s.title),
+  "founder": {
+    "@type": "Person",
+    "name": "Michael LaPlante",
+    "url": SITE_URL,
+  },
+  "provider": {
+    "@type": "Person",
+    "name": "Michael LaPlante",
+    "url": SITE_URL,
+  },
+  "sameAs": [
+    "https://www.linkedin.com/in/mlaplante/",
+    "https://github.com/mlaplante",
+    "https://twitter.com/laplantewebdev",
+  ],
+});
+---
+
+<SiteLayout
+  title="Consulting Services | Michael LaPlante - Security Architecture, Cloud Security & Compliance"
+  description="Security consulting by Michael LaPlante — security architecture reviews, cloud security strategy, compliance & risk assessment, and engineering leadership advisory. 15+ years in enterprise security."
+>
+  <Fragment slot="head">
+    <meta name="keywords" content="security consulting, cloud security consultant, security architecture review, SOC 2, ISO 27001, DevSecOps advisory, Michael LaPlante">
+    <meta name="author" content="Michael LaPlante">
+    <script type="application/ld+json" set:html={professionalServiceSchema} />
+    <link rel="stylesheet" type="text/css" href="/css/fonts.css">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/css/linea.css">
+    <link rel="stylesheet" type="text/css" href="/css/style.css">
+  </Fragment>
+
+  <!-- Skip to Content Link for Accessibility -->
+  <a href="#main-content" class="skip-to-content">Skip to main content</a>
+
+  <!--========================================
+    Menu
+  =========================================-->
+  <nav class="top-nav" aria-label="Main navigation">
+    <div class="container">
+
+      <a href="#" class="menu-btn" aria-label="Toggle menu" aria-expanded="false">
+        <span class="lines">
+          <span class="l1"></span>
+          <span class="l2"></span>
+          <span class="l3"></span>
+        </span>
+      </a>
+
+      <button class="dark-mode-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+        <span class="sun-icon">☀️</span>
+        <span class="moon-icon">🌙</span>
+      </button>
+
+      <div class="menu" role="menu">
+        <ul>
+          <li><a href="/">Home</a></li>
+          <li><a href="/services/">Services</a></li>
+          <li><a href="/blog/">Blog</a></li>
+          <li><a href="/uses/">Uses</a></li>
+          <li><a href="/resume/">Resume</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!--========================================
+    Main Content
+  =========================================-->
+  <main id="main-content">
+
+  <!-- Page Header -->
+  <section class="section" id="services-header" style="padding-top: 120px;">
+    <div class="container">
+      <div class="section-header" data-aos="fade-up">
+        <h1>Consulting Services</h1>
+      </div>
+      <p data-aos="fade-up">
+        I help teams build secure, scalable systems — drawing on 15+ years across
+        information security, engineering leadership, and software development.
+        Engagements are pragmatic and tailored to your environment, not a
+        one-size-fits-all checklist.
+      </p>
+      <div data-aos="fade-up" style="margin-top: 20px;">
+        <a href="/#contact" class="btn btn-custom">Schedule a Consultation</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Services -->
+  <section class="section" id="what-i-do">
+    <div class="container">
+      <div class="section-header" data-aos="fade-up">
+        <h2>What I Do</h2>
+      </div>
+      <div class="row">
+        {services.map((service) => (
+          <div class="col-sm-6">
+            <div class="service" data-aos="fade-up">
+              <i class={service.icon}></i>
+              <h4>{service.title}</h4>
+              <p>{service.description}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Process -->
+  <section class="section" id="how-it-works">
+    <div class="container">
+      <div class="section-header" data-aos="fade-up">
+        <h2>How Engagements Work</h2>
+      </div>
+      <div class="row">
+        {process.map((phase) => (
+          <div class="col-sm-6 col-md-3">
+            <div class="service" data-aos="fade-up">
+              <span class="process-step">{phase.step}</span>
+              <h4>{phase.title}</h4>
+              <p>{phase.description}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- By the Numbers -->
+  <section class="section funfacts-section" id="funfacts">
+    <div class="container">
+      <div class="section-header" data-aos="fade-up">
+        <h2>Why Work With Me</h2>
+      </div>
+      <div class="row">
+        {stats.map((stat) => (
+          <div class="col-sm-3 col-6">
+            <div class="funfact" data-aos="fade-up">
+              <strong>{stat.value}</strong>
+              <span>{stat.label}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="section" id="services-cta">
+    <div class="container">
+      <div class="section-header" data-aos="fade-up">
+        <h2>Let's Talk</h2>
+      </div>
+      <p data-aos="fade-up">
+        Have a security challenge, an upcoming audit, or a team you want to level
+        up? Tell me what you're working on and I'll get back to you.
+      </p>
+      <div data-aos="fade-up" style="margin-top: 20px;">
+        <a href="/#contact" class="btn btn-custom">Get In Touch</a>
+      </div>
+    </div>
+  </section>
+
+  </main>
+
+  <!--========================================
+    Footer
+  =========================================-->
+  <footer>
+    <div class="container">
+      <p class="copyright" data-aos="fade-up">
+        Copyright &copy; LaPlante Web Development 2006-<span id="copyright-year"></span>.
+        <a href="/privacy/">Privacy</a>
+      </p>
+    </div>
+  </footer>
+
+  <!--========================================
+    JavaScript Files
+  =========================================-->
+  <script is:inline src="/js/script.js"></script>
+</SiteLayout>
+
+<style>
+  .process-step {
+    display: inline-block;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    color: #2980b9;
+    margin-bottom: 8px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .process-step { color: #60a5fa; }
+  }
+  :global(body.dark-mode) .process-step { color: #60a5fa; }
+</style>

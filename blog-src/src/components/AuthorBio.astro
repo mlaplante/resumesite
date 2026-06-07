@@ -1,0 +1,137 @@
+---
+// Author bio box rendered at the foot of every blog post — turns a good read
+// into "who is this / can I hire them". Pulls from the shared résumé profile.
+import { profile } from '../data/resume';
+---
+
+<aside class="author-bio" aria-label="About the author">
+  <picture>
+    <source srcset="/images/mike-laplante-200.webp" type="image/webp" />
+    <img
+      src="/images/mike-laplante-200.jpg"
+      alt="Michael LaPlante"
+      class="author-bio-photo"
+      width="200"
+      height="200"
+      loading="lazy"
+    />
+  </picture>
+  <div class="author-bio-body">
+    <span class="author-bio-label">Written by</span>
+    <h3 class="author-bio-name">{profile.name}</h3>
+    <p class="author-bio-role">{profile.title}</p>
+    <p class="author-bio-text">
+      Technology executive with 15+ years across information security, engineering
+      leadership, and software development. I write about security, AI, and building
+      resilient systems — and I consult on the same.
+    </p>
+    <div class="author-bio-links">
+      {profile.links.map((link) => (
+        <a href={link.url} target="_blank" rel="noopener noreferrer">{link.label}</a>
+      ))}
+      <a href="/services/">Work with me</a>
+    </div>
+  </div>
+</aside>
+
+<style>
+  .author-bio {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    margin-top: 48px;
+    padding: 28px 32px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+  }
+
+  .author-bio-photo {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin: 0;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  .author-bio-body {
+    min-width: 0;
+  }
+
+  .author-bio-label {
+    font-family: 'Poppins', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #2980b9;
+  }
+
+  .author-bio-name {
+    font-family: 'Poppins', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    margin: 4px 0 2px;
+  }
+
+  .author-bio-role {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 12px;
+    color: #6b7280;
+    margin: 0 0 12px;
+    letter-spacing: 0.3px;
+  }
+
+  .author-bio-text {
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #374151;
+    margin: 0 0 14px;
+  }
+
+  .author-bio-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .author-bio-links a {
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #2980b9;
+    text-decoration: none;
+    transition: opacity 0.2s;
+  }
+
+  .author-bio-links a:hover {
+    opacity: 0.7;
+  }
+
+  @media (max-width: 560px) {
+    .author-bio {
+      flex-direction: column;
+      gap: 16px;
+      padding: 24px;
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .author-bio { background: #1e293b; border-color: #334155; }
+    .author-bio-photo { box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3); }
+    .author-bio-label { color: #60a5fa; }
+    .author-bio-name { color: #f1f5f9; }
+    .author-bio-role { color: #94a3b8; }
+    .author-bio-text { color: #cbd5e1; }
+    .author-bio-links a { color: #60a5fa; }
+  }
+  :global(body.dark-mode) .author-bio { background: #1e293b; border-color: #334155; }
+  :global(body.dark-mode) .author-bio-name { color: #f1f5f9; }
+  :global(body.dark-mode) .author-bio-role { color: #94a3b8; }
+  :global(body.dark-mode) .author-bio-text { color: #cbd5e1; }
+  :global(body.dark-mode) .author-bio-links a { color: #60a5fa; }
+  :global(body.dark-mode) .author-bio-label { color: #60a5fa; }
+</style>

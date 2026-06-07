@@ -67,6 +67,19 @@ body {
 .blog-nav .nav-links {
   display: flex;
   gap: 24px;
+  flex-wrap: wrap;
+}
+
+/* Keep the wider nav from overflowing on narrow screens. */
+@media (max-width: 640px) {
+  .blog-nav .container {
+    flex-wrap: wrap;
+    gap: 6px 16px;
+  }
+  .blog-nav .nav-links {
+    gap: 14px;
+    row-gap: 6px;
+  }
 }
 
 /* ===== Content Area ===== */

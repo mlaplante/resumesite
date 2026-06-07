@@ -59,6 +59,22 @@ export const skills: Skill[] = [
   { name: 'Full-Stack Development', description: 'TypeScript, React, Angular, Node.js, and modern web architecture' },
 ];
 
+export interface Certification {
+  name: string;
+  // Issuing body, e.g. "ISC2", "ISACA", "Amazon Web Services".
+  issuer: string;
+  // Optional year earned and a verification/credential URL.
+  year?: string;
+  url?: string;
+}
+
+// Professional certifications. Intentionally empty until real credentials are
+// supplied — never list a certification that isn't actually held. The homepage
+// and résumé only render the "Certifications" section when this array is
+// non-empty, so leaving it empty publishes nothing. To populate:
+//   { name: 'CISSP', issuer: 'ISC2', year: '2024', url: 'https://...' }
+export const certifications: Certification[] = [];
+
 export interface ExperienceEntry {
   company: string;
   role: string;
