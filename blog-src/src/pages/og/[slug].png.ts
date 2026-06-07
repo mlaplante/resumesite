@@ -6,6 +6,7 @@ import { dirname, resolve } from 'node:path';
 import satori from 'satori';
 import { Resvg } from '@resvg/resvg-js';
 import { decompress } from 'wawoff2';
+import { formatDateLong } from '../../utils/format';
 
 // Decompress the WOFF2 fonts that ship with the site to TTF at build time so
 // satori can parse them. Done once per build, on demand, then memoized.
@@ -127,7 +128,7 @@ export async function GET({ props }: APIContext) {
   const card = buildCard(
     post.data.title,
     post.data.category,
-    post.data.date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }),
+    formatDateLong(post.data.date),
   );
 
   // Cast: satori's JSX type expects a React element shape. Our handcrafted

@@ -1,7 +1,7 @@
-import { getCollection } from 'astro:content';
 import type { APIContext } from 'astro';
-
-const SITE = 'https://michaellaplante.com';
+import { getSortedPosts } from '../utils/posts';
+import { formatDateYMD } from '../utils/format';
+import { SITE_URL as SITE } from '../config';
 
 const HEADER = `# Michael LaPlante — Full Site Text
 
@@ -34,14 +34,8 @@ This file is the long-form companion to /llms.txt. It contains the full text of 
 - Code snippets in posts are illustrative — review for fit before using in production.
 `;
 
-function formatDate(date: Date): string {
-  return date.toISOString().slice(0, 10);
-}
-
 export async function GET(_context: APIContext) {
-  const posts = (await getCollection('posts')).sort(
-    (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
-  );
+  const posts = await getSortedPosts();
 
   const sections = posts.map((post) => {
     const url = `${SITE}/blog/${post.id}/`;
@@ -50,7 +44,7 @@ export async function GET(_context: APIContext) {
       `# ${post.data.title}`,
       ``,
       `- URL: ${url}`,
-      `- Date: ${formatDate(post.data.date)}`,
+      `- Date: ${formatDateYMD(post.data.date)}`,
       `- Category: ${post.data.category}`,
       `- Tags: ${tags}`,
       `- Excerpt: ${post.data.excerpt}`,

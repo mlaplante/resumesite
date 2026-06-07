@@ -6,6 +6,7 @@ import { SITE_URL } from '../../../config';
 import { getReadTime } from '../../../utils/readTime';
 import { formatDateShort } from '../../../utils/format';
 import { slugify } from '../../../utils/slug';
+import { safeJsonLd, breadcrumbList } from '../../../utils/schema';
 
 export const getStaticPaths = (async () => {
   const posts = await getCollection('posts');
@@ -34,15 +35,11 @@ export const getStaticPaths = (async () => {
 const { seriesName, posts } = Astro.props;
 const siteUrl = SITE_URL;
 
-const breadcrumbSchema = JSON.stringify({
-  "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  "itemListElement": [
-    { "@type": "ListItem", "position": 1, "name": "Home", "item": siteUrl },
-    { "@type": "ListItem", "position": 2, "name": "Blog", "item": `${siteUrl}/blog/` },
-    { "@type": "ListItem", "position": 3, "name": seriesName, "item": `${siteUrl}/blog/series/${slugify(seriesName)}/` },
-  ],
-});
+const breadcrumbSchema = safeJsonLd(breadcrumbList([
+  { name: 'Home', item: siteUrl },
+  { name: 'Blog', item: `${siteUrl}/blog/` },
+  { name: seriesName, item: `${siteUrl}/blog/series/${slugify(seriesName)}/` },
+]));
 ---
 
 <BlogLayout

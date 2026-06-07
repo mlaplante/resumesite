@@ -1,22 +1,20 @@
-import { getCollection } from 'astro:content';
 import type { APIContext } from 'astro';
-import { SITE_URL } from '../config';
+import { getSortedPosts } from '../utils/posts';
+import { SITE_URL, AUTHOR_NAME, BLOG_TITLE, BLOG_DESCRIPTION } from '../config';
 
 // JSON Feed 1.1 — https://www.jsonfeed.org/version/1.1/
 // Companion to /blog/rss.xml for readers that prefer JSON.
 export async function GET(_context: APIContext) {
-  const posts = (await getCollection('posts')).sort(
-    (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
-  );
+  const posts = await getSortedPosts();
 
   const feed = {
     version: 'https://jsonfeed.org/version/1.1',
-    title: "Michael LaPlante's Blog",
+    title: BLOG_TITLE,
     home_page_url: `${SITE_URL}/blog/`,
     feed_url: `${SITE_URL}/feed.json`,
-    description: 'Thoughts on security, engineering, and building things.',
+    description: BLOG_DESCRIPTION,
     language: 'en-US',
-    authors: [{ name: 'Michael LaPlante', url: SITE_URL }],
+    authors: [{ name: AUTHOR_NAME, url: SITE_URL }],
     items: posts.map((post) => ({
       id: `${SITE_URL}/blog/${post.id}/`,
       url: `${SITE_URL}/blog/${post.id}/`,

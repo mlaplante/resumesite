@@ -1,13 +1,11 @@
 ---
 import SiteLayout from '../layouts/SiteLayout.astro';
-import { getCollection } from 'astro:content';
 import { getReadTime } from '../utils/readTime';
 import { formatDateShort } from '../utils/format';
+import { getSortedPosts } from '../utils/posts';
 import { profile, summary, stats, skills, experience, certifications } from '../data/resume';
 
-const posts = (await getCollection('posts'))
-  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
-  .slice(0, 4);
+const posts = (await getSortedPosts()).slice(0, 4);
 ---
 
 <SiteLayout title="Michael LaPlante - SVP of Information Security and Operations | Technology Leader | Security Executive | Software Engineer" description="Michael LaPlante - Technology executive with 15+ years of experience in information security, operations, and software engineering. SVP of Information Security and Operations.">
