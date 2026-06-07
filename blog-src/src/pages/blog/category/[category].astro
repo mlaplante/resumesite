@@ -5,6 +5,8 @@ import BlogLayout from '../../../layouts/BlogLayout.astro';
 import { SITE_URL } from '../../../config';
 import { getReadTime } from '../../../utils/readTime';
 import { formatDateShort } from '../../../utils/format';
+import { byDateDesc } from '../../../utils/posts';
+import { safeJsonLd, breadcrumbList } from '../../../utils/schema';
 
 export const getStaticPaths = (async () => {
   const posts = await getCollection('posts');
@@ -13,9 +15,7 @@ export const getStaticPaths = (async () => {
     params: { category },
     props: {
       category,
-      posts: posts
-        .filter((p) => p.data.category === category)
-        .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()),
+      posts: posts.filter((p) => p.data.category === category).sort(byDateDesc),
     },
   }));
 }) satisfies GetStaticPaths;
@@ -24,15 +24,11 @@ const { category, posts } = Astro.props;
 const displayName = category.replace(/-/g, ' ');
 const siteUrl = SITE_URL;
 
-const breadcrumbSchema = JSON.stringify({
-  "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  "itemListElement": [
-    { "@type": "ListItem", "position": 1, "name": "Home", "item": siteUrl },
-    { "@type": "ListItem", "position": 2, "name": "Blog", "item": `${siteUrl}/blog/` },
-    { "@type": "ListItem", "position": 3, "name": displayName, "item": `${siteUrl}/blog/category/${category}/` },
-  ],
-});
+const breadcrumbSchema = safeJsonLd(breadcrumbList([
+  { name: 'Home', item: siteUrl },
+  { name: 'Blog', item: `${siteUrl}/blog/` },
+  { name: displayName, item: `${siteUrl}/blog/category/${category}/` },
+]));
 ---
 
 <BlogLayout

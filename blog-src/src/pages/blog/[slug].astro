@@ -3,10 +3,11 @@ import { getCollection, render } from 'astro:content';
 import BlogLayout from '../../layouts/BlogLayout.astro';
 import NewsletterSignup from '../../components/NewsletterSignup.astro';
 import AuthorBio from '../../components/AuthorBio.astro';
-import { SITE_URL } from '../../config';
+import { SITE_URL, AUTHOR_NAME } from '../../config';
 import { getReadTime, getWordCount } from '../../utils/readTime';
 import { formatDateLong, formatDateShort } from '../../utils/format';
 import { slugify } from '../../utils/slug';
+import { safeJsonLd, breadcrumbList } from '../../utils/schema';
 
 export async function getStaticPaths() {
   const posts = await getCollection('posts');
@@ -56,7 +57,7 @@ const relatedPosts = allPosts
   })
   .slice(0, 3);
 
-const blogPostingSchema = JSON.stringify({
+const blogPostingSchema = safeJsonLd({
   "@context": "https://schema.org",
   "@type": "BlogPosting",
   "headline": post.data.title,
@@ -65,12 +66,12 @@ const blogPostingSchema = JSON.stringify({
   "dateModified": updated.toISOString(),
   "author": {
     "@type": "Person",
-    "name": "Michael LaPlante",
+    "name": AUTHOR_NAME,
     "url": siteUrl,
   },
   "publisher": {
     "@type": "Person",
-    "name": "Michael LaPlante",
+    "name": AUTHOR_NAME,
   },
   "url": postUrl,
   "image": heroImage,
@@ -83,30 +84,11 @@ const blogPostingSchema = JSON.stringify({
   },
 });
 
-const breadcrumbSchema = JSON.stringify({
-  "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  "itemListElement": [
-    {
-      "@type": "ListItem",
-      "position": 1,
-      "name": "Home",
-      "item": siteUrl,
-    },
-    {
-      "@type": "ListItem",
-      "position": 2,
-      "name": "Blog",
-      "item": `${siteUrl}/blog/`,
-    },
-    {
-      "@type": "ListItem",
-      "position": 3,
-      "name": post.data.title,
-      "item": postUrl,
-    },
-  ],
-});
+const breadcrumbSchema = safeJsonLd(breadcrumbList([
+  { name: 'Home', item: siteUrl },
+  { name: 'Blog', item: `${siteUrl}/blog/` },
+  { name: post.data.title, item: postUrl },
+]));
 ---
 
 <BlogLayout

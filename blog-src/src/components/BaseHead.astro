@@ -1,5 +1,5 @@
 ---
-import { SITE_URL, DEFAULT_OG_IMAGE } from '../config';
+import { SITE_URL, DEFAULT_OG_IMAGE, BLOG_TITLE, BLOG_DESCRIPTION } from '../config';
 
 interface Props {
   title: string;
@@ -12,7 +12,7 @@ interface Props {
 
 const {
   title,
-  description = "Thoughts on security, engineering, and building things.",
+  description = BLOG_DESCRIPTION,
   image = DEFAULT_OG_IMAGE,
   ogType = 'website',
   noindex = false,
@@ -55,8 +55,8 @@ const canonicalUrl = canonical ?? `${SITE_URL}${Astro.url.pathname}`;
 <meta name="theme-color" content="#1a5276" media="(prefers-color-scheme: dark)" />
 
 <!-- RSS / JSON Feed autodiscovery -->
-<link rel="alternate" type="application/rss+xml" title="Michael LaPlante's Blog" href="/blog/rss.xml" />
-<link rel="alternate" type="application/feed+json" title="Michael LaPlante's Blog (JSON Feed)" href="/feed.json" />
+<link rel="alternate" type="application/rss+xml" title={BLOG_TITLE} href="/blog/rss.xml" />
+<link rel="alternate" type="application/feed+json" title={`${BLOG_TITLE} (JSON Feed)`} href="/feed.json" />
 
 <!-- Self-hosted Umami analytics -->
 <link rel="preconnect" href="https://laplantedevanalytics.netlify.app" crossorigin />

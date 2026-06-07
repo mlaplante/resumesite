@@ -26,3 +26,8 @@ export function formatDateLong(date: Date): string {
 export function formatDateISO(date: Date): string {
   return date.toISOString();
 }
+
+// `YYYY-MM-DD` (UTC) — for plain-text contexts like llms-full.txt.
+export function formatDateYMD(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
