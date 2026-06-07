@@ -1,6 +1,6 @@
 ---
 import SiteLayout from '../layouts/SiteLayout.astro';
-import { profile, summary, stats, skills, experience } from '../data/resume';
+import { profile, summary, stats, skills, experience, certifications } from '../data/resume';
 ---
 
 <SiteLayout
@@ -40,6 +40,7 @@ import { profile, summary, stats, skills, experience } from '../data/resume';
       <div class="menu" role="menu">
         <ul>
           <li><a href="/">Home</a></li>
+          <li><a href="/services/">Services</a></li>
           <li><a href="/blog/">Blog</a></li>
           <li><a href="/uses/">Uses</a></li>
           <li><a href="/resume/">Resume</a></li>
@@ -94,6 +95,20 @@ import { profile, summary, stats, skills, experience } from '../data/resume';
           ))}
         </div>
       </section>
+
+      {certifications.length > 0 && (
+        <section class="resume-section">
+          <h2>Certifications</h2>
+          <ul class="resume-certs">
+            {certifications.map((cert) => (
+              <li>
+                <strong>{cert.name}</strong>
+                <span> · {cert.issuer}{cert.year ? ` · ${cert.year}` : ''}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section class="resume-section">
         <h2>Experience</h2>
@@ -280,6 +295,26 @@ import { profile, summary, stats, skills, experience } from '../data/resume';
     margin: 0;
   }
 
+  .resume-certs {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 28px;
+  }
+  .resume-certs li {
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    color: #374151;
+    line-height: 1.5;
+  }
+  .resume-certs strong {
+    font-weight: 600;
+    color: #111827;
+  }
+  .resume-certs span { color: #6b7280; }
+
   .resume-job {
     margin-bottom: 20px;
   }
@@ -314,6 +349,7 @@ import { profile, summary, stats, skills, experience } from '../data/resume';
   @media (max-width: 600px) {
     .resume-paper { padding: 32px 22px; }
     .resume-skills { grid-template-columns: 1fr; }
+    .resume-certs { grid-template-columns: 1fr; }
     .resume-job-head { flex-direction: column; gap: 2px; }
   }
 

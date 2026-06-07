@@ -1,0 +1,256 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { getCollection } from 'astro:content';
+import BlogLayout from '../../../layouts/BlogLayout.astro';
+import { SITE_URL } from '../../../config';
+import { getReadTime } from '../../../utils/readTime';
+import { formatDateShort } from '../../../utils/format';
+import { slugify } from '../../../utils/slug';
+
+export const getStaticPaths = (async () => {
+  const posts = await getCollection('posts');
+  const seriesMap = new Map<string, { name: string; posts: typeof posts }>();
+  for (const post of posts) {
+    const name = post.data.series;
+    if (!name) continue;
+    const key = slugify(name);
+    if (!seriesMap.has(key)) seriesMap.set(key, { name, posts: [] });
+    seriesMap.get(key)!.posts.push(post);
+  }
+  return [...seriesMap.entries()].map(([series, { name, posts: seriesPosts }]) => ({
+    params: { series },
+    props: {
+      seriesName: name,
+      posts: seriesPosts.sort((a, b) => {
+        const ao = a.data.seriesOrder ?? Number.POSITIVE_INFINITY;
+        const bo = b.data.seriesOrder ?? Number.POSITIVE_INFINITY;
+        if (ao !== bo) return ao - bo;
+        return a.data.date.valueOf() - b.data.date.valueOf();
+      }),
+    },
+  }));
+}) satisfies GetStaticPaths;
+
+const { seriesName, posts } = Astro.props;
+const siteUrl = SITE_URL;
+
+const breadcrumbSchema = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": siteUrl },
+    { "@type": "ListItem", "position": 2, "name": "Blog", "item": `${siteUrl}/blog/` },
+    { "@type": "ListItem", "position": 3, "name": seriesName, "item": `${siteUrl}/blog/series/${slugify(seriesName)}/` },
+  ],
+});
+---
+
+<BlogLayout
+  title={`Series: ${seriesName}`}
+  description={`A ${posts.length}-part series: "${seriesName}".`}
+>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={breadcrumbSchema} />
+  </Fragment>
+  <div class="listing-wrapper">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+      <a href="/">Home</a>
+      <span class="breadcrumb-sep">/</span>
+      <a href="/blog/">Blog</a>
+      <span class="breadcrumb-sep">/</span>
+      <span class="breadcrumb-current">{seriesName}</span>
+    </nav>
+
+    <p class="series-eyebrow">Series</p>
+    <h1>{seriesName}</h1>
+    <p class="taxonomy-count">{posts.length} part{posts.length === 1 ? '' : 's'}</p>
+
+    <ol class="series-list">
+      {posts.map((post, i) => {
+        const readTime = getReadTime(post.body);
+        return (
+          <li>
+            <a href={`/blog/${post.id}/`} class="series-item">
+              <span class="series-item-num">{i + 1}</span>
+              <span class="series-item-body">
+                <span class="series-item-title">{post.data.title}</span>
+                <span class="series-item-meta">
+                  <time datetime={post.data.date.toISOString()}>
+                    {formatDateShort(post.data.date)}
+                  </time>
+                  <span class="dot-sep">&middot;</span>
+                  <span>{readTime} min read</span>
+                </span>
+                <span class="series-item-excerpt">{post.data.excerpt}</span>
+              </span>
+            </a>
+          </li>
+        );
+      })}
+    </ol>
+
+    <div class="back-link">
+      <a href="/blog/">&larr; All posts</a>
+    </div>
+  </div>
+</BlogLayout>
+
+<style>
+  .listing-wrapper {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  @media (min-width: 768px) {
+    .listing-wrapper { max-width: 900px; }
+  }
+
+  .breadcrumbs {
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    color: #9ca3af;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .breadcrumbs a { color: #6b7280; text-decoration: none; transition: color 0.2s; }
+  .breadcrumbs a:hover { color: #2980b9; }
+  .breadcrumb-sep { color: #d1d5db; }
+  .breadcrumb-current { color: #374151; font-weight: 500; }
+
+  .series-eyebrow {
+    font-family: 'Poppins', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #2980b9;
+    margin: 0 0 4px;
+  }
+
+  h1 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 4px;
+  }
+
+  .taxonomy-count {
+    font-family: 'Poppins', sans-serif;
+    font-size: 15px;
+    color: #6b7280;
+    margin-bottom: 32px;
+  }
+
+  .series-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    counter-reset: none;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .series-item {
+    display: flex;
+    gap: 18px;
+    align-items: flex-start;
+    padding: 20px 22px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+
+  .series-item:hover {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    border-color: #d1d5db;
+    transform: translateY(-2px);
+  }
+
+  .series-item-num {
+    font-family: 'Poppins', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: #2980b9;
+    background: rgba(41, 128, 185, 0.08);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .series-item-body { min-width: 0; display: block; }
+
+  .series-item-title {
+    display: block;
+    font-family: 'Poppins', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1.35;
+  }
+
+  .series-item-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    color: #9ca3af;
+    margin: 4px 0 8px;
+  }
+
+  .dot-sep { color: #d1d5db; }
+
+  .series-item-excerpt {
+    display: block;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    color: #6b7280;
+    line-height: 1.6;
+  }
+
+  .back-link {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  .back-link a {
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #2980b9;
+    text-decoration: none;
+  }
+  .back-link a:hover { opacity: 0.7; }
+
+  @media (prefers-color-scheme: dark) {
+    h1 { color: #f1f5f9; }
+    .series-eyebrow { color: #60a5fa; }
+    .taxonomy-count { color: #94a3b8; }
+    .breadcrumbs a { color: #94a3b8; }
+    .breadcrumbs a:hover { color: #60a5fa; }
+    .breadcrumb-sep { color: #475569; }
+    .breadcrumb-current { color: #e2e8f0; }
+    .series-item { background: #1e293b; border-color: #334155; }
+    .series-item:hover { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); border-color: #475569; }
+    .series-item-num { color: #60a5fa; background: rgba(96, 165, 250, 0.12); }
+    .series-item-title { color: #f1f5f9; }
+    .series-item-meta { color: #64748b; }
+    .dot-sep { color: #475569; }
+    .series-item-excerpt { color: #94a3b8; }
+    .back-link { border-top-color: #334155; }
+    .back-link a { color: #60a5fa; }
+  }
+</style>

@@ -355,14 +355,21 @@ export function makeExcerpt(content) {
     .trim() + '...';
 }
 
-export function buildFrontmatter({ title, date, category, excerpt }) {
+// Optionally groups a post into a multi-part series. When `series` is supplied
+// the lines are emitted as real frontmatter; otherwise a commented hint is left
+// so a human reviewer can opt the draft into a series at publish time. The hint
+// is a YAML comment, so it's ignored by the content-collection schema either way.
+export function buildFrontmatter({ title, date, category, excerpt, series, seriesOrder }) {
   const esc = (s) => s.replace(/"/g, '\\"');
+  const seriesLines = series
+    ? `series: "${esc(series)}"\nseriesOrder: ${Number.isFinite(seriesOrder) ? seriesOrder : 1}\n`
+    : `# series: ""      # optional: set the same value on every part of a multi-part series\n# seriesOrder: 1   # this post's position within that series\n`;
   return `---
 title: "${esc(title)}"
 date: ${date}
 category: "${category}"
 tags: []
-excerpt: "${esc(excerpt)}"
+${seriesLines}excerpt: "${esc(excerpt)}"
 ---`;
 }
 

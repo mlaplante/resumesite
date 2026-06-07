@@ -136,6 +136,33 @@ describe('buildFrontmatter', () => {
     expect(fm.startsWith('---\n')).toBe(true);
     expect(fm.endsWith('---')).toBe(true);
   });
+
+  it('emits a commented series hint when no series is supplied', () => {
+    const fm = buildFrontmatter({
+      title: 'A Post',
+      date: '2026-05-17',
+      category: 'thought-leadership',
+      excerpt: 'Body',
+    });
+    expect(fm).toContain('# series:');
+    expect(fm).toContain('# seriesOrder:');
+    // The hint must be a YAML comment, never active frontmatter.
+    expect(fm).not.toMatch(/^series:/m);
+  });
+
+  it('emits real series frontmatter when a series is supplied', () => {
+    const fm = buildFrontmatter({
+      title: 'A Post',
+      date: '2026-05-17',
+      category: 'thought-leadership',
+      excerpt: 'Body',
+      series: 'Zero Trust Deep Dive',
+      seriesOrder: 2,
+    });
+    expect(fm).toMatch(/^series: "Zero Trust Deep Dive"$/m);
+    expect(fm).toMatch(/^seriesOrder: 2$/m);
+    expect(fm).not.toContain('# series:');
+  });
 });
 
 describe('findMostSimilar (lexical Jaccard)', () => {

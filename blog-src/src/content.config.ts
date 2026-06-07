@@ -17,6 +17,11 @@ const posts = defineCollection({
     excerpt: z.string().min(1).max(300),
     // Optional explicit hero image; falls back to DEFAULT_OG_IMAGE.
     image: z.string().optional(),
+    // Optional series grouping. Posts sharing the same `series` string are
+    // linked together (series box on each post + a /blog/series/<slug> index),
+    // ordered by `seriesOrder` (ascending), then date.
+    series: z.string().min(1).optional(),
+    seriesOrder: z.number().optional(),
   }),
 });
 

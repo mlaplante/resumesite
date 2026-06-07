@@ -3,7 +3,7 @@ import SiteLayout from '../layouts/SiteLayout.astro';
 import { getCollection } from 'astro:content';
 import { getReadTime } from '../utils/readTime';
 import { formatDateShort } from '../utils/format';
-import { profile, summary, stats, skills, experience } from '../data/resume';
+import { profile, summary, stats, skills, experience, certifications } from '../data/resume';
 
 const posts = (await getCollection('posts'))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
@@ -100,7 +100,7 @@ const posts = (await getCollection('posts'))
             <a data-scroll href="#about">About</a>
           </li>
           <li>
-            <a data-scroll href="#services">Services</a>
+            <a href="/services/">Services</a>
           </li>
           <li>
             <a data-scroll href="#skills">Skills</a>
@@ -253,8 +253,9 @@ const posts = (await getCollection('posts'))
         </div>
       </div>
 
-      <div class="text-center" data-aos="fade-up" style="margin-top: 24px;">
+      <div class="text-center intro-actions" data-aos="fade-up" style="margin-top: 24px;">
         <a href="#contact" data-scroll class="btn btn-custom">Discuss Your Needs</a>
+        <a href="/services/" class="btn btn-custom btn-ghost">See Full Services &rarr;</a>
       </div>
     </div>
   </section>
@@ -282,6 +283,38 @@ const posts = (await getCollection('posts'))
 
     </div>
   </section>
+
+  {certifications.length > 0 && (
+  <!--========================================
+    Certifications Section
+  =========================================-->
+  <section class="section skills-section" id="certifications">
+    <div class="container">
+
+      <div class="section-header" data-aos="fade-up">
+        <h2>Certifications</h2>
+      </div>
+
+      <div class="row">
+        {certifications.map((cert) => (
+          <div class="col-sm-6 col-md-4" data-aos="fade-up">
+            <div class="service">
+              <h4>
+                {cert.url ? (
+                  <a href={cert.url} target="_blank" rel="noopener noreferrer">{cert.name}</a>
+                ) : (
+                  cert.name
+                )}
+              </h4>
+              <p>{cert.issuer}{cert.year ? ` · ${cert.year}` : ''}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+    </div>
+  </section>
+  )}
 
   <!--========================================
     Experience Section
