@@ -48,8 +48,19 @@ const fullTitle = `${title} | Michael LaPlante`;
     )}
     <nav class="blog-nav" aria-label="Blog navigation">
       <div class="container">
-        <a href="/">Michael LaPlante</a>
-        <div class="nav-links">
+        <a href="/" class="nav-brand">Michael LaPlante</a>
+        <button
+          class="nav-toggle"
+          type="button"
+          aria-label="Toggle navigation menu"
+          aria-expanded="false"
+          aria-controls="blog-nav-links"
+        >
+          <span class="nav-toggle-bar"></span>
+          <span class="nav-toggle-bar"></span>
+          <span class="nav-toggle-bar"></span>
+        </button>
+        <div class="nav-links" id="blog-nav-links">
           <a href="/">Home</a>
           <a href="/services/">Services</a>
           <a href={baseUrl}>Blog</a>
@@ -60,6 +71,25 @@ const fullTitle = `${title} | Michael LaPlante`;
         </div>
       </div>
     </nav>
+    <script is:inline>
+      (function () {
+        var nav = document.querySelector('.blog-nav');
+        if (!nav) return;
+        var toggle = nav.querySelector('.nav-toggle');
+        if (!toggle) return;
+        toggle.addEventListener('click', function () {
+          var open = nav.classList.toggle('nav-open');
+          toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+        // Close the menu when a link is tapped.
+        nav.querySelectorAll('.nav-links a').forEach(function (link) {
+          link.addEventListener('click', function () {
+            nav.classList.remove('nav-open');
+            toggle.setAttribute('aria-expanded', 'false');
+          });
+        });
+      })();
+    </script>
     <main id="blog-main-content" class="blog-content">
       <slot />
     </main>
