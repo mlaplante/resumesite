@@ -70,15 +70,74 @@ body {
   flex-wrap: wrap;
 }
 
-/* Keep the wider nav from overflowing on narrow screens. */
+/* Hamburger toggle — hidden on desktop, shown on narrow screens. */
+.blog-nav .nav-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 40px;
+  height: 40px;
+  padding: 8px;
+  margin: -8px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.blog-nav .nav-toggle-bar {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: #fff;
+  border-radius: 2px;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+/* Collapse the nav into a tappable menu on narrow screens. */
 @media (max-width: 640px) {
+  /* Let the links wrap onto their own full-width row below the bar. */
   .blog-nav .container {
     flex-wrap: wrap;
-    gap: 6px 16px;
+  }
+  .blog-nav .nav-toggle {
+    display: flex;
+    margin-left: auto;
   }
   .blog-nav .nav-links {
-    gap: 14px;
-    row-gap: 6px;
+    flex-basis: 100%;
+    flex-direction: column;
+    gap: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease;
+  }
+  .blog-nav.nav-open .nav-links {
+    max-height: 360px;
+    margin-top: 12px;
+  }
+  .blog-nav .nav-links a {
+    display: block;
+    padding: 12px 4px;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    font-size: 15px;
+  }
+  /* Morph the bars into an X when open. */
+  .blog-nav.nav-open .nav-toggle-bar:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+  }
+  .blog-nav.nav-open .nav-toggle-bar:nth-child(2) {
+    opacity: 0;
+  }
+  .blog-nav.nav-open .nav-toggle-bar:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blog-nav .nav-links,
+  .blog-nav .nav-toggle-bar {
+    transition: none;
   }
 }
 
