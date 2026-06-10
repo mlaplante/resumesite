@@ -16,8 +16,8 @@ declare module 'cloudflare:test' {
 const SITE = 'https://example.com';
 
 // Mirror of worker/schema.sql. Kept inline because the Workers sandbox
-// can't read the host filesystem; the duplication is checked against the
-// real file by the `keeps in sync with worker/schema.sql` test below.
+// can't read the host filesystem — keep the two in sync by hand when the
+// schema changes.
 const TEST_SCHEMA_STATEMENTS = [
   `CREATE TABLE IF NOT EXISTS submissions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -84,18 +84,24 @@ function makeContactRequest(overrides: {
 //   - Turnstile siteverify  → ok by default
 //   - ForwardEmail send     → ok by default
 // Pass overrides to simulate failures of individual upstreams.
-function stubUpstreams(opts: { turnstile?: boolean; forwardEmail?: { ok: boolean; status?: number; body?: string } } = {}) {
-  const turnstileOk = opts.turnstile ?? true;
+function stubUpstreams(opts: {
+  turnstile?: boolean | 'network-error' | 'malformed';
+  forwardEmail?: { ok: boolean; status?: number; body?: string } | 'network-error';
+} = {}) {
+  const turnstile = opts.turnstile ?? true;
   const feRes = opts.forwardEmail ?? { ok: true };
   const fetchSpy = vi.fn(async (input: RequestInfo | URL) => {
     const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
     if (url.includes('challenges.cloudflare.com/turnstile/v0/siteverify')) {
-      return new Response(JSON.stringify({ success: turnstileOk, 'error-codes': turnstileOk ? [] : ['invalid-input-response'] }), {
+      if (turnstile === 'network-error') throw new TypeError('fetch failed: connection refused');
+      if (turnstile === 'malformed') return new Response('<html>gateway error</html>', { status: 502 });
+      return new Response(JSON.stringify({ success: turnstile, 'error-codes': turnstile ? [] : ['invalid-input-response'] }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       });
     }
     if (url.includes('api.forwardemail.net/v1/emails')) {
+      if (feRes === 'network-error') throw new TypeError('fetch failed: connection refused');
       return new Response(feRes.body ?? (feRes.ok ? '{"id":"abc123"}' : '{"error":"bad"}'), {
         status: feRes.status ?? (feRes.ok ? 200 : 400),
       });
@@ -220,6 +226,26 @@ describe('contact form: turnstile', () => {
     expect(res.status).toBe(303);
     expect(res.headers.get('Location')).toBe(`${SITE}/contact-error/`);
   });
+
+  it('fails closed (redirect, no stored row) when siteverify is unreachable', async () => {
+    stubUpstreams({ turnstile: 'network-error' });
+    const ctx = createExecutionContext();
+    const res = await worker.fetch(makeContactRequest(), env, ctx);
+    await waitOnExecutionContext(ctx);
+    expect(res.status).toBe(303);
+    expect(res.headers.get('Location')).toBe(`${SITE}/contact-error/`);
+    const count = await env.DB.prepare('SELECT COUNT(*) AS n FROM submissions').first<{ n: number }>();
+    expect(count?.n).toBe(0);
+  });
+
+  it('fails closed when siteverify returns a non-JSON body', async () => {
+    stubUpstreams({ turnstile: 'malformed' });
+    const ctx = createExecutionContext();
+    const res = await worker.fetch(makeContactRequest(), env, ctx);
+    await waitOnExecutionContext(ctx);
+    expect(res.status).toBe(303);
+    expect(res.headers.get('Location')).toBe(`${SITE}/contact-error/`);
+  });
 });
 
 describe('contact form: honeypot', () => {
@@ -272,6 +298,19 @@ describe('contact form: rate limit', () => {
 describe('contact form: ForwardEmail upstream failure', () => {
   it('keeps the D1 row but redirects to /contact-error/', async () => {
     stubUpstreams({ forwardEmail: { ok: false, status: 502, body: '{"error":"upstream"}' } });
+    const ctx = createExecutionContext();
+    const res = await worker.fetch(makeContactRequest(), env, ctx);
+    await waitOnExecutionContext(ctx);
+    expect(res.status).toBe(303);
+    expect(res.headers.get('Location')).toBe(`${SITE}/contact-error/`);
+    const row = await env.DB.prepare(
+      'SELECT email FROM submissions WHERE email = ?1',
+    ).bind('test@example.com').first();
+    expect(row).not.toBeNull();
+  });
+
+  it('keeps the D1 row and redirects when ForwardEmail is unreachable', async () => {
+    stubUpstreams({ forwardEmail: 'network-error' });
     const ctx = createExecutionContext();
     const res = await worker.fetch(makeContactRequest(), env, ctx);
     await waitOnExecutionContext(ctx);

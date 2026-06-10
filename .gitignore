@@ -9,6 +9,14 @@ dist/
 blog-src/node_modules/
 blog-src/.astro/
 
+# Local secrets — .env for Astro PUBLIC_ vars, .dev.vars for `wrangler dev`.
+# Only the example template is tracked.
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+
 # Local cache of LLM embeddings used by the auto-blog-draft dedupe pipeline.
 scripts/.embeddings-cache.json
 blog/**/CLAUDE.md

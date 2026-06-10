@@ -447,10 +447,18 @@ const isFirstPage = page.currentPage === 1;
     return activeBtn?.getAttribute('data-category') || 'all';
   }
 
+  // Escapes for BOTH element and attribute contexts. The DOM-based
+  // textContent/innerHTML trick does not escape quotes, which would let a
+  // value containing `"` break out of an attribute like data-category below.
+  const HTML_ESCAPES: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  };
   function escapeHtml(value: string): string {
-    const div = document.createElement('div');
-    div.textContent = value;
-    return div.innerHTML;
+    return value.replace(/[&<>"']/g, (c) => HTML_ESCAPES[c]);
   }
 
   function renderResults(posts: IndexedPost[], query: string) {
@@ -467,11 +475,11 @@ const isFirstPage = page.currentPage === 1;
       resultsGrid.innerHTML = matches
         .map(
           (post) => `
-            <a href="${post.url}" class="post-card" data-category="${escapeHtml(post.category)}">
+            <a href="${escapeHtml(post.url)}" class="post-card" data-category="${escapeHtml(post.category)}">
               <div class="post-card-meta">
-                <time datetime="${post.dateISO}">${escapeHtml(post.dateShort)}</time>
+                <time datetime="${escapeHtml(post.dateISO)}">${escapeHtml(post.dateShort)}</time>
                 <span class="dot-sep">&middot;</span>
-                <span>${post.readTime} min read</span>
+                <span>${Number(post.readTime) || 1} min read</span>
               </div>
               <h2>${escapeHtml(post.title)}</h2>
               <p>${escapeHtml(post.excerpt)}</p>

@@ -139,9 +139,8 @@ import { profile, summary, stats, skills, experience, certifications } from '../
   </footer>
 
   <script is:inline src="/js/script.js"></script>
-  <script is:inline>
-    document.getElementById('resume-print')?.addEventListener('click', () => window.print());
-  </script>
+  <!-- External so the CSP can serve script-src without 'unsafe-inline'. -->
+  <script is:inline defer src="/js/resume-print.js"></script>
 </SiteLayout>
 
 <style>

@@ -10,6 +10,9 @@ const RETENTION_MS = 90 * 86_400_000;
 const MAX_NAME_LEN = 200;
 const MAX_EMAIL_LEN = 200;
 const MAX_MESSAGE_LEN = 5000;
+// Cap time spent waiting on Turnstile / ForwardEmail so a hung upstream
+// can't stall the request until the platform kills it.
+const UPSTREAM_TIMEOUT_MS = 10_000;
 
 // Strip CR/LF and other control characters that could be used to inject
 // extra email headers downstream when name/email are interpolated into
@@ -37,6 +40,12 @@ export async function handleContact(request: Request, env: Env, ctx: ExecutionCo
   const url = new URL(request.url);
   const redirectTo = (path: string) =>
     new Response(null, { status: 303, headers: { Location: url.origin + path, ...NO_STORE } });
+  // Log-and-bounce helper: every rejection path emits one structured warning
+  // and lands the user on the friendly error page.
+  const reject = (reason: string, details?: Record<string, unknown>) => {
+    console.warn(`contact: rejected on ${reason}`, details ?? {});
+    return redirectTo(CONTACT_ERROR);
+  };
 
   // Same-origin enforcement: every modern browser sends `Origin` on POST.
   // A legitimate form submission from this site matches `url.origin`.
@@ -63,13 +72,11 @@ export async function handleContact(request: Request, env: Env, ctx: ExecutionCo
   const token = String(form.get('cf-turnstile-response') ?? '');
 
   if (!name || !message || !EMAIL_RE.test(email)) {
-    console.warn('contact: rejected on validation', { hasName: !!name, hasMessage: !!message, emailOk: EMAIL_RE.test(email) });
-    return redirectTo(CONTACT_ERROR);
+    return reject('validation', { hasName: !!name, hasMessage: !!message, emailOk: EMAIL_RE.test(email) });
   }
 
   if (!token) {
-    console.warn('contact: rejected on missing turnstile token');
-    return redirectTo(CONTACT_ERROR);
+    return reject('missing turnstile token');
   }
 
   const ip = request.headers.get('CF-Connecting-IP') ?? '';
@@ -80,8 +87,7 @@ export async function handleContact(request: Request, env: Env, ctx: ExecutionCo
       'SELECT COUNT(*) AS n FROM submissions WHERE ip = ?1 AND ts > ?2'
     ).bind(ip, since).first<{ n: number }>();
     if (recent && recent.n >= RATE_LIMIT_MAX) {
-      console.warn('contact: rejected on rate limit', { ip, recent: recent.n });
-      return redirectTo(CONTACT_ERROR);
+      return reject('rate limit', { ip, recent: recent.n });
     }
   }
 
@@ -90,14 +96,22 @@ export async function handleContact(request: Request, env: Env, ctx: ExecutionCo
   tsBody.set('response', token);
   if (ip) tsBody.set('remoteip', ip);
 
-  const tsRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-    method: 'POST',
-    body: tsBody,
-  });
-  const tsJson = (await tsRes.json()) as { success: boolean; 'error-codes'?: string[] };
+  // Fail closed: a siteverify outage, timeout, or malformed response means we
+  // could not verify the human — bounce to the error page instead of letting
+  // the exception surface as an opaque 500 (or worse, skipping verification).
+  let tsJson: { success: boolean; 'error-codes'?: string[] };
+  try {
+    const tsRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      body: tsBody,
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+    });
+    tsJson = (await tsRes.json()) as { success: boolean; 'error-codes'?: string[] };
+  } catch (err) {
+    return reject('turnstile verify error', { error: String(err) });
+  }
   if (!tsJson.success) {
-    console.warn('contact: rejected on turnstile', { errors: tsJson['error-codes'] });
-    return redirectTo(CONTACT_ERROR);
+    return reject('turnstile', { errors: tsJson['error-codes'] });
   }
 
   await env.DB.prepare(
@@ -121,14 +135,22 @@ export async function handleContact(request: Request, env: Env, ctx: ExecutionCo
     text: `From: ${name} <${email}>\nIP: ${ip}\n\n${message}`,
   });
 
-  const mailRes = await fetch('https://api.forwardemail.net/v1/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: 'Basic ' + btoa(env.FE_API_KEY + ':'),
-      'Content-Type': 'application/json',
-    },
-    body: mailBody,
-  });
+  let mailRes: Response;
+  try {
+    mailRes = await fetch('https://api.forwardemail.net/v1/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Basic ' + btoa(env.FE_API_KEY + ':'),
+        'Content-Type': 'application/json',
+      },
+      body: mailBody,
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+    });
+  } catch (err) {
+    // Submission is already recorded in D1 as a backstop.
+    console.error('ForwardEmail fetch failed:', String(err));
+    return redirectTo(CONTACT_ERROR);
+  }
 
   if (!mailRes.ok) {
     const errBody = await mailRes.text();

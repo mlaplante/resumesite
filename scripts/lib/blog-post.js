@@ -7,7 +7,7 @@
 // Everything else — git log gathering, topic selection, dedupe, frontmatter,
 // collision-safe file naming — lives here so the three scripts can't drift.
 
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { writeFileSync, readFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
@@ -63,7 +63,8 @@ export function topicUserPrompt(topic) {
 export function getGitLog(days = DEFAULT_DAYS) {
   try {
     const since = new Date(Date.now() - days * 86_400_000).toISOString().split('T')[0];
-    return execSync(`git log --since="${since}" --oneline --no-merges`, { encoding: 'utf-8' });
+    // execFileSync with an argv array: nothing is ever interpreted by a shell.
+    return execFileSync('git', ['log', `--since=${since}`, '--oneline', '--no-merges'], { encoding: 'utf-8' });
   } catch {
     return '';
   }
