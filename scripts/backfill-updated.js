@@ -24,7 +24,7 @@
  * frontmatter date and its first git commit.
  */
 
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -49,8 +49,12 @@ function parseFrontmatter(content) {
 // changes, ignoring renames and the original import commit.
 function lastContentCommit(file) {
   const rel = relative(REPO_ROOT, file);
-  const log = execSync(
-    `git log --follow --diff-filter=M --pretty=format:%H%x09%ai -- "${rel}"`,
+  // execFileSync with an argv array (and `--` before the path) so a post
+  // filename containing shell metacharacters can't inject a command or be
+  // mistaken for a git option.
+  const log = execFileSync(
+    'git',
+    ['log', '--follow', '--diff-filter=M', '--pretty=format:%H%x09%ai', '--', rel],
     { cwd: REPO_ROOT, encoding: 'utf-8' },
   ).trim();
   if (!log) return null;
