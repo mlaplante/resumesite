@@ -1,7 +1,9 @@
 ---
 import SiteLayout from '../layouts/SiteLayout.astro';
 import { stats } from '../data/resume';
-import { SITE_URL } from '../config';
+import { SITE_URL, CAL_LINK } from '../config';
+
+const bookingUrl = CAL_LINK ? `https://cal.com/${CAL_LINK}` : '';
 
 const services = [
   {
@@ -83,6 +85,15 @@ const professionalServiceSchema = JSON.stringify({
     "https://github.com/mlaplante",
     "https://twitter.com/laplantewebdev",
   ],
+  ...(bookingUrl
+    ? {
+        potentialAction: {
+          "@type": "ReserveAction",
+          name: "Book a consultation call",
+          target: bookingUrl,
+        },
+      }
+    : {}),
 });
 ---
 
@@ -152,7 +163,9 @@ const professionalServiceSchema = JSON.stringify({
         one-size-fits-all checklist.
       </p>
       <div data-aos="fade-up" style="margin-top: 20px;">
-        <a href="/#contact" class="btn btn-custom">Schedule a Consultation</a>
+        {bookingUrl
+          ? <a href="#book" data-scroll class="btn btn-custom">Book a Call</a>
+          : <a href="/#contact" class="btn btn-custom">Schedule a Consultation</a>}
       </div>
     </div>
   </section>
@@ -216,6 +229,27 @@ const professionalServiceSchema = JSON.stringify({
     </div>
   </section>
 
+  <!-- Booking -->
+  {bookingUrl && (
+    <section class="section" id="book">
+      <div class="container">
+        <div class="section-header" data-aos="fade-up">
+          <h2>Book a Call</h2>
+        </div>
+        <p data-aos="fade-up">
+          Grab a time that works for you — a free intro call to talk through
+          your security challenge and see whether we're a fit. No prep needed.
+        </p>
+        <div id="cal-booking" data-cal-link={CAL_LINK} data-aos="fade-up"></div>
+        <p class="booking-fallback" data-aos="fade-up">
+          Calendar not loading?
+          <a href={bookingUrl} rel="noopener">Open the booking page directly</a>
+          or use the <a href="/#contact">contact form</a>.
+        </p>
+      </div>
+    </section>
+  )}
+
   <!-- CTA -->
   <section class="section" id="services-cta">
     <div class="container">
@@ -227,7 +261,8 @@ const professionalServiceSchema = JSON.stringify({
         up? Tell me what you're working on and I'll get back to you.
       </p>
       <div data-aos="fade-up" style="margin-top: 20px;">
-        <a href="/#contact" class="btn btn-custom">Get In Touch</a>
+        {bookingUrl && <a href="#book" data-scroll class="btn btn-custom">Book a Call</a>}
+        <a href="/#contact" class={`btn btn-custom${bookingUrl ? ' btn-ghost' : ''}`}>Get In Touch</a>
       </div>
     </div>
   </section>
@@ -250,9 +285,21 @@ const professionalServiceSchema = JSON.stringify({
     JavaScript Files
   =========================================-->
   <script is:inline src="/js/script.js"></script>
+  {bookingUrl && <script is:inline defer src="/js/cal-embed.js"></script>}
 </SiteLayout>
 
 <style>
+  /* Reserve space so the page doesn't jump while the Cal.com embed loads. */
+  #cal-booking {
+    min-height: 560px;
+    margin-top: 10px;
+  }
+
+  .booking-fallback {
+    font-size: 14px;
+    margin-top: 14px;
+  }
+
   .process-step {
     display: inline-block;
     font-family: 'Roboto Mono', monospace;

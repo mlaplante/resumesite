@@ -13,8 +13,9 @@ A modern, fully Astro-powered personal portfolio and security consulting website
 - **Responsive Design**: Works seamlessly across desktop, tablet, and mobile
 - **Blog with Taxonomy**: Category, tag, and multi-part **series** pages, RSS + JSON feeds, related posts, per-post author bio, desktop + mobile tables of contents, dark mode, in-page reading progress
 - **Full-Archive Blog Search**: Client-side search over a build-time JSON index (`/blog/search.json`) covering every post, not just the current page
-- **Printable Résumé**: `/resume` renders a print-optimized résumé (browser "Save as PDF") from a single shared data module (`src/data/resume.ts`) that also powers the homepage experience/skills/certifications sections — one source of truth, no separate file to maintain
+- **Printable + Downloadable Résumé**: `/resume` renders a print-optimized résumé, and `/resume.pdf` is a true PDF generated at build time (pdfkit + the site's own Poppins fonts) — both driven by a single shared data module (`src/data/resume.ts`) that also powers the homepage experience/skills/certifications sections, so neither can drift from the site
 - **Consulting Services Page**: `/services` lays out the consulting offerings, engagement process, and a `ProfessionalService` structured-data block for the security-consulting side of the business
+- **Book-a-Call Scheduling**: Cal.com inline embed on `/services` (handle configured via `CAL_LINK` in `src/config.ts`; set it to `''` to hide all booking UI), with a CSP-compliant external bootstrap script, dark-mode-aware theming, and link-out fallbacks
 - **AI-Assisted Drafts**: Anthropic / Gemini / GitHub Models integrations for generating blog post drafts
 - **Automated Publishing**: GitHub Actions workflows to draft, promote, and deploy posts
 - **Performance Optimized**: Self-hosted assets, immutable cache headers for hashed bundles, CSS-only effects
@@ -68,7 +69,8 @@ resumesite/
 │       ├── styles/blog.css         # Blog-specific styles
 │       └── utils/
 │           ├── readTime.ts         # Word count / reading time
-│           └── format.ts           # Shared date formatting
+│           ├── format.ts           # Shared date formatting
+│           └── resumePdf.ts        # Build-time /resume.pdf renderer (pdfkit)
 ├── worker/                         # Cloudflare Worker for /api/contact
 │   ├── index.ts                    # Router
 │   ├── api/contact.ts              # Contact form handler (D1 + Turnstile + ForwardEmail)
