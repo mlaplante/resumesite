@@ -52,7 +52,10 @@ import { profile, summary, stats, skills, experience, certifications } from '../
   <main id="main-content" class="resume-page">
     <div class="resume-toolbar">
       <a href="/" class="resume-back">&larr; Back to site</a>
-      <button type="button" id="resume-print" class="resume-print-btn">Download PDF</button>
+      <div class="resume-toolbar-actions">
+        <button type="button" id="resume-print" class="resume-print-btn resume-btn-ghost">Print</button>
+        <a href="/resume.pdf" download="Michael-LaPlante-Resume.pdf" class="resume-print-btn">Download PDF</a>
+      </div>
     </div>
 
     <article class="resume-paper">
@@ -167,6 +170,11 @@ import { profile, summary, stats, skills, experience, certifications } from '../
   }
   .resume-back:hover { opacity: 0.7; }
 
+  .resume-toolbar-actions {
+    display: flex;
+    gap: 10px;
+  }
+
   .resume-print-btn {
     font-family: 'Poppins', sans-serif;
     font-size: 14px;
@@ -178,8 +186,20 @@ import { profile, summary, stats, skills, experience, certifications } from '../
     color: #fff;
     cursor: pointer;
     transition: background 0.2s;
+    text-decoration: none;
+    display: inline-block;
   }
-  .resume-print-btn:hover { background: #1a6da3; }
+  .resume-print-btn:hover { background: #1a6da3; color: #fff; }
+
+  .resume-btn-ghost {
+    background: transparent;
+    color: #2980b9;
+    box-shadow: inset 0 0 0 2px #2980b9;
+  }
+  .resume-btn-ghost:hover {
+    background: rgba(41, 128, 185, 0.1);
+    color: #2980b9;
+  }
 
   /* The résumé "paper" — kept light in both color schemes so it reads like a
      printed document and the on-screen view matches the PDF. */
