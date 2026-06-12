@@ -12,6 +12,11 @@
   "author": "",
   "license": "ISC",
   "type": "module",
+  "overrides": {
+    "yaml-language-server": {
+      "yaml": "^2.8.3"
+    }
+  },
   "dependencies": {
     "@astrojs/rss": "^4.0.18",
     "@astrojs/sitemap": "^3.7.3",
