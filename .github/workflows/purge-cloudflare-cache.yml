@@ -1,4 +1,9 @@
-name: Purge Cloudflare Cache
+# Purges the Cloudflare edge cache after a push (best-effort — skipped when
+# the Cloudflare secrets aren't configured), then verifies the live site
+# (static assets + Worker route) actually responds. The README badge for this
+# workflow therefore doubles as a deploy-status badge: green means the site
+# is up.
+name: Deploy Status
 
 on:
   workflow_dispatch:
@@ -23,15 +28,15 @@ jobs:
       - name: Purge Cloudflare cache
         run: |
           set -euo pipefail
-          # Validate secrets are populated; otherwise curl hits /zones//purge_cache
-          # and Cloudflare returns a confusing 7003 "could not route" error.
-          missing=()
-          [ -n "${CF_ZONE_ID}" ] || missing+=(CLOUDFLARE_ZONE_ID)
-          [ -n "${CF_API_TOKEN}" ] || missing+=(CLOUDFLARE_API_TOKEN)
-          if [ ${#missing[@]} -gt 0 ]; then
-            echo "Missing required repository secret(s): ${missing[*]}" >&2
-            echo "Set them under Settings → Secrets and variables → Actions." >&2
-            exit 1
+          # The purge is best-effort: without the Cloudflare secrets we can't
+          # call the API, but that shouldn't paint the deploy badge red — the
+          # edge cache simply expires on its own TTL instead. (Checking
+          # secrets in a job-level `if:` isn't supported, so skip here.)
+          if [ -z "${CF_ZONE_ID}" ] || [ -z "${CF_API_TOKEN}" ]; then
+            echo "::notice::Cloudflare secrets not configured; skipping cache purge." \
+              "Set CLOUDFLARE_ZONE_ID and CLOUDFLARE_API_TOKEN under" \
+              "Settings → Secrets and variables → Actions to enable automatic purges."
+            exit 0
           fi
           response=$(curl -sS -X POST \
             "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache" \
@@ -45,3 +50,38 @@ jobs:
             echo "Cache purge failed." >&2
             exit 1
           }
+
+  verify:
+    name: Verify site is deployed
+    needs: purge
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check live site
+        run: |
+          set -euo pipefail
+          check() {
+            local desc=$1 url=$2 expected=$3
+            local status attempt
+            for attempt in 1 2 3; do
+              # Identifiable UA so the request is distinguishable in logs and
+              # can be exempted if Cloudflare bot protection challenges it.
+              status=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 \
+                -A 'resumesite-deploy-check (+https://github.com/mlaplante/resumesite)' \
+                "$url" || echo 000)
+              if [ "$status" = "$expected" ]; then
+                echo "OK: $desc ($url -> $status)"
+                return 0
+              fi
+              echo "Attempt $attempt/3: $desc returned $status, expected $expected" >&2
+              [ "$attempt" -lt 3 ] && sleep 10
+            done
+            echo "FAIL: $desc ($url) never returned $expected" >&2
+            return 1
+          }
+          # Static assets served by the Worker's ASSETS binding.
+          check "static site" "https://michaellaplante.com/" 200
+          # GET /api/contact returns 405 from the Worker router itself, so this
+          # proves the Worker is deployed and routing — a Cloudflare error page
+          # or a missing Worker would return 5xx/404 instead.
+          check "worker API route" "https://michaellaplante.com/api/contact" 405

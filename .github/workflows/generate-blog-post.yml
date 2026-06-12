@@ -72,9 +72,11 @@ jobs:
             # Sanitize aggressively (printable ASCII minus shell metacharacters) and cap length.
             RAW_TITLE=$(head -5 "$DRAFT_FILE" | grep '^title:' | sed 's/^title: *"//;s/"$//')
             SAFE_TITLE=$(printf '%s' "$RAW_TITLE" | tr -cd 'A-Za-z0-9 _.,:!?-' | head -c 120)
-            echo "has_draft=true" >> "$GITHUB_OUTPUT"
-            echo "draft_file=$DRAFT_FILE" >> "$GITHUB_OUTPUT"
-            echo "title=$SAFE_TITLE" >> "$GITHUB_OUTPUT"
+            {
+              echo "has_draft=true"
+              echo "draft_file=$DRAFT_FILE"
+              echo "title=$SAFE_TITLE"
+            } >> "$GITHUB_OUTPUT"
           else
             echo "has_draft=false" >> "$GITHUB_OUTPUT"
             echo "No new draft was generated."
