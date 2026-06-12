@@ -56,6 +56,15 @@ jobs:
     needs: purge
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    env:
+      # Probe the Worker's workers.dev URL rather than the custom domain:
+      # the zone's bot protection challenges automated requests from CI
+      # runners with a 403 before they ever reach the Worker, while
+      # workers.dev sits outside the zone and hits the Worker directly.
+      # If the account subdomain differs, set the DEPLOY_CHECK_HOST
+      # repository *variable* (Settings → Secrets and variables → Actions
+      # → Variables) — no secrets required.
+      DEPLOY_CHECK_HOST: ${{ vars.DEPLOY_CHECK_HOST || 'resumesite.laplantewebdevelopment.workers.dev' }}
     steps:
       - name: Check live site
         run: |
@@ -64,8 +73,7 @@ jobs:
             local desc=$1 url=$2 expected=$3
             local status attempt
             for attempt in 1 2 3; do
-              # Identifiable UA so the request is distinguishable in logs and
-              # can be exempted if Cloudflare bot protection challenges it.
+              # Identifiable UA so the probe is distinguishable in logs.
               status=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 \
                 -A 'resumesite-deploy-check (+https://github.com/mlaplante/resumesite)' \
                 "$url" || echo 000)
@@ -80,8 +88,8 @@ jobs:
             return 1
           }
           # Static assets served by the Worker's ASSETS binding.
-          check "static site" "https://michaellaplante.com/" 200
+          check "static site" "https://${DEPLOY_CHECK_HOST}/" 200
           # GET /api/contact returns 405 from the Worker router itself, so this
-          # proves the Worker is deployed and routing — a Cloudflare error page
-          # or a missing Worker would return 5xx/404 instead.
-          check "worker API route" "https://michaellaplante.com/api/contact" 405
+          # proves the Worker is deployed and routing — a missing Worker would
+          # return 404/5xx instead.
+          check "worker API route" "https://${DEPLOY_CHECK_HOST}/api/contact" 405
