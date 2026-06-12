@@ -1,7 +1,8 @@
-# Purges the Cloudflare edge cache after a push, then verifies the live site
+# Purges the Cloudflare edge cache after a push (best-effort — skipped when
+# the Cloudflare secrets aren't configured), then verifies the live site
 # (static assets + Worker route) actually responds. The README badge for this
 # workflow therefore doubles as a deploy-status badge: green means the site
-# is up and serving fresh content.
+# is up.
 name: Deploy Status
 
 on:
@@ -27,15 +28,15 @@ jobs:
       - name: Purge Cloudflare cache
         run: |
           set -euo pipefail
-          # Validate secrets are populated; otherwise curl hits /zones//purge_cache
-          # and Cloudflare returns a confusing 7003 "could not route" error.
-          missing=()
-          [ -n "${CF_ZONE_ID}" ] || missing+=(CLOUDFLARE_ZONE_ID)
-          [ -n "${CF_API_TOKEN}" ] || missing+=(CLOUDFLARE_API_TOKEN)
-          if [ ${#missing[@]} -gt 0 ]; then
-            echo "Missing required repository secret(s): ${missing[*]}" >&2
-            echo "Set them under Settings → Secrets and variables → Actions." >&2
-            exit 1
+          # The purge is best-effort: without the Cloudflare secrets we can't
+          # call the API, but that shouldn't paint the deploy badge red — the
+          # edge cache simply expires on its own TTL instead. (Checking
+          # secrets in a job-level `if:` isn't supported, so skip here.)
+          if [ -z "${CF_ZONE_ID}" ] || [ -z "${CF_API_TOKEN}" ]; then
+            echo "::notice::Cloudflare secrets not configured; skipping cache purge." \
+              "Set CLOUDFLARE_ZONE_ID and CLOUDFLARE_API_TOKEN under" \
+              "Settings → Secrets and variables → Actions to enable automatic purges."
+            exit 0
           fi
           response=$(curl -sS -X POST \
             "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache" \
