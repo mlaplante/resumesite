@@ -15,6 +15,7 @@ A modern, fully Astro-powered personal portfolio and security consulting website
 - **Full-Archive Blog Search**: Client-side search over a build-time JSON index (`/blog/search.json`) covering every post, not just the current page
 - **Printable + Downloadable Résumé**: `/resume` renders a print-optimized résumé, and `/resume.pdf` is a true PDF generated at build time (pdfkit + the site's own Poppins fonts) — both driven by a single shared data module (`src/data/resume.ts`) that also powers the homepage experience/skills/certifications sections, so neither can drift from the site
 - **Consulting Services Page**: `/services` lays out the consulting offerings, engagement process, and a `ProfessionalService` structured-data block for the security-consulting side of the business
+- **Uses Page**: `/uses` catalogs the hardware, software, and tools used day to day
 - **Book-a-Call Scheduling**: Cal.com inline embed on `/services` (handle configured via `CAL_LINK` in `src/config.ts`; set it to `''` to hide all booking UI), with a CSP-compliant external bootstrap script, dark-mode-aware theming, and link-out fallbacks
 - **AI-Assisted Drafts**: Anthropic / Gemini / GitHub Models integrations for generating blog post drafts
 - **Automated Publishing**: GitHub Actions workflows to draft, promote, and deploy posts
@@ -55,13 +56,16 @@ resumesite/
 │   │   └── fonts/                  # Icon and custom fonts
 │   └── src/
 │       ├── components/
+│       │   ├── AuthorBio.astro     # Per-post author bio card
 │       │   ├── BaseHead.astro      # Shared <head> meta/OG/canonical/favicons
 │       │   └── NewsletterSignup.astro
 │       ├── content/
 │       │   ├── posts/              # Published blog posts (Markdown)
 │       │   └── drafts/             # Draft posts (not built)
 │       ├── content.config.ts       # Content collection schema (Zod)
-│       ├── config.ts               # SITE_URL / DEFAULT_OG_IMAGE constants
+│       ├── config.ts               # Site/author/feed constants + CAL_LINK booking handle
+│       ├── data/
+│       │   └── resume.ts           # Single source of truth for résumé + homepage data
 │       ├── layouts/
 │       │   ├── SiteLayout.astro    # Shared layout for main pages
 │       │   └── BlogLayout.astro    # Blog post layout
@@ -70,6 +74,9 @@ resumesite/
 │       └── utils/
 │           ├── readTime.ts         # Word count / reading time
 │           ├── format.ts           # Shared date formatting
+│           ├── posts.ts            # Shared post sorting / querying helpers
+│           ├── schema.ts           # JSON-LD helpers (incl. safe </script> escaping)
+│           ├── slug.ts             # URL-safe slugify shared with the draft scripts
 │           └── resumePdf.ts        # Build-time /resume.pdf renderer (pdfkit)
 ├── worker/                         # Cloudflare Worker for /api/contact
 │   ├── index.ts                    # Router
@@ -79,8 +86,16 @@ resumesite/
 │   ├── lib/blog-post.js            # Shared mode/dedupe/frontmatter logic
 │   ├── generate-post.js            # Anthropic Claude
 │   ├── generate-post-gemini.js     # Google Gemini
-│   └── generate-post-gh-models.js  # GitHub Models
+│   ├── generate-post-gh-models.js  # GitHub Models
+│   └── backfill-updated.js         # Adds `updated:` frontmatter from git history
+├── tests/
+│   ├── worker/contact.test.ts      # Contact-handler integration tests (Workers runtime)
+│   └── lib/                        # Node unit tests (blog-post lib, resume PDF)
+├── githooks/pre-commit             # Optional gitleaks secret scan (git config core.hooksPath githooks)
+├── docs/archive/                   # Historical design/plan documents
+├── vitest.config.ts                # Two-project test config (worker + lib)
 ├── wrangler.jsonc                  # Cloudflare Worker config (D1 binding, assets)
+├── _typos.toml                     # Spell-check exceptions for the typos workflow
 ├── package.json                    # Root npm scripts (delegates to blog-src/)
 └── .github/workflows/
     ├── ci.yml                      # Tests, typecheck, full Astro build
@@ -110,6 +125,9 @@ git clone https://github.com/mlaplante/resumesite.git
 cd resumesite
 npm install
 cd blog-src && npm install && cd ..
+
+# Optional: run the gitleaks secret scan before every commit
+git config core.hooksPath githooks
 ```
 
 ### Development
@@ -158,6 +176,7 @@ The blog lives at [michaellaplante.com/blog](https://michaellaplante.com/blog).
 | `npm run preview`               | Preview the built site locally |
 | `npm run typecheck`             | Run `astro check` for TS / content-schema validation |
 | `npm test`                      | Run Worker integration tests + shared-lib unit tests |
+| `npm run test:watch`            | Run the test suite in watch mode |
 | `npm run worker:dev`            | Run Wrangler dev (Worker + assets together) |
 | `npm run worker:deploy`         | Deploy the Worker + assets to Cloudflare |
 | `npm run blog:draft:git`        | Generate a draft from recent git history (Anthropic) |
@@ -228,10 +247,10 @@ Two vitest projects:
   `@cloudflare/vitest-pool-workers`, with a Miniflare-backed D1. Covers the
   contact handler end-to-end: origin enforcement, validation, honeypot,
   Turnstile, rate-limit, upstream-failure path, OPTIONS / 405 routing.
-- **lib** — plain Node project. Covers the shared blog-post lib: title
+- **lib** — plain Node project. Covers the shared blog-post lib (title
   extraction & validation, lexical + semantic dedupe, frontmatter rendering,
   excerpt extraction, embedding cache behaviour, and `pickUniqueTopic`
-  retry / fallback semantics.
+  retry / fallback semantics) plus the build-time résumé PDF renderer.
 
 ## Deployment
 
