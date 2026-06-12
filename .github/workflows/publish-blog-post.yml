@@ -27,7 +27,9 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      # Pinned to a full commit SHA so a moved/compromised tag can't inject
+      # code into a workflow that holds `contents: write`.
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           ref: master
 
