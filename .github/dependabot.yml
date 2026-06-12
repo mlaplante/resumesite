@@ -11,14 +11,18 @@ updates:
       day: monday
     open-pull-requests-limit: 5
     groups:
-      # All bumps (patch/minor/major) land as one PR so every package is
-      # kept at its latest version with minimal review noise.
-      all-updates:
+      # Patch/minor bumps land as one PR to cut review noise; majors are
+      # grouped into their own PR so breaking changes stay visible.
+      minor-and-patch:
         patterns:
           - "*"
         update-types:
           - minor
           - patch
+      majors:
+        patterns:
+          - "*"
+        update-types:
           - major
 
   # Astro site package.
@@ -29,12 +33,16 @@ updates:
       day: monday
     open-pull-requests-limit: 5
     groups:
-      all-updates:
+      minor-and-patch:
         patterns:
           - "*"
         update-types:
           - minor
           - patch
+      majors:
+        patterns:
+          - "*"
+        update-types:
           - major
 
   # Workflow actions (pinned to commit SHAs).
