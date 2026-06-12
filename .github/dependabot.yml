@@ -1,0 +1,40 @@
+# Automated dependency update PRs. Covers both npm package roots and the
+# GitHub Actions workflows (Dependabot updates SHA-pinned actions in place,
+# keeping the trailing `# vX.Y.Z` comment in sync).
+version: 2
+updates:
+  # Root package: worker tooling, vitest, AI blog-post generator SDK.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      # Patch/minor bumps land as one PR to cut review noise; majors stay
+      # separate so breaking changes get individual attention.
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+
+  # Astro site package.
+  - package-ecosystem: npm
+    directory: /blog-src
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+
+  # Workflow actions (pinned to commit SHAs).
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
