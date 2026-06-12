@@ -3,7 +3,7 @@ title: "Automating DNS Service Discovery and Load Balancing With CoreDNS and eBP
 date: 2026-05-28
 category: "thought-leadership"
 tags: []
-excerpt: "In the dynamic world of modern infrastructure, services are constantly being spun up, scaled, and terminated. Manually updating DNS records or load ba..."
+excerpt: "In the dynamic world of modern infrastructure, services are constantly being spun up, scaled, and terminated. Manually updating DNS records or load..."
 ---
 
 # Automating DNS Service Discovery and Load Balancing With CoreDNS and eBPF

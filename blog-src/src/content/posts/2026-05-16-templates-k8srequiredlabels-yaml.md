@@ -3,7 +3,7 @@ title: "templates/k8srequiredlabels.yaml"
 date: 2026-05-16
 category: "thought-leadership"
 tags: []
-excerpt: "In the dynamic world of Kubernetes, ensuring security, compliance, and operational best practices isn't just a good idea – it's a necessity. As cluste..."
+excerpt: "In the dynamic world of Kubernetes, ensuring security, compliance, and operational best practices isn't just a good idea – it's a necessity. As..."
 ---
 
 ## Automating Kubernetes Policy Enforcement with OPA Gatekeeper and GitOps

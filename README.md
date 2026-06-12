@@ -83,9 +83,16 @@ resumesite/
 ├── wrangler.jsonc                  # Cloudflare Worker config (D1 binding, assets)
 ├── package.json                    # Root npm scripts (delegates to blog-src/)
 └── .github/workflows/
+    ├── ci.yml                      # Tests, typecheck, full Astro build
+    ├── codeql.yml                  # CodeQL static analysis
+    ├── dependabot-auto-merge.yml   # Auto-merge minor/patch dependency PRs
     ├── generate-blog-post.yml      # AI draft generation
+    ├── gitleaks.yml                # Secret scanning
+    ├── link-check.yml              # Weekly dead-link sweep of blog content
+    ├── lint-workflows.yml          # actionlint + zizmor on workflow YAML
     ├── publish-blog-post.yml       # Draft-to-post promotion
-    └── purge-cloudflare-cache.yml  # CDN cache invalidation
+    ├── purge-cloudflare-cache.yml  # CDN cache invalidation
+    └── typos.yml                   # Spell check (config: _typos.toml)
 ```
 
 ## Getting Started
@@ -239,9 +246,18 @@ The site deploys to **Cloudflare** as a Worker plus static assets:
 
 | Workflow                       | Trigger              | Purpose |
 |--------------------------------|----------------------|---------|
+| `ci.yml`                       | PRs / push to master | Worker + lib tests, Astro typecheck, full production build |
+| `codeql.yml`                   | PRs / push / weekly  | CodeQL static analysis of the Worker and scripts |
+| `dependabot-auto-merge.yml`    | Dependabot PRs       | Flag minor/patch dependency PRs for auto-merge |
 | `generate-blog-post.yml`       | Manual / scheduled   | Generate AI blog drafts via Gemini (opens a PR) |
+| `gitleaks.yml`                 | PRs / push to master | Secret scanning over the full git history |
+| `link-check.yml`               | Weekly / manual      | Dead-link sweep of blog content; files an issue with the report |
+| `lint-workflows.yml`           | Workflow changes     | actionlint + zizmor security audit of workflow YAML |
 | `publish-blog-post.yml`        | PR merge (label-gated) | Move drafts → posts on merge |
 | `purge-cloudflare-cache.yml`   | Post-push to master  | Invalidate Cloudflare CDN cache |
+| `typos.yml`                    | PRs / push to master | Spell check; exceptions live in `_typos.toml` |
+
+`dependabot-auto-merge.yml` only *flags* a PR — GitHub completes the merge once every required check passes. Enable **Allow auto-merge** in the repository settings and add branch protection on `master` requiring the CI checks, or the merge will happen without waiting for them.
 
 ### Custom Domain
 

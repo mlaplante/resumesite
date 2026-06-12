@@ -348,12 +348,17 @@ export function stripTitleDirective(content) {
 }
 
 export function makeExcerpt(content) {
-  return stripTitleDirective(content)
+  const text = stripTitleDirective(content)
     .replace(/^#.+\n+/, '')
     .replace(/[#*`\[\]]/g, '')
-    .trim()
-    .slice(0, 150)
-    .trim() + '...';
+    .trim();
+  let sliced = text.slice(0, 150);
+  // If the 150-char cut lands mid-word, back up to the last word boundary so
+  // the ellipsis never splits a word (which also trips the CI spell check).
+  if (/\S/.test(text[150] ?? '') && /\s\S+$/.test(sliced)) {
+    sliced = sliced.replace(/\s+\S+$/, '');
+  }
+  return sliced.trim() + '...';
 }
 
 // Optionally groups a post into a multi-part series. When `series` is supplied

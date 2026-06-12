@@ -3,7 +3,7 @@ title: "Automating Zero-Downtime Database Migrations with GitOps and Kubernetes"
 date: 2026-04-20
 category: "thought-leadership"
 tags: []
-excerpt: "Database migrations are a critical—but often nerve-wracking—part of deploying modern applications. Nothing kills momentum like a botched migration tha..."
+excerpt: "Database migrations are a critical—but often nerve-wracking—part of deploying modern applications. Nothing kills momentum like a botched migration..."
 ---
 
 # Automating Zero-Downtime Database Migrations with GitOps and Kubernetes

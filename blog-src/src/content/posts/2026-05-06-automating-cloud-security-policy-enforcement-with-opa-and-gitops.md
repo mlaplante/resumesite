@@ -169,7 +169,7 @@ Here's how we can integrate them:
 1.  **Start Small with Critical Policies:** Don't try to automate everything at once. Identify your top 3-5 critical security policies (e.g., S3 encryption, public access for databases, allowed instance types) and implement OPA for those first.
 2.  **Define Your Policy Input Schema:** Understand the structure of the data OPA will evaluate (Terraform plan JSON, CloudFormation template, Kubernetes manifest). This helps in writing precise Rego policies.
 3.  **Integrate Early in the Lifecycle:** The earlier you catch policy violations, the cheaper they are to fix. Prioritize pre-commit hooks and CI/CD pipeline integration.
-4.  **Leverage OPA Tooling:** Explore `conftest` (for IaC policy validation), OPA Gatekeeper (for Kubernetes admission control), and the OPA Playgorund for testing Rego policies.
+4.  **Leverage OPA Tooling:** Explore `conftest` (for IaC policy validation), OPA Gatekeeper (for Kubernetes admission control), and the OPA Playground for testing Rego policies.
 5.  **Educate Your Teams:** Policy-as-code is a cultural shift. Educate your development and operations teams on how OPA works, how to write compliant code, and how to interpret OPA feedback.
 6.  **Version Control Your Policies:** Treat your Rego policies like any other codebase. Store them in Git, review them via pull requests, and version them. This is the "Git" part of your policy enforcement GitOps.
 

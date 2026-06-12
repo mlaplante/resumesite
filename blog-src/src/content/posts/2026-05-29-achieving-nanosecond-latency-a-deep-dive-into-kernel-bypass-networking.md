@@ -3,7 +3,7 @@ title: "Achieving Nanosecond Latency: A Deep Dive into Kernel-Bypass Networking"
 date: 2026-05-29
 category: "thought-leadership"
 tags: []
-excerpt: "In the world of high-frequency trading, real-time analytics, and high-performance computing, every microsecond, or even nanosecond, counts. Traditiona..."
+excerpt: "In the world of high-frequency trading, real-time analytics, and high-performance computing, every microsecond, or even nanosecond, counts..."
 ---
 
 # Achieving Nanosecond Latency: A Deep Dive into Kernel-Bypass Networking

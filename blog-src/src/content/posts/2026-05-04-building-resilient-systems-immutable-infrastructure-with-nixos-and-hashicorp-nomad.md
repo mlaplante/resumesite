@@ -3,7 +3,7 @@ title: "Building Resilient Systems: Immutable Infrastructure with NixOS and Hash
 date: 2026-05-04
 category: "thought-leadership"
 tags: []
-excerpt: "In the world of modern infrastructure, the pursuit of reliability, predictability, and efficiency is constant. One paradigm that has gained significan..."
+excerpt: "In the world of modern infrastructure, the pursuit of reliability, predictability, and efficiency is constant. One paradigm that has gained..."
 ---
 
 # Building Resilient Systems: Immutable Infrastructure with NixOS and HashiCorp Nomad

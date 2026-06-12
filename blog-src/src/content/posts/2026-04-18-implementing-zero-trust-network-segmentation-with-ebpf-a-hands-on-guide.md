@@ -3,7 +3,7 @@ title: "Implementing Zero Trust Network Segmentation with eBPF: A Hands-On Guide
 date: 2026-04-18
 category: "thought-leadership"
 tags: []
-excerpt: "Zero Trust is more than a buzzword—it's a mandate for modern security. As network boundaries blur and attack surfaces expand, traditional perimeter-ba..."
+excerpt: "Zero Trust is more than a buzzword—it's a mandate for modern security. As network boundaries blur and attack surfaces expand, traditional..."
 ---
 
 # Implementing Zero Trust Network Segmentation with eBPF: A Hands-On Guide
