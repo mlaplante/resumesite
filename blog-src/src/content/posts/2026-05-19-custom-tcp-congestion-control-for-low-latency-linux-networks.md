@@ -3,7 +3,7 @@ title: "Custom TCP Congestion Control for Low-Latency Linux Networks"
 date: 2026-05-19
 category: "thought-leadership"
 tags: []
-excerpt: "Network latency is a critical factor in the performance of modern applications, from high-frequency trading platforms to real-time communication syste..."
+excerpt: "Network latency is a critical factor in the performance of modern applications, from high-frequency trading platforms to real-time communication..."
 ---
 
 # Optimizing Network Latency with Custom TCP Congestion Control Algorithms in Linux

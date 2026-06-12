@@ -1,0 +1,39 @@
+name: Dependabot Auto-Merge
+
+# Flags Dependabot's grouped minor/patch PRs for auto-merge. GitHub only
+# completes the merge once every required check on the PR passes, so this
+# relies on branch protection requiring the CI workflow (and "Allow
+# auto-merge" being enabled in the repository settings). Major-version PRs
+# are left for human review.
+
+on: pull_request
+
+permissions: {}
+
+jobs:
+  auto-merge:
+    # `user.login` (not `github.actor`) so a human re-triggering the workflow
+    # on a Dependabot PR can't be confused for Dependabot itself.
+    if: github.event.pull_request.user.login == 'dependabot[bot]' && github.repository == 'mlaplante/resumesite'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        # Pinned to a full commit SHA so a moved/compromised tag can't inject
+        # code into a workflow that holds `contents: write`.
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Enable auto-merge for minor/patch updates
+        # For grouped PRs, `update-type` reports the highest bump in the
+        # group, so a group containing any major update is skipped.
+        if: steps.metadata.outputs.update-type == 'version-update:semver-minor' || steps.metadata.outputs.update-type == 'version-update:semver-patch'
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh pr merge --auto --squash "$PR_URL"

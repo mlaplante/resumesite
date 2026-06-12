@@ -115,6 +115,11 @@ describe('makeExcerpt', () => {
     const body = 'TITLE: Foo Bar Baz Qux\n\n# Foo Bar Baz Qux\n\nReal body content here.';
     expect(makeExcerpt(body)).toBe('Real body content here....');
   });
+  it('never cuts mid-word at the 150-char limit', () => {
+    const body = '# Title\n\n' + 'supercalifragilistic '.repeat(20);
+    const ex = makeExcerpt(body);
+    expect(ex.endsWith('supercalifragilistic...')).toBe(true);
+  });
   it('strips common markdown punctuation', () => {
     const body = '# Title\n\n**Bold** and `code` and [link](http://x) text';
     expect(makeExcerpt(body)).not.toContain('**');

@@ -1,0 +1,10 @@
+# zizmor configuration — see .github/workflows/lint-workflows.yml.
+
+rules:
+  # These two workflows push commits/branches back to the repo, so the
+  # checkout step must keep its credentials. Every other workflow sets
+  # `persist-credentials: false`.
+  artipacked:
+    ignore:
+      - generate-blog-post.yml
+      - publish-blog-post.yml

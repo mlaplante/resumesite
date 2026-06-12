@@ -1,0 +1,58 @@
+name: Link Check
+
+# Blog posts accumulate dead external links over time (and an AI draft
+# generator occasionally invents one). Check weekly and file an issue with
+# the report rather than failing a PR over someone else's outage.
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lychee:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      # Pinned to a full commit SHA so a moved/compromised tag can't inject
+      # code into the workflow.
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      - name: Check links in blog content
+        uses: lycheeverse/lychee-action@8646ba30535128ac92d33dfc9133794bfdd9b411 # v2.8.0
+        with:
+          # http(s) only: relative links resolve to site routes, not files on
+          # disk, so checking them here would only produce false positives.
+          # 429 is accepted — rate-limited is not broken. LinkedIn and X
+          # block bots outright, so they can't be checked meaningfully.
+          args: >-
+            --no-progress
+            --scheme https --scheme http
+            --accept '100..=103,200..=299,429'
+            --exclude 'linkedin\.com'
+            --exclude '(twitter|x)\.com'
+            'blog-src/src/content/**/*.md'
+            README.md
+          output: lychee-report.md
+          fail: true
+
+      - name: File or update the broken-links issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title="Link check: broken links in blog content"
+          existing=$(gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body-file lychee-report.md
+          else
+            gh issue create --title "$title" --body-file lychee-report.md
+          fi

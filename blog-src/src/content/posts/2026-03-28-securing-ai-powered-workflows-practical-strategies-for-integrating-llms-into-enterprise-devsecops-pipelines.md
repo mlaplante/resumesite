@@ -3,7 +3,7 @@ title: "Securing AI-Powered Workflows: Practical Strategies for Integrating LLMs
 date: 2026-03-28
 category: "thought-leadership"
 tags: []
-excerpt: "It’s no secret that AI-driven tools like Large Language Models (LLMs) are reshaping enterprise workflows. From automated code reviews to advanced thre..."
+excerpt: "It’s no secret that AI-driven tools like Large Language Models (LLMs) are reshaping enterprise workflows. From automated code reviews to advanced..."
 ---
 
 # Securing AI-Powered Workflows: Practical Strategies for Integrating LLMs into Enterprise DevSecOps Pipelines

@@ -3,7 +3,7 @@ title: "Leveraging AI-Powered Threat Detection to Secure Multi-Cloud Environment
 date: 2026-04-03
 category: "thought-leadership"
 tags: []
-excerpt: "Multi-cloud environments are here to stay. Organizations are embracing the agility and resilience of using multiple cloud providers, but with that fle..."
+excerpt: "Multi-cloud environments are here to stay. Organizations are embracing the agility and resilience of using multiple cloud providers, but with that..."
 ---
 
 # Leveraging AI-Powered Threat Detection to Secure Multi-Cloud Environments

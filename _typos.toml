@@ -1,0 +1,18 @@
+# Spell-check configuration for crate-ci/typos, run in CI by
+# .github/workflows/typos.yml.
+
+[files]
+extend-exclude = [
+  "package-lock.json",
+  "blog-src/package-lock.json",
+]
+
+[default.extend-words]
+# Brand names, acronyms, and accepted variants the default dictionary flags.
+aks = "aks"                  # Azure Kubernetes Service
+counterfit = "counterfit"    # Microsoft Counterfit (AI security tool)
+hashi = "hashi"              # HashiCorp
+hav = "hav"                  # hardware-assisted virtualization
+shure = "shure"              # Shure SM7B microphone
+sie = "sie"                  # SIEM/SIEMs tokenizes as SIE + Ms
+unparseable = "unparseable"  # valid variant of "unparsable"
