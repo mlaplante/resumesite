@@ -29,9 +29,19 @@ jobs:
         with:
           node-version: 22
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            blog-src/package-lock.json
 
       - name: Install dependencies
         run: npm ci
+
+      # The lib tests import Astro-side modules (blog-src/src/utils), which
+      # need blog-src's node_modules for both their imports (pdfkit, wawoff2)
+      # and the tsconfig extends chain (astro/tsconfigs/strict).
+      - name: Install site dependencies
+        run: npm ci
+        working-directory: blog-src
 
       # Worker integration tests (real Workers runtime + Miniflare D1) and
       # shared-lib unit tests.
