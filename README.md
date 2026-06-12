@@ -1,6 +1,6 @@
 # Michael LaPlante - Personal Portfolio & Resume Website
 
-[![Cloudflare Cache Purge](https://github.com/mlaplante/resumesite/actions/workflows/purge-cloudflare-cache.yml/badge.svg?branch=master)](https://github.com/mlaplante/resumesite/actions/workflows/purge-cloudflare-cache.yml)
+[![Deploy Status](https://github.com/mlaplante/resumesite/actions/workflows/purge-cloudflare-cache.yml/badge.svg?branch=master)](https://github.com/mlaplante/resumesite/actions/workflows/purge-cloudflare-cache.yml)
 
 A modern, fully Astro-powered personal portfolio and security consulting website for Michael LaPlante. The entire site (portfolio + blog) is built as a single Astro 6 project, served from Cloudflare Workers with a D1-backed contact form, Turnstile bot challenge, and ForwardEmail delivery. Blog drafts are AI-assisted via Anthropic Claude / Google Gemini / GitHub Models, gated behind human review.
 
@@ -91,7 +91,7 @@ resumesite/
     ├── link-check.yml              # Weekly dead-link sweep of blog content
     ├── lint-workflows.yml          # actionlint + zizmor on workflow YAML
     ├── publish-blog-post.yml       # Draft-to-post promotion
-    ├── purge-cloudflare-cache.yml  # CDN cache invalidation
+    ├── purge-cloudflare-cache.yml  # CDN cache invalidation + live-site deploy check
     └── typos.yml                   # Spell check (config: _typos.toml)
 ```
 
@@ -240,7 +240,7 @@ The site deploys to **Cloudflare** as a Worker plus static assets:
 1. Build emits the static site into `dist/` (configured via `astro.config.mjs`)
 2. `wrangler deploy` uploads the Worker (`worker/index.ts`) and the assets directory together
 3. The Worker handles `/api/contact`; everything else is served from the bound `ASSETS` fetcher
-4. The `purge-cloudflare-cache.yml` workflow fires on pushes to `master` to invalidate the edge cache
+4. The `purge-cloudflare-cache.yml` workflow fires on pushes to `master` to invalidate the edge cache, then verifies the live site and Worker route respond — its README badge doubles as a deploy-status badge
 
 ### GitHub Actions Workflows
 
@@ -254,7 +254,7 @@ The site deploys to **Cloudflare** as a Worker plus static assets:
 | `link-check.yml`               | Weekly / manual      | Dead-link sweep of blog content; files an issue with the report |
 | `lint-workflows.yml`           | Workflow changes     | actionlint + zizmor security audit of workflow YAML |
 | `publish-blog-post.yml`        | PR merge (label-gated) | Move drafts → posts on merge |
-| `purge-cloudflare-cache.yml`   | Post-push to master  | Invalidate Cloudflare CDN cache |
+| `purge-cloudflare-cache.yml`   | Post-push to master  | Invalidate Cloudflare CDN cache, then verify the live site + Worker respond (drives the deploy-status badge) |
 | `typos.yml`                    | PRs / push to master | Spell check; exceptions live in `_typos.toml` |
 
 `dependabot-auto-merge.yml` only *flags* a PR — GitHub completes the merge once every required check passes. Enable **Allow auto-merge** in the repository settings and add branch protection on `master` requiring the CI checks, or the merge will happen without waiting for them.
