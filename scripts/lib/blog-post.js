@@ -15,7 +15,6 @@ import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
 
 const here = dirname(fileURLToPath(import.meta.url));
-export const DRAFTS_DIR = join(here, '..', '..', 'blog-src', 'src', 'content', 'drafts');
 export const POSTS_DIR = join(here, '..', '..', 'blog-src', 'src', 'content', 'posts');
 const EMBEDDING_CACHE_PATH = join(here, '..', '.embeddings-cache.json');
 
@@ -74,9 +73,8 @@ export function getGitLog(days = DEFAULT_DAYS) {
 // shape than `getExistingPostTitles` so semantic comparisons can use the
 // excerpt as well as the title.
 export function getExistingPosts() {
-  const dirs = [POSTS_DIR, DRAFTS_DIR].filter(existsSync);
-  if (dirs.length === 0) return [];
-  const files = dirs.flatMap(d => readdirSync(d).map(f => join(d, f)));
+  if (!existsSync(POSTS_DIR)) return [];
+  const files = readdirSync(POSTS_DIR).map(f => join(POSTS_DIR, f));
   return files
     .filter(f => f.endsWith('.md'))
     .map(f => {
@@ -379,13 +377,13 @@ ${seriesLines}excerpt: "${esc(excerpt)}"
 ---`;
 }
 
-export function writeDraftCollisionSafe({ slug, date, content }) {
-  mkdirSync(DRAFTS_DIR, { recursive: true });
+export function writePostCollisionSafe({ slug, date, content }) {
+  mkdirSync(POSTS_DIR, { recursive: true });
   let filename = `${date}-${slug}.md`;
-  let filepath = join(DRAFTS_DIR, filename);
-  for (let n = 2; existsSync(filepath) || existsSync(join(POSTS_DIR, filename)); n++) {
+  let filepath = join(POSTS_DIR, filename);
+  for (let n = 2; existsSync(filepath); n++) {
     filename = `${date}-${slug}-${n}.md`;
-    filepath = join(DRAFTS_DIR, filename);
+    filepath = join(POSTS_DIR, filename);
   }
   writeFileSync(filepath, content);
   return { filename, filepath };
@@ -487,7 +485,7 @@ export async function runGenerator({ argv, providerName, generate, embed, suppor
   const frontmatter = buildFrontmatter({ title, date, category, excerpt });
   const fullPost = `${frontmatter}\n\n${body}`;
 
-  const { filename, filepath } = writeDraftCollisionSafe({ slug, date, content: fullPost });
-  console.log(`Draft saved: blog-src/src/content/drafts/${filename}`);
+  const { filename, filepath } = writePostCollisionSafe({ slug, date, content: fullPost });
+  console.log(`Post saved: blog-src/src/content/posts/${filename}`);
   return { filename, filepath, title };
 }
