@@ -105,7 +105,6 @@ resumesite/
     ├── gitleaks.yml                # Secret scanning
     ├── link-check.yml              # Weekly dead-link sweep of blog content
     ├── lint-workflows.yml          # actionlint + zizmor on workflow YAML
-    ├── publish-blog-post.yml       # Draft-to-post promotion
     ├── purge-cloudflare-cache.yml  # CDN cache invalidation + live-site deploy check
     └── typos.yml                   # Spell check (config: _typos.toml)
 ```
@@ -268,11 +267,10 @@ The site deploys to **Cloudflare** as a Worker plus static assets:
 | `ci.yml`                       | PRs / push to master | Worker + lib tests, Astro typecheck, full production build |
 | `codeql.yml`                   | PRs / push / weekly  | CodeQL static analysis of the Worker and scripts |
 | `dependabot-auto-merge.yml`    | Dependabot PRs       | Flag minor/patch dependency PRs for auto-merge |
-| `generate-blog-post.yml`       | Manual / scheduled   | Generate AI blog drafts via Gemini (opens a PR) |
+| `generate-blog-post.yml`       | Manual / scheduled   | Generate an AI blog post via Gemini and open a PR for review; merging the PR publishes it |
 | `gitleaks.yml`                 | PRs / push to master | Secret scanning over the full git history |
 | `link-check.yml`               | Weekly / manual      | Dead-link sweep of blog content; files an issue with the report |
 | `lint-workflows.yml`           | Workflow changes     | actionlint + zizmor security audit of workflow YAML |
-| `publish-blog-post.yml`        | PR merge (label-gated) | Move drafts → posts on merge |
 | `purge-cloudflare-cache.yml`   | Post-push to master  | Verify the live site + Worker respond (drives the deploy-status badge); also purges the CDN cache when the Cloudflare secrets are set |
 | `typos.yml`                    | PRs / push to master | Spell check; exceptions live in `_typos.toml` |
 
