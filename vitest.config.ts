@@ -43,6 +43,16 @@ export default defineConfig({
           environment: 'node',
         },
       },
+      {
+        // Site-level checks: content frontmatter validation (always runs) and
+        // production build-output smoke tests (self-skip when dist/ is absent,
+        // so they only assert in the CI build job that runs `npm run build`).
+        test: {
+          name: 'site',
+          include: ['tests/site/**/*.test.ts'],
+          environment: 'node',
+        },
+      },
     ],
   },
 });
