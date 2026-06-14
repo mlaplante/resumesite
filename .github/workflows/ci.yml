@@ -75,3 +75,12 @@ jobs:
       # and runs the PurgeCSS pass.
       - name: Build site
         run: npm run build
+
+      # Root tooling (vitest) for the build-output smoke tests below.
+      - name: Install root dependencies
+        run: npm ci
+
+      # Smoke-test the freshly built dist/: required routes/endpoints exist,
+      # OG cards and the PDF résumé rendered, search index is populated.
+      - name: Smoke-test build output
+        run: npx vitest run --project site
