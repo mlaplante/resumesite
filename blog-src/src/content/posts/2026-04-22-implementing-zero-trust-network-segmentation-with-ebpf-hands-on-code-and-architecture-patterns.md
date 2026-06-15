@@ -189,5 +189,5 @@ Zero Trust is a journey, not a checkbox. eBPF gives engineers powerful tools for
 
 **Further Reading:**
 - [Cilium: eBPF-powered networking and security](https://cilium.io/)
-- [eBPF documentation](https://docs.cilium.io/en/latest/ebpf/)
+- [eBPF.io documentation](https://ebpf.io/)
 - [Zero Trust Architecture (NIST SP 800-207)](https://csrc.nist.gov/publications/detail/sp/800-207/final)
