@@ -64,7 +64,7 @@ resource "aws_s3_bucket" "my_bucket" {
 }
 ```
 
-A static analysis tool like [Checkov](https://www.checkov.io/) or [Terrascan](https://www.accurato.io/terrascan/) can easily flag the `acl = "public-read"` as a high-severity misconfiguration.
+A static analysis tool like [Checkov](https://www.checkov.io/) or [Terrascan](https://github.com/tenable/terrascan) can easily flag the `acl = "public-read"` as a high-severity misconfiguration.
 
 **Checkov output example:**
 

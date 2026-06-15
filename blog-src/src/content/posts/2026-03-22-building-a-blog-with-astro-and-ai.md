@@ -82,4 +82,4 @@ The workflow is intentionally semi-automated: AI generates drafts, but nothing g
 
 **AI-assisted development changes the economics of side projects.** This entire blog — architecture design, implementation, styling, dark mode, content pipeline — came together in one session. The cost of adding features to personal projects has dropped dramatically.
 
-The blog is live at [/blog](/blog). More posts to come.
+The blog is live at `/blog`. More posts to come.

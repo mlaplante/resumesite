@@ -6,7 +6,7 @@ tags: ["claude-code", "git", "security", "developer-tools", "gitleaks"]
 excerpt: "How I track my Claude Code configuration with git, sync it across multiple laptops, and use gitleaks to prevent credentials from ever hitting the remote."
 ---
 
-If you use [Claude Code](https://claude.ai/code) across multiple machines, you've probably noticed the `~/.claude` directory quietly accumulating settings, hooks, skills, and plugin configs. Lose that directory and you're rebuilding your workflow from scratch.
+If you use Claude Code across multiple machines, you've probably noticed the `~/.claude` directory quietly accumulating settings, hooks, skills, and plugin configs. Lose that directory and you're rebuilding your workflow from scratch.
 
 Here's how I version-control mine with git, keep it synced across machines, and make sure secrets never leak into the repo.
 

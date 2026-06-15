@@ -161,7 +161,7 @@ aws secretsmanager update-secret \
 
 To ensure your workloads pick up the rotated secret, consider:
 
-- Using Kubernetes deployment strategies that trigger pod restarts on secret changes (e.g., [hashing secrets into pod annotations](https://github.com/bitnami-labs/sealed-secrets/issues/106)).
+- Using Kubernetes deployment strategies that trigger pod restarts on secret changes (e.g., hashing secrets into pod annotations or using tools like Reloader).
 - Automating rollouts with GitOps tools or hooks.
 
 Example: Annotate your deployment with a hash of the secret:
