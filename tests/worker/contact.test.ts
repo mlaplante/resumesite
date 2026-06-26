@@ -145,6 +145,51 @@ describe('contact form: origin enforcement', () => {
 });
 
 describe('contact form: input validation', () => {
+  it('rejects unsupported content types before parsing the body', async () => {
+    stubUpstreams();
+    const ctx = createExecutionContext();
+    const res = await worker.fetch(
+      new Request(`${SITE}/api/contact`, {
+        method: 'POST',
+        headers: {
+          Origin: SITE,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: 'Test User' }),
+      }),
+      env,
+      ctx,
+    );
+    await waitOnExecutionContext(ctx);
+    expect(res.status).toBe(415);
+    expect(res.headers.get('X-Content-Type-Options')).toBe('nosniff');
+  });
+
+  it('rejects oversized form posts before parsing the body', async () => {
+    stubUpstreams();
+    const body = new FormData();
+    body.set('name', 'Test User');
+    body.set('email', 'test@example.com');
+    body.set('message', 'x'.repeat(40 * 1024));
+    body.set('cf-turnstile-response', 'valid-token');
+
+    const ctx = createExecutionContext();
+    const res = await worker.fetch(
+      new Request(`${SITE}/api/contact`, {
+        method: 'POST',
+        headers: {
+          Origin: SITE,
+          'Content-Length': String(40 * 1024),
+        },
+        body,
+      }),
+      env,
+      ctx,
+    );
+    await waitOnExecutionContext(ctx);
+    expect(res.status).toBe(413);
+  });
+
   it('redirects to /contact-error/ when name is missing', async () => {
     stubUpstreams();
     const ctx = createExecutionContext();

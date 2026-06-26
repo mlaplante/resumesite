@@ -12,6 +12,8 @@ export interface Env {
 const ALLOW_HEADERS: HeadersInit = {
   Allow: 'POST, OPTIONS',
   'Cache-Control': 'no-store',
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
 };
 
 export default {

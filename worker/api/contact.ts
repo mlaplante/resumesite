@@ -10,6 +10,7 @@ const RETENTION_MS = 90 * 86_400_000;
 const MAX_NAME_LEN = 200;
 const MAX_EMAIL_LEN = 200;
 const MAX_MESSAGE_LEN = 5000;
+const MAX_FORM_BYTES = 32 * 1024;
 // Cap time spent waiting on Turnstile / ForwardEmail so a hung upstream
 // can't stall the request until the platform kills it.
 const UPSTREAM_TIMEOUT_MS = 10_000;
@@ -55,6 +56,20 @@ export async function handleContact(request: Request, env: Env, ctx: ExecutionCo
   if (origin !== url.origin) {
     console.warn('contact: rejected on origin mismatch', { origin, expected: url.origin });
     return plain(403, 'Forbidden');
+  }
+
+  const contentType = request.headers.get('Content-Type') ?? '';
+  if (
+    !contentType.startsWith('application/x-www-form-urlencoded') &&
+    !contentType.startsWith('multipart/form-data')
+  ) {
+    return plain(415, 'Unsupported media type');
+  }
+
+  const contentLength = Number(request.headers.get('Content-Length') ?? '0');
+  if (contentLength > MAX_FORM_BYTES) {
+    console.warn('contact: rejected on body size', { contentLength, max: MAX_FORM_BYTES });
+    return plain(413, 'Payload too large');
   }
 
   let form: FormData;
