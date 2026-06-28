@@ -30,13 +30,36 @@ const PICK_TOPIC_MAX_ATTEMPTS = 4;
 export const SYSTEM_PROMPT =
   `You are a skilled technical writer for Michael LaPlante's blog. Michael is an SVP of Information Security and Operations with 15+ years of experience. Write engaging, practical posts that share real insight. Use a professional but approachable tone. Include concrete examples and actionable takeaways. Focus on technical deep dives with meaningful code snippets, configuration examples, and hands-on engineering detail. Avoid making AI or machine learning the primary topic — keep the emphasis on code, infrastructure, and practical engineering.`;
 
+// --- Temporary content focus (requested 2026-06-28) -----------------------
+// For 45 days the daily auto-generated posts are steered toward cybersecurity
+// and the governance of AI within cybersecurity. This is date-gated so the
+// topic picker and writer prompts automatically revert to the defaults above
+// once the window closes — no manual cleanup needed even though generation is
+// fully automated by the GitHub Actions cron.
+export const FOCUS_UNTIL = '2026-08-12'; // 45 days from 2026-06-28, inclusive
+
+export function focusActive(today = new Date().toISOString().slice(0, 10)) {
+  return today <= FOCUS_UNTIL;
+}
+
+const FOCUS_SYSTEM_PROMPT =
+  `You are a skilled technical writer for Michael LaPlante's blog. Michael is an SVP of Information Security and Operations with 15+ years of experience. Write engaging, practical posts that share real insight. Use a professional but approachable tone. Include concrete examples and actionable takeaways. Focus on technical deep dives with meaningful detail. Center every post on cybersecurity — threat detection and response, secure architecture, incident response, identity and access management, cryptography in practice, vulnerability management, and cloud/infrastructure security — or on the governance of AI within security: AI risk management, model and data governance, securing AI/ML systems, and emerging AI security regulation and frameworks (e.g. NIST AI RMF, ISO/IEC 42001, the EU AI Act). When AI appears, frame it through a security and governance lens rather than as a general AI/ML tutorial. Include concrete examples, configuration, or commands where they illustrate the point.`;
+
+// Returns the system prompt active for `today`, honoring the temporary focus.
+export function activeSystemPrompt(today) {
+  return focusActive(today) ? FOCUS_SYSTEM_PROMPT : SYSTEM_PROMPT;
+}
+
 export const TOPIC_PICKER_SYSTEM =
   'You suggest blog post topics for a tech blog by an SVP of Information Security and Operations. Respond with ONLY a single topic title, nothing else.';
 
-export function topicPickerPrompt(exclusions) {
+export function topicPickerPrompt(exclusions, today) {
   const list = exclusions.length
     ? `\nAlready covered (do NOT repeat these topics or anything semantically similar — pick something in a genuinely different area):\n${exclusions.map(t => `- ${t}`).join('\n')}`
     : '';
+  if (focusActive(today)) {
+    return `Suggest one fresh, specific blog post topic about cybersecurity, or about the governance of AI within cybersecurity. Good cybersecurity areas: threat detection and response, secure system and network architecture, identity and access management, cryptography in practice, vulnerability and patch management, cloud and container security, security operations, and application security engineering. Good AI-governance areas: AI risk management frameworks (e.g. NIST AI RMF, ISO/IEC 42001), securing AI/ML pipelines and models, governing AI use within security programs, AI-driven threat detection oversight, and emerging AI security regulation. Keep the emphasis on security and governance rather than general AI/ML tutorials. Pick something timely and practical that a technical, security-minded audience would find valuable.${list}`;
+  }
   return `Suggest one fresh, specific blog post topic focused on technical deep dives and hands-on code. Good areas: infrastructure automation, debugging techniques, performance optimization, DevOps tooling, security engineering (code-level), architecture patterns, or systems programming. AVOID topics primarily about AI, LLMs, or machine learning. Pick something timely and practical that a technical audience would find valuable.${list}`;
 }
 
@@ -442,12 +465,12 @@ export async function runGenerator({ argv, providerName, generate, embed, suppor
 
   // Try once, and if the LLM emits an unparseable / file-path-style title,
   // give it one more shot with a stronger nudge before giving up.
-  let content = await generate({ system: SYSTEM_PROMPT, user: userPrompt });
+  let content = await generate({ system: activeSystemPrompt(), user: userPrompt });
   let title = extractTitle(content);
   if (!title) {
     console.warn('First response had no parseable title; retrying with stricter instructions.');
     content = await generate({
-      system: SYSTEM_PROMPT,
+      system: activeSystemPrompt(),
       user: `${userPrompt}\n\nIMPORTANT: Your previous response did not begin with a "TITLE: ..." line. Start your response with exactly:\nTITLE: <a clear, human-readable title in Title Case, with no slashes, no file extensions, and no code identifiers>`,
     });
     title = extractTitle(content);
