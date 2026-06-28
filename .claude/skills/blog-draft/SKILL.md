@@ -28,12 +28,15 @@ excerpt: "One sentence summary..."
 ---
 ```
 
-## Content Focus (temporary — expires 2026-04-26)
+## Content Focus (temporary — expires 2026-08-12)
 
-For the next two weeks, prioritize **technical deep dives and code-focused content**:
-- Favor topics like architecture decisions, debugging war stories, infrastructure automation, performance optimization, code patterns, DevOps tooling, and hands-on engineering walkthroughs
-- **Avoid AI-centric topics** (no posts primarily about AI, LLMs, or machine learning — mentioning AI incidentally is fine)
+For the next 45 days, prioritize **cybersecurity and the governance of AI within cybersecurity**:
+- Favor cybersecurity topics: threat detection and response, secure architecture, incident response, identity and access management, cryptography in practice, vulnerability management, and cloud/infrastructure security
+- Also favor AI-governance-in-security topics: AI risk management frameworks (e.g. NIST AI RMF, ISO/IEC 42001, the EU AI Act), securing AI/ML pipelines and models, and governing AI use within security programs
+- Frame AI through a security and governance lens rather than as a general AI/ML tutorial
 - Include meaningful code snippets, configuration examples, or CLI commands whenever possible
+
+After 2026-08-12 this focus lapses; revert to general technical deep-dive content unless told otherwise.
 
 ## Guidelines
 
