@@ -11,7 +11,8 @@ A modern, fully Astro-powered personal portfolio and security consulting website
 - **Unified Astro Build**: Entire site (portfolio + blog) built as a single Astro 6 project
 - **Cloudflare Workers Runtime**: Static assets + a Worker that handles `/api/contact` (D1 storage, Turnstile, ForwardEmail)
 - **Responsive Design**: Works seamlessly across desktop, tablet, and mobile
-- **Blog with Taxonomy**: Category, tag, and multi-part **series** pages, RSS + JSON feeds, related posts, per-post author bio, desktop + mobile tables of contents, dark mode, in-page reading progress
+- **Blog with Taxonomy**: Category, tag, and multi-part **series** pages, RSS + JSON feeds, related posts, per-post author bio, desktop + mobile tables of contents, in-page reading progress
+- **Dark Mode with Manual Toggle**: A site-wide toggle (blog nav + portfolio) backed by `public/js/theme.js` — explicit choice persists in `localStorage`, otherwise the OS preference is followed live; code blocks switch to the Shiki dark theme
 - **Full-Archive Blog Search**: Client-side search over a build-time JSON index (`/blog/search.json`) covering every post, not just the current page
 - **Printable + Downloadable Résumé**: `/resume` renders a print-optimized résumé, and `/resume.pdf` is a true PDF generated at build time (pdfkit + the site's own Poppins fonts) — both driven by a single shared data module (`src/data/resume.ts`) that also powers the homepage experience/skills/certifications sections, so neither can drift from the site
 - **Consulting Services Page**: `/services` lays out the consulting offerings, engagement process, and a `ProfessionalService` structured-data block for the security-consulting side of the business
@@ -174,6 +175,7 @@ The blog lives at [michaellaplante.com/blog](https://michaellaplante.com/blog).
 | `npm run build`                 | Build entire site to `dist/` (includes PurgeCSS + per-post OG images) |
 | `npm run preview`               | Preview the built site locally |
 | `npm run typecheck`             | Run `astro check` for TS / content-schema validation |
+| `npm run lint`                  | ESLint over worker, scripts, tests, and Astro sources |
 | `npm test`                      | Run Worker integration tests + shared-lib unit tests |
 | `npm run test:watch`            | Run the test suite in watch mode |
 | `npm run worker:dev`            | Run Wrangler dev (Worker + assets together) |
@@ -220,7 +222,15 @@ new candidate.
 The LLM is also required to emit a `TITLE:` directive on the first line
 of every draft; `extractTitle` validates that it isn't a file path, code
 identifier, or single-word fragment, and retries the call once with stronger
-instructions before failing.
+instructions before failing. The extracted title is then cross-checked
+against the body's opening heading (which wins when they disagree badly —
+the classic failure is the directive latching onto a stray code line), and
+a `TAGS:` directive on line 2 populates the frontmatter tags.
+
+Independent of the similarity scoring, an **exact-duplicate guard** refuses
+to write any post whose title (case-insensitive) or slug (any date prefix)
+matches an existing post, and the content tests fail CI on repeated titles
+or slugs — the pipeline once published the same post twice ten days apart.
 
 ### Backfilling `updated:` on heavily-edited posts
 
@@ -264,10 +274,10 @@ The site deploys to **Cloudflare** as a Worker plus static assets:
 
 | Workflow                       | Trigger              | Purpose |
 |--------------------------------|----------------------|---------|
-| `ci.yml`                       | PRs / push to master | Worker + lib tests, Astro typecheck, full production build |
+| `ci.yml`                       | PRs / push to master | ESLint, Worker + lib tests, Astro typecheck, full build, Lighthouse audit |
 | `codeql.yml`                   | PRs / push / weekly  | CodeQL static analysis of the Worker and scripts |
 | `dependabot-auto-merge.yml`    | Dependabot PRs       | Flag minor/patch dependency PRs for auto-merge |
-| `generate-blog-post.yml`       | Manual / scheduled   | Generate an AI blog post via Gemini and open a PR for review; merging the PR publishes it |
+| `generate-blog-post.yml`       | Manual / Mon-Wed-Fri | Generate an AI blog post via Gemini and open a PR for review; merging the PR publishes it |
 | `gitleaks.yml`                 | PRs / push to master | Secret scanning over the full git history |
 | `link-check.yml`               | Weekly / manual      | Dead-link sweep of blog content; files an issue with the report |
 | `lint-workflows.yml`           | Workflow changes     | actionlint + zizmor security audit of workflow YAML |
