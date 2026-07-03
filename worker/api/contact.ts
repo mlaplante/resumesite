@@ -1,4 +1,5 @@
 import type { Env } from '../index';
+import { renderNotificationEmail, renderAutoReplyEmail } from '../email/templates';
 
 const THANK_YOU = '/thank-you/';
 // Email delivery failed but the submission is safely stored — tell the sender
@@ -68,6 +69,33 @@ async function readBodyCapped(request: Request, maxBytes: number): Promise<Uint8
     offset += chunk.byteLength;
   }
   return buf;
+}
+
+const FORWARDEMAIL_URL = 'https://api.forwardemail.net/v1/emails';
+
+interface MailPayload {
+  from: string;
+  to: string;
+  replyTo?: string;
+  subject: string;
+  html: string;
+  text: string;
+}
+
+// Single point of contact with ForwardEmail. Both the owner notification and
+// the sender auto-reply go through here so auth, timeout, and the JSON shape
+// stay in one place. The AbortSignal caps how long a hung upstream can stall
+// the caller.
+function sendMail(env: Env, payload: MailPayload): Promise<Response> {
+  return fetch(FORWARDEMAIL_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: 'Basic ' + btoa(env.FE_API_KEY + ':'),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+  });
 }
 
 export async function handleContact(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -195,24 +223,42 @@ export async function handleContact(request: Request, env: Env, ctx: ExecutionCo
       .catch(err => console.error('retention purge failed:', err))
   );
 
-  const mailBody = JSON.stringify({
-    from: env.CONTACT_FROM,
-    to: env.CONTACT_TO,
-    replyTo: `${name} <${email}>`,
-    subject: `Contact form: ${name}`,
-    text: `From: ${name} <${email}>\nIP: ${ip}\n\n${message}`,
-  });
+  // Fire the branded thank-you auto-reply to the sender as a best-effort side
+  // task. It rides on ctx.waitUntil so a slow or failing send never delays the
+  // user's redirect or downgrades their acknowledgement — the auto-reply is a
+  // courtesy, not part of the delivery guarantee. replyTo points back at the
+  // owner so a reply from the sender still lands in the right inbox. Gated
+  // behind Turnstile + the per-IP rate limit above, which bounds any use of
+  // this as a reflector toward a spoofed address.
+  const autoReply = renderAutoReplyEmail({ name });
+  ctx.waitUntil(
+    sendMail(env, {
+      from: env.CONTACT_FROM,
+      to: email,
+      replyTo: env.CONTACT_TO,
+      subject: autoReply.subject,
+      html: autoReply.html,
+      text: autoReply.text,
+    })
+      .then(res => {
+        if (!res.ok) console.error('auto-reply failed', res.status);
+        else console.log('auto-reply sent ok', res.status);
+      })
+      .catch(err => console.error('auto-reply fetch failed:', String(err))),
+  );
 
+  // The owner notification is the delivery that matters — its failure is what
+  // decides whether the sender sees the delayed-delivery acknowledgement.
+  const notification = renderNotificationEmail({ name, email, message, ip });
   let mailRes: Response;
   try {
-    mailRes = await fetch('https://api.forwardemail.net/v1/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: 'Basic ' + btoa(env.FE_API_KEY + ':'),
-        'Content-Type': 'application/json',
-      },
-      body: mailBody,
-      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+    mailRes = await sendMail(env, {
+      from: env.CONTACT_FROM,
+      to: env.CONTACT_TO,
+      replyTo: `${name} <${email}>`,
+      subject: notification.subject,
+      html: notification.html,
+      text: notification.text,
     });
   } catch (err) {
     // The submission is safely recorded in D1 — acknowledge receipt instead
@@ -224,7 +270,7 @@ export async function handleContact(request: Request, env: Env, ctx: ExecutionCo
   if (!mailRes.ok) {
     const errBody = await mailRes.text();
     const requestId = mailRes.headers.get('X-Request-Id') ?? '';
-    console.error('ForwardEmail failed', mailRes.status, 'request-id=', requestId, 'body-len=', mailBody.length, 'err=', errBody);
+    console.error('ForwardEmail failed', mailRes.status, 'request-id=', requestId, 'err=', errBody);
     // The submission is safely recorded in D1 — acknowledge receipt.
     return redirectTo(THANK_YOU_DELAYED);
   }

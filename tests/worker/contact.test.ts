@@ -427,6 +427,120 @@ describe('contact form: ForwardEmail upstream failure', () => {
   });
 });
 
+describe('contact form: branded emails', () => {
+  // A fetch stub that also captures the JSON bodies POSTed to ForwardEmail so
+  // the tests can assert on the rendered notification and auto-reply.
+  function stubAndCapture() {
+    const mails: Array<Record<string, unknown>> = [];
+    const fetchSpy = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes('challenges.cloudflare.com/turnstile/v0/siteverify')) {
+        return new Response(JSON.stringify({ success: true, 'error-codes': [] }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      if (url.includes('api.forwardemail.net/v1/emails')) {
+        if (init?.body) mails.push(JSON.parse(String(init.body)));
+        return new Response('{"id":"abc123"}', { status: 200 });
+      }
+      throw new Error(`Unexpected fetch in test: ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchSpy);
+    return mails;
+  }
+
+  it('sends the owner notification as branded HTML with a plain-text part', async () => {
+    const mails = stubAndCapture();
+    const ctx = createExecutionContext();
+    const res = await worker.fetch(makeContactRequest(), env, ctx);
+    await waitOnExecutionContext(ctx);
+    expect(res.status).toBe(303);
+
+    const notification = mails.find(m => String(m.subject).startsWith('Contact form:'));
+    expect(notification).toBeDefined();
+    // Goes to the owner, reply routes back to the sender.
+    expect(notification!.to).toBe(env.CONTACT_TO);
+    expect(notification!.replyTo).toBe('Test User <test@example.com>');
+    // Branded HTML: the site's Indigo primary and the sender's details.
+    expect(String(notification!.html)).toContain('#3F51B5');
+    expect(String(notification!.html)).toContain('New contact form submission');
+    expect(String(notification!.html)).toContain('test@example.com');
+    // Still ships a text/plain alternative for non-HTML clients.
+    expect(String(notification!.text)).toContain('Hello there, this is a test message.');
+  });
+
+  it('sends a branded thank-you auto-reply back to the sender', async () => {
+    const mails = stubAndCapture();
+    const ctx = createExecutionContext();
+    const res = await worker.fetch(makeContactRequest(), env, ctx);
+    await waitOnExecutionContext(ctx);
+    expect(res.status).toBe(303);
+
+    const autoReply = mails.find(m => String(m.subject).includes('Thanks for reaching out'));
+    expect(autoReply).toBeDefined();
+    // Delivered to the person who filled out the form...
+    expect(autoReply!.to).toBe('test@example.com');
+    // ...from the site address, with replies routed to the owner.
+    expect(autoReply!.from).toBe(env.CONTACT_FROM);
+    expect(autoReply!.replyTo).toBe(env.CONTACT_TO);
+    // Warm, branded, and on-message.
+    expect(String(autoReply!.html)).toContain('#3F51B5');
+    expect(String(autoReply!.html)).toContain('Thanks for reaching out, Test');
+    expect(String(autoReply!.text)).toContain("I'll be in touch soon");
+  });
+
+  it('escapes HTML in the sender name/message so the notification can\'t be injected', async () => {
+    const mails = stubAndCapture();
+    const ctx = createExecutionContext();
+    const res = await worker.fetch(
+      makeContactRequest({
+        fields: { name: 'Evil <b>Name</b>', message: '<script>alert(1)</script>' },
+      }),
+      env,
+      ctx,
+    );
+    await waitOnExecutionContext(ctx);
+    expect(res.status).toBe(303);
+
+    const notification = mails.find(m => String(m.subject).startsWith('Contact form:'));
+    expect(notification).toBeDefined();
+    const html = String(notification!.html);
+    expect(html).not.toContain('<script>alert(1)</script>');
+    expect(html).toContain('&lt;script&gt;');
+    expect(html).toContain('Evil &lt;b&gt;Name&lt;/b&gt;');
+  });
+
+  it('does not block the redirect on an auto-reply failure', async () => {
+    // Turnstile ok; ForwardEmail: first call (auto-reply, fired via waitUntil)
+    // fails, second call (owner notification) succeeds. The user still gets the
+    // clean thank-you page.
+    let feCalls = 0;
+    const fetchSpy = vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes('siteverify')) {
+        return new Response(JSON.stringify({ success: true }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      if (url.includes('forwardemail')) {
+        feCalls++;
+        if (feCalls === 1) throw new TypeError('fetch failed');
+        return new Response('{"id":"ok"}', { status: 200 });
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchSpy);
+
+    const ctx = createExecutionContext();
+    const res = await worker.fetch(makeContactRequest(), env, ctx);
+    await waitOnExecutionContext(ctx);
+    expect(res.status).toBe(303);
+    expect(res.headers.get('Location')).toBe(`${SITE}/thank-you/`);
+  });
+});
+
 describe('router', () => {
   it('returns 405 for non-POST on /api/contact', async () => {
     const ctx = createExecutionContext();
