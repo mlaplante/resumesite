@@ -1,0 +1,14 @@
+# 301s for removed/renamed blog posts.
+# - Exact-duplicate posts published twice by the AI draft pipeline: the later
+#   copy redirects to the surviving original.
+# - Posts whose AI-extracted title was a stray code line redirect to the
+#   surviving post on the same topic (or, for the Gatekeeper post, its
+#   renamed canonical URL).
+/blog/2026-04-06-leveraging-ai-powered-threat-detection-to-secure-multi-cloud-environments/ /blog/2026-04-03-leveraging-ai-powered-threat-detection-to-secure-multi-cloud-environments/ 301
+/blog/2026-05-13-building-immutable-infrastructure-with-nix-and-aws-cdk/ /blog/2026-05-03-building-immutable-infrastructure-with-nix-and-aws-cdk/ 301
+/blog/2026-05-10-automating-incident-response-playbooks-with-serverless-functions-and-infrastructure-as-code/ /blog/2026-05-09-automating-incident-response-playbooks-with-serverless-functions-and-infrastructure-as-code/ 301
+/blog/2026-05-08-automating-cloud-security-policy-enforcement-with-opa-and-gitops/ /blog/2026-05-06-automating-cloud-security-policy-enforcement-with-opa-and-gitops/ 301
+/blog/2026-04-29-aws-side/ /blog/2026-05-14-automating-secure-multi-cloud-network-connectivity-with-iac-and-ebpf/ 301
+/blog/2026-05-05-define-the-lambda-function/ /blog/2026-05-09-automating-incident-response-playbooks-with-serverless-functions-and-infrastructure-as-code/ 301
+/blog/2026-05-12-environment-variables-for-api-keys-and-endpoints/ /blog/2026-05-09-automating-incident-response-playbooks-with-serverless-functions-and-infrastructure-as-code/ 301
+/blog/2026-05-16-templates-k8srequiredlabels-yaml/ /blog/2026-05-16-automating-kubernetes-policy-enforcement-with-opa-gatekeeper-and-gitops/ 301
