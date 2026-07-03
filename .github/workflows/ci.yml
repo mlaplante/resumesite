@@ -14,6 +14,27 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  lint:
+    name: ESLint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
   test:
     name: Worker + lib tests
     runs-on: ubuntu-latest
@@ -84,3 +105,10 @@ jobs:
       # OG cards and the PDF résumé rendered, search index is populated.
       - name: Smoke-test build output
         run: npx vitest run --project site
+
+      # Lighthouse audit of key pages in the built dist/ (see lighthouserc.json).
+      # Accessibility < 0.9 fails the job; perf/best-practices/SEO regressions warn.
+      - name: Lighthouse audit
+        run: |
+          npx --yes @lhci/cli@0.15.x collect
+          npx --yes @lhci/cli@0.15.x assert

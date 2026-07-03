@@ -158,7 +158,7 @@ export function isValidTitle(title) {
   // Plausible length: ban very short ("AWS Side") and very long (rambling) outputs.
   if (t.length < 12 || t.length > 160) return false;
   // No path separators — file paths shouldn't become article titles.
-  if (/[\/\\]/.test(t)) return false;
+  if (/[/\\]/.test(t)) return false;
   // No file extension suffix.
   if (FILE_EXTENSIONS.test(t)) return false;
   // Must contain at least one letter and at least one space (multi-word).
@@ -462,7 +462,7 @@ export function stripTitleDirective(content) {
 export function makeExcerpt(content) {
   const text = stripTitleDirective(content)
     .replace(/^#.+\n+/, '')
-    .replace(/[#*`\[\]]/g, '')
+    .replace(/[#*`[\]]/g, '')
     .trim();
   let sliced = text.slice(0, 150);
   // If the 150-char cut lands mid-word, back up to the last word boundary so

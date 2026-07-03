@@ -1,5 +1,5 @@
 import { PurgeCSS } from 'purgecss';
-import { readFile, writeFile, stat } from 'node:fs/promises';
+import { writeFile, stat } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 

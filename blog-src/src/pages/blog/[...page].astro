@@ -17,7 +17,6 @@ const posts = page.data;
 // otherwise the button row varies between pages and can omit categories.
 const allPosts = await getSortedPosts();
 const categories = ['all', ...new Set(allPosts.map((p) => p.data.category))];
-const isFirstPage = page.currentPage === 1;
 ---
 
 <BlogLayout title="Blog" description="Thoughts on security, engineering, and building things.">

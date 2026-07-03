@@ -100,7 +100,6 @@
 	==========================================*/
 	function initMenuButtonColor() {
 		var mainSection = document.querySelector('.main-section');
-		var body = document.body;
 		var menuBtn = document.querySelector('.menu-btn');
 		
 		if (!mainSection || !menuBtn) return;

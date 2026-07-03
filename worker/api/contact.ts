@@ -25,6 +25,7 @@ const UPSTREAM_TIMEOUT_MS = 10_000;
 // Strip CR/LF and other control characters that could be used to inject
 // extra email headers downstream when name/email are interpolated into
 // replyTo / subject / body.
+// eslint-disable-next-line no-control-regex -- matching control chars is the point
 const stripControl = (s: string) => s.replace(/[\x00-\x1f\x7f]/g, '');
 
 // Stricter email validation than \S+@\S+\.\S+ — requires a 2+ char TLD,
