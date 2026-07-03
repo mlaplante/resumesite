@@ -50,11 +50,23 @@ import SiteLayout from '../layouts/SiteLayout.astro';
         </g>
       </svg>
       <h1>Thank you!</h1>
-      <p>Your message has been sent. I'll get back to you soon.</p>
+      <p id="thank-you-default">Your message has been sent. I'll get back to you soon.</p>
+      <p id="thank-you-delayed" hidden>
+        Your message was received and saved. Email delivery is running a little
+        behind, but no action is needed on your part — I'll get back to you soon.
+      </p>
       <a href="/" class="btn btn-custom">Back to Home</a>
     </div>
   </div>
   <script is:inline defer src="/js/script.js"></script>
+  <script>
+    // The Worker redirects here with ?delivery=delayed when the submission
+    // was stored but the notification email failed to send.
+    if (new URLSearchParams(location.search).get('delivery') === 'delayed') {
+      document.getElementById('thank-you-default')?.setAttribute('hidden', '');
+      document.getElementById('thank-you-delayed')?.removeAttribute('hidden');
+    }
+  </script>
 </SiteLayout>
 
 <style>

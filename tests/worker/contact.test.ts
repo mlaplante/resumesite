@@ -29,6 +29,13 @@ const TEST_SCHEMA_STATEMENTS = [
   )`,
   `CREATE INDEX IF NOT EXISTS idx_submissions_ts ON submissions (ts DESC)`,
   `CREATE INDEX IF NOT EXISTS idx_submissions_ip_ts ON submissions (ip, ts DESC)`,
+  `CREATE TABLE IF NOT EXISTS contact_attempts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ip TEXT NOT NULL,
+    ts INTEGER NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_contact_attempts_ip_ts ON contact_attempts (ip, ts DESC)`,
+  `CREATE INDEX IF NOT EXISTS idx_contact_attempts_ts ON contact_attempts (ts DESC)`,
 ];
 
 // Apply the D1 schema once before any test runs; tests share the same
@@ -41,6 +48,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await env.DB.prepare('DELETE FROM submissions').run();
+  await env.DB.prepare('DELETE FROM contact_attempts').run();
   vi.restoreAllMocks();
 });
 
@@ -182,6 +190,34 @@ describe('contact form: input validation', () => {
           'Content-Length': String(40 * 1024),
         },
         body,
+      }),
+      env,
+      ctx,
+    );
+    await waitOnExecutionContext(ctx);
+    expect(res.status).toBe(413);
+  });
+
+  it('rejects an oversized streamed body even without a Content-Length header', async () => {
+    stubUpstreams();
+    // Chunked upload: no Content-Length for the header check to trust — only
+    // the stream cap can catch it.
+    const payload = new TextEncoder().encode('name=Test&message=' + 'x'.repeat(40 * 1024));
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(payload);
+        controller.close();
+      },
+    });
+    const ctx = createExecutionContext();
+    const res = await worker.fetch(
+      new Request(`${SITE}/api/contact`, {
+        method: 'POST',
+        headers: {
+          Origin: SITE,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: stream,
       }),
       env,
       ctx,
@@ -338,29 +374,52 @@ describe('contact form: rate limit', () => {
       expect(res.headers.get('Location')).toBe(`${SITE}/thank-you/`);
     }
   });
-});
 
-describe('contact form: ForwardEmail upstream failure', () => {
-  it('keeps the D1 row but redirects to /contact-error/', async () => {
-    stubUpstreams({ forwardEmail: { ok: false, status: 502, body: '{"error":"upstream"}' } });
+  it('counts failed Turnstile attempts toward the rate limit', async () => {
+    // Five attempts that all fail the challenge...
+    stubUpstreams({ turnstile: false });
+    for (let i = 0; i < 5; i++) {
+      const ctx = createExecutionContext();
+      const res = await worker.fetch(makeContactRequest(), env, ctx);
+      await waitOnExecutionContext(ctx);
+      expect(res.headers.get('Location')).toBe(`${SITE}/contact-error/`);
+    }
+    // ...then a sixth with a valid token is still rejected: the limit is on
+    // attempts, so failing the challenge can't be used to retry for free.
+    const fetchSpy = stubUpstreams({ turnstile: true });
     const ctx = createExecutionContext();
     const res = await worker.fetch(makeContactRequest(), env, ctx);
     await waitOnExecutionContext(ctx);
     expect(res.status).toBe(303);
     expect(res.headers.get('Location')).toBe(`${SITE}/contact-error/`);
+    // Rate limit fired before any upstream call.
+    expect(fetchSpy).not.toHaveBeenCalled();
+    const count = await env.DB.prepare('SELECT COUNT(*) AS n FROM submissions').first<{ n: number }>();
+    expect(count?.n).toBe(0);
+  });
+});
+
+describe('contact form: ForwardEmail upstream failure', () => {
+  it('keeps the D1 row and acknowledges receipt with a delayed-delivery note', async () => {
+    stubUpstreams({ forwardEmail: { ok: false, status: 502, body: '{"error":"upstream"}' } });
+    const ctx = createExecutionContext();
+    const res = await worker.fetch(makeContactRequest(), env, ctx);
+    await waitOnExecutionContext(ctx);
+    expect(res.status).toBe(303);
+    expect(res.headers.get('Location')).toBe(`${SITE}/thank-you/?delivery=delayed`);
     const row = await env.DB.prepare(
       'SELECT email FROM submissions WHERE email = ?1',
     ).bind('test@example.com').first();
     expect(row).not.toBeNull();
   });
 
-  it('keeps the D1 row and redirects when ForwardEmail is unreachable', async () => {
+  it('keeps the D1 row and acknowledges receipt when ForwardEmail is unreachable', async () => {
     stubUpstreams({ forwardEmail: 'network-error' });
     const ctx = createExecutionContext();
     const res = await worker.fetch(makeContactRequest(), env, ctx);
     await waitOnExecutionContext(ctx);
     expect(res.status).toBe(303);
-    expect(res.headers.get('Location')).toBe(`${SITE}/contact-error/`);
+    expect(res.headers.get('Location')).toBe(`${SITE}/thank-you/?delivery=delayed`);
     const row = await env.DB.prepare(
       'SELECT email FROM submissions WHERE email = ?1',
     ).bind('test@example.com').first();
