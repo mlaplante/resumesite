@@ -179,7 +179,6 @@ import SiteLayout from '../layouts/SiteLayout.astro';
   }
 
   /* Dark mode - slightly brighter robot */
-  @media (prefers-color-scheme: dark) {
-    .robot-eye-left, .robot-eye-right { fill: #93a0ff; }
-  }
+  :global([data-theme='dark']) .robot-eye-left,
+  :global([data-theme='dark']) .robot-eye-right { fill: #93a0ff; }
 </style>

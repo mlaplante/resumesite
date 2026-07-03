@@ -143,29 +143,27 @@ const wrapperClass = variant === 'centered' ? 'newsletter-signup' : 'newsletter-
   }
 
   /* Dark mode */
-  @media (prefers-color-scheme: dark) {
-    .newsletter-cta,
-    .newsletter-signup {
-      background: linear-gradient(135deg, rgba(26, 82, 118, 0.15) 0%, rgba(26, 82, 118, 0.05) 100%);
-      border-color: rgba(96, 165, 250, 0.15);
-    }
-    .newsletter-cta h3,
-    .newsletter-signup h3 { color: #f1f5f9; }
-    .newsletter-cta p,
-    .newsletter-signup p { color: #94a3b8; }
-    .newsletter-form-row input[type="email"] {
-      background: #0f172a;
-      border-color: #334155;
-      color: #f1f5f9;
-    }
-    .newsletter-form-row input[type="email"]::placeholder { color: #64748b; }
-    .newsletter-form-row input[type="email"]:focus {
-      border-color: #1a5276;
-      box-shadow: 0 0 0 3px rgba(26, 82, 118, 0.2);
-    }
-    .newsletter-form-row button { background: #1a5276; }
-    .newsletter-form-row button:hover { background: #154360; }
-    .newsletter-alt { color: #64748b !important; }
-    .newsletter-alt a { color: #60a5fa; }
+  :global([data-theme='dark']) .newsletter-cta,
+  :global([data-theme='dark']) .newsletter-signup {
+    background: linear-gradient(135deg, rgba(26, 82, 118, 0.15) 0%, rgba(26, 82, 118, 0.05) 100%);
+    border-color: rgba(96, 165, 250, 0.15);
   }
+  :global([data-theme='dark']) .newsletter-cta h3,
+  :global([data-theme='dark']) .newsletter-signup h3 { color: #f1f5f9; }
+  :global([data-theme='dark']) .newsletter-cta p,
+  :global([data-theme='dark']) .newsletter-signup p { color: #94a3b8; }
+  :global([data-theme='dark']) .newsletter-form-row input[type="email"] {
+    background: #0f172a;
+    border-color: #334155;
+    color: #f1f5f9;
+  }
+  :global([data-theme='dark']) .newsletter-form-row input[type="email"]::placeholder { color: #64748b; }
+  :global([data-theme='dark']) .newsletter-form-row input[type="email"]:focus {
+    border-color: #1a5276;
+    box-shadow: 0 0 0 3px rgba(26, 82, 118, 0.2);
+  }
+  :global([data-theme='dark']) .newsletter-form-row button { background: #1a5276; }
+  :global([data-theme='dark']) .newsletter-form-row button:hover { background: #154360; }
+  :global([data-theme='dark']) .newsletter-alt { color: #64748b !important; }
+  :global([data-theme='dark']) .newsletter-alt a { color: #60a5fa; }
 </style>

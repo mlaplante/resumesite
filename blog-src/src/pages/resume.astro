@@ -373,9 +373,7 @@ import { profile, summary, stats, skills, experience, certifications } from '../
   }
 
   /* Page chrome (background) follows dark mode; the paper stays light. */
-  @media (prefers-color-scheme: dark) {
-    .resume-page { background: #0f172a; }
-  }
+  :global([data-theme='dark']) .resume-page { background: #0f172a; }
   :global(body.dark-mode) .resume-page { background: #0f172a; }
 
   /* Print: strip chrome, flatten the paper to the page. */

@@ -481,19 +481,12 @@ const posts = (await getSortedPosts()).slice(0, 4);
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-  @media (prefers-color-scheme: dark) {
-    .post-preview { background: #1e293b; border-color: #334155; }
-    .post-preview:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.3); border-color: #475569; }
-    .post-preview h4 { color: #f1f5f9; }
-    .post-preview p { color: #94a3b8; }
-    .post-preview-date { color: #64748b; }
-    .post-preview-sep { color: #475569; }
-  }
-  :global(body.dark-mode) .post-preview { background: #1e293b; border-color: #334155; }
-  :global(body.dark-mode) .post-preview:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.3); border-color: #475569; }
-  :global(body.dark-mode) .post-preview h4 { color: #f1f5f9; }
-  :global(body.dark-mode) .post-preview p { color: #94a3b8; }
-  :global(body.dark-mode) .post-preview-date { color: #64748b; }
+  :global([data-theme='dark']) .post-preview { background: #1e293b; border-color: #334155; }
+  :global([data-theme='dark']) .post-preview:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.3); border-color: #475569; }
+  :global([data-theme='dark']) .post-preview h4 { color: #f1f5f9; }
+  :global([data-theme='dark']) .post-preview p { color: #94a3b8; }
+  :global([data-theme='dark']) .post-preview-date { color: #64748b; }
+  :global([data-theme='dark']) .post-preview-sep { color: #475569; }
 
   .contact-booking-note {
     margin: -10px 0 24px;
@@ -505,8 +498,5 @@ const posts = (await getSortedPosts()).slice(0, 4);
     text-decoration: none;
   }
   .contact-booking-note a:hover { opacity: 0.7; }
-  @media (prefers-color-scheme: dark) {
-    .contact-booking-note a { color: #60a5fa; }
-  }
-  :global(body.dark-mode) .contact-booking-note a { color: #60a5fa; }
+  :global([data-theme='dark']) .contact-booking-note a { color: #60a5fa; }
 </style>

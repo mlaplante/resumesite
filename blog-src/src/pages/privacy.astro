@@ -237,13 +237,11 @@ const lastUpdated = 'June 6, 2026';
     opacity: 0.7;
   }
 
-  @media (prefers-color-scheme: dark) {
-    .updated { color: #94a3b8; }
-    .legal p,
-    .legal li { color: #cbd5e1; }
-    .legal h2 { color: #f1f5f9; }
-    .legal a { color: #60a5fa; }
-  }
+  :global([data-theme='dark']) .updated { color: #94a3b8; }
+  :global([data-theme='dark']) .legal p,
+  :global([data-theme='dark']) .legal li { color: #cbd5e1; }
+  :global([data-theme='dark']) .legal h2 { color: #f1f5f9; }
+  :global([data-theme='dark']) .legal a { color: #60a5fa; }
 
   :global(body.dark-mode) .updated { color: #94a3b8; }
   :global(body.dark-mode) .legal p,

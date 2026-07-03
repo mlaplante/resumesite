@@ -6,6 +6,14 @@
 	function init() {
 		var nav = document.querySelector('.blog-nav');
 		if (!nav) return;
+
+		var themeToggle = nav.querySelector('.theme-toggle');
+		if (themeToggle && window.__toggleTheme) {
+			themeToggle.addEventListener('click', function () {
+				window.__toggleTheme();
+			});
+		}
+
 		var toggle = nav.querySelector('.nav-toggle');
 		if (!toggle) return;
 		toggle.addEventListener('click', function () {

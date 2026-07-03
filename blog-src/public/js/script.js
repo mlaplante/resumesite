@@ -22,27 +22,23 @@
 	function initDarkMode() {
 		var body = document.body;
 		var darkModeToggle = document.querySelector('.dark-mode-toggle');
-		
+
 		if (!darkModeToggle) return;
-		
-		// Check for saved dark mode preference
-		var darkMode = localStorage.getItem('darkMode');
-		
-		if (darkMode === DARK_MODE_ENABLED) {
-			body.classList.add('dark-mode');
-		}
-		
-		// Toggle dark mode
+
 		darkModeToggle.addEventListener('click', function(e) {
 			e.preventDefault();
-			body.classList.toggle('dark-mode');
-			
-			// Save preference
-			if (body.classList.contains('dark-mode')) {
-				localStorage.setItem('darkMode', DARK_MODE_ENABLED);
-			} else {
-				localStorage.setItem('darkMode', DARK_MODE_DISABLED);
+			// theme.js owns the theme: it persists the choice and keeps
+			// <html data-theme> and body.dark-mode in sync everywhere.
+			if (window.__toggleTheme) {
+				window.__toggleTheme();
+				return;
 			}
+			// Fallback if theme.js failed to load — old class-only behavior.
+			body.classList.toggle('dark-mode');
+			localStorage.setItem(
+				'darkMode',
+				body.classList.contains('dark-mode') ? DARK_MODE_ENABLED : DARK_MODE_DISABLED
+			);
 		});
 	}
 
