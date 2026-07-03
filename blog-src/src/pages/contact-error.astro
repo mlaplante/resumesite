@@ -156,7 +156,6 @@ import SiteLayout from '../layouts/SiteLayout.astro';
     }
   }
 
-  @media (prefers-color-scheme: dark) {
-    .robot-eye-left, .robot-eye-right { fill: #ff9b9b; }
-  }
+  :global([data-theme='dark']) .robot-eye-left,
+  :global([data-theme='dark']) .robot-eye-right { fill: #ff9b9b; }
 </style>

@@ -309,8 +309,6 @@ const professionalServiceSchema = JSON.stringify({
     margin-bottom: 8px;
   }
 
-  @media (prefers-color-scheme: dark) {
-    .process-step { color: #60a5fa; }
-  }
+  :global([data-theme='dark']) .process-step { color: #60a5fa; }
   :global(body.dark-mode) .process-step { color: #60a5fa; }
 </style>

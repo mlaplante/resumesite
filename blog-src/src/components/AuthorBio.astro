@@ -119,15 +119,13 @@ import { profile } from '../data/resume';
     }
   }
 
-  @media (prefers-color-scheme: dark) {
-    .author-bio { background: #1e293b; border-color: #334155; }
-    .author-bio-photo { box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3); }
-    .author-bio-label { color: #60a5fa; }
-    .author-bio-name { color: #f1f5f9; }
-    .author-bio-role { color: #94a3b8; }
-    .author-bio-text { color: #cbd5e1; }
-    .author-bio-links a { color: #60a5fa; }
-  }
+  :global([data-theme='dark']) .author-bio { background: #1e293b; border-color: #334155; }
+  :global([data-theme='dark']) .author-bio-photo { box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3); }
+  :global([data-theme='dark']) .author-bio-label { color: #60a5fa; }
+  :global([data-theme='dark']) .author-bio-name { color: #f1f5f9; }
+  :global([data-theme='dark']) .author-bio-role { color: #94a3b8; }
+  :global([data-theme='dark']) .author-bio-text { color: #cbd5e1; }
+  :global([data-theme='dark']) .author-bio-links a { color: #60a5fa; }
   :global(body.dark-mode) .author-bio { background: #1e293b; border-color: #334155; }
   :global(body.dark-mode) .author-bio-name { color: #f1f5f9; }
   :global(body.dark-mode) .author-bio-role { color: #94a3b8; }

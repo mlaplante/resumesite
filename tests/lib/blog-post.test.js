@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdtempSync, rmSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -7,6 +7,10 @@ import {
   slugify,
   isValidTitle,
   extractTitle,
+  extractFirstHeading,
+  reconcileTitle,
+  extractTags,
+  findExactDuplicate,
   stripTitleDirective,
   makeExcerpt,
   buildFrontmatter,
@@ -98,8 +102,98 @@ describe('stripTitleDirective', () => {
     const out = stripTitleDirective('TITLE: A Good Title\n\n# A Good Title\n\nBody');
     expect(out).toBe('# A Good Title\n\nBody');
   });
+  it('removes a TAGS: line following the TITLE: line', () => {
+    const out = stripTitleDirective('TITLE: A Good Title\nTAGS: kubernetes, ebpf\n\n# A Good Title\n\nBody');
+    expect(out).toBe('# A Good Title\n\nBody');
+  });
   it('leaves content unchanged when no TITLE: directive is present', () => {
     expect(stripTitleDirective('# Heading\n\nBody')).toBe('# Heading\n\nBody');
+  });
+});
+
+describe('extractFirstHeading', () => {
+  it('returns the first H1 outside code fences', () => {
+    expect(extractFirstHeading('intro\n\n```\n# fenced\n```\n\n# Real Heading\n\nBody')).toBe('Real Heading');
+  });
+  it('also accepts an H2 as the opening heading', () => {
+    expect(extractFirstHeading('## Taming the Fire: Automating Incident Response\n\nBody')).toBe(
+      'Taming the Fire: Automating Incident Response',
+    );
+  });
+  it('skips the TITLE directive line', () => {
+    expect(extractFirstHeading('TITLE: Something Else Entirely\n\n## The Actual Body Heading\n\nBody')).toBe(
+      'The Actual Body Heading',
+    );
+  });
+  it('returns null when there is no heading', () => {
+    expect(extractFirstHeading('just prose, no headings')).toBeNull();
+    expect(extractFirstHeading(null)).toBeNull();
+  });
+});
+
+describe('reconcileTitle', () => {
+  it('keeps the directive title when it matches the body heading', () => {
+    const content = 'TITLE: Securing Kubernetes with eBPF\n\n# Securing Kubernetes with eBPF\n\nBody';
+    expect(reconcileTitle('Securing Kubernetes with eBPF', content)).toBe('Securing Kubernetes with eBPF');
+  });
+  it('prefers the body heading when the directive title is unrelated (stray code line)', () => {
+    const content =
+      'TITLE: Define the Lambda function\n\n## Taming the Fire: Automating Incident Response with Serverless and IaC\n\nBody';
+    expect(reconcileTitle('Define the Lambda function', content)).toBe(
+      'Taming the Fire: Automating Incident Response with Serverless and IaC',
+    );
+  });
+  it('falls back to the body heading when no title was extracted at all', () => {
+    const content = '## Automating Kubernetes Policy Enforcement with OPA Gatekeeper\n\nBody';
+    expect(reconcileTitle(null, content)).toBe('Automating Kubernetes Policy Enforcement with OPA Gatekeeper');
+  });
+  it('keeps the title when the body heading is itself invalid', () => {
+    const content = 'TITLE: A Perfectly Good Post Title\n\n# config.yaml\n\nBody';
+    expect(reconcileTitle('A Perfectly Good Post Title', content)).toBe('A Perfectly Good Post Title');
+  });
+});
+
+describe('extractTags', () => {
+  it('parses, slugifies, and dedupes the TAGS directive', () => {
+    const content = 'TITLE: A Post\nTAGS: Kubernetes, eBPF, Incident Response, kubernetes\n\nBody';
+    expect(extractTags(content)).toEqual(['kubernetes', 'ebpf', 'incident-response']);
+  });
+  it('caps at 6 tags', () => {
+    const content = 'TAGS: a1, b2, c3, d4, e5, f6, g7, h8\n\nBody';
+    expect(extractTags(content)).toHaveLength(6);
+  });
+  it('returns [] when the directive is missing or empty', () => {
+    expect(extractTags('# Heading\n\nBody')).toEqual([]);
+    expect(extractTags(null)).toEqual([]);
+  });
+});
+
+describe('findExactDuplicate', () => {
+  let dir;
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'posts-'));
+    writeFileSync(
+      join(dir, '2026-05-03-building-immutable-infrastructure.md'),
+      '---\ntitle: "Building Immutable Infrastructure"\ndate: 2026-05-03\n---\n\nBody',
+    );
+  });
+  afterEach(() => rmSync(dir, { recursive: true, force: true }));
+
+  it('detects a slug collision regardless of date prefix', () => {
+    expect(findExactDuplicate('Building Immutable Infrastructure!', undefined, dir)).toBe(
+      '2026-05-03-building-immutable-infrastructure.md',
+    );
+  });
+  it('detects a case-insensitive exact title match', () => {
+    expect(findExactDuplicate('BUILDING IMMUTABLE INFRASTRUCTURE', 'other-slug', dir)).toBe(
+      '2026-05-03-building-immutable-infrastructure.md',
+    );
+  });
+  it('returns null for a genuinely new post', () => {
+    expect(findExactDuplicate('A Totally Different Topic', undefined, dir)).toBeNull();
+  });
+  it('returns null when the posts directory does not exist', () => {
+    expect(findExactDuplicate('Anything At All', undefined, join(dir, 'nope'))).toBeNull();
   });
 });
 
@@ -140,6 +234,27 @@ describe('buildFrontmatter', () => {
     expect(fm).toContain('excerpt: "It \\"works\\""');
     expect(fm.startsWith('---\n')).toBe(true);
     expect(fm.endsWith('---')).toBe(true);
+  });
+
+  it('emits the extracted tags as a YAML list', () => {
+    const fm = buildFrontmatter({
+      title: 'A Post',
+      date: '2026-05-17',
+      category: 'thought-leadership',
+      excerpt: 'Body',
+      tags: ['kubernetes', 'ebpf'],
+    });
+    expect(fm).toContain('tags: ["kubernetes", "ebpf"]');
+  });
+
+  it('emits an empty tags list when no tags are supplied', () => {
+    const fm = buildFrontmatter({
+      title: 'A Post',
+      date: '2026-05-17',
+      category: 'thought-leadership',
+      excerpt: 'Body',
+    });
+    expect(fm).toContain('tags: []');
   });
 
   it('emits a commented series hint when no series is supplied', () => {
@@ -258,6 +373,25 @@ describe('pickUniqueTopic', () => {
     let i = 0;
     const generate = async () => responses[i++];
     const topic = await pickUniqueTopic(generate, ['Zero Trust Network Segmentation Strategies']);
+    expect(topic).toBe('A Completely Different Topic About Quantum Networking');
+    expect(i).toBe(2);
+  });
+
+  it('rejects an exact-title repeat even if similarity scoring would pass', async () => {
+    const responses = [
+      'zero trust network segmentation strategies', // exact (case-insensitive) repeat
+      'A Completely Different Topic About Quantum Networking',
+    ];
+    let i = 0;
+    const generate = async () => responses[i++];
+    // Embed reports everything as dissimilar — only the exact-match guard can catch it.
+    const embed = async (text) =>
+      text === 'zero trust network segmentation strategies'
+        ? [1, 0, 0]
+        : text.includes('Quantum')
+          ? [0, 1, 0]
+          : [0, 0, 1];
+    const topic = await pickUniqueTopic(generate, ['Zero Trust Network Segmentation Strategies'], embed);
     expect(topic).toBe('A Completely Different Topic About Quantum Networking');
     expect(i).toBe(2);
   });

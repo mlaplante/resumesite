@@ -141,6 +141,64 @@ body {
   }
 }
 
+/* ===== Theme Toggle (blog nav) ===== */
+.blog-nav .nav-links {
+  margin-left: auto; /* keep links right-aligned with the toggle beside them */
+}
+
+.blog-nav .theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin-left: 20px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.blog-nav .theme-toggle:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.blog-nav .theme-toggle:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.blog-nav .theme-toggle .moon-icon {
+  display: none;
+}
+
+[data-theme='dark'] .blog-nav .theme-toggle .sun-icon {
+  display: none;
+}
+
+[data-theme='dark'] .blog-nav .theme-toggle .moon-icon {
+  display: block;
+}
+
+@media (max-width: 640px) {
+  /* Top bar: brand · theme toggle · hamburger; links drop to their own row. */
+  .blog-nav .theme-toggle {
+    order: 0;
+    margin-left: auto;
+  }
+  .blog-nav .nav-toggle {
+    order: 1;
+    margin-left: 14px;
+  }
+  .blog-nav .nav-links {
+    order: 2;
+  }
+}
+
 /* ===== Content Area ===== */
 .blog-content {
   max-width: 1080px;
@@ -299,83 +357,73 @@ body {
 }
 
 /* ===== Dark Mode ===== */
-@media (prefers-color-scheme: dark) {
-  body {
-    background: #0f172a;
-  }
+[data-theme='dark'] body {
+  background: #0f172a;
+}
 
-  .blog-nav {
-    background: linear-gradient(135deg, #1a5276 0%, #154360 100%);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-  }
-
-  .blog-content h1 {
-    color: #f1f5f9;
-  }
-
-  .blog-meta {
-    color: #94a3b8;
-  }
-
-  .blog-meta .category {
-    background: rgba(96, 165, 250, 0.1);
-    color: #60a5fa;
-  }
-
-  .blog-content article {
-    color: #cbd5e1;
-  }
-
-  .blog-content article h2 {
-    color: #e2e8f0;
-  }
-
-  .blog-content article h3 {
-    color: #e2e8f0;
-  }
-
-  .blog-content article strong {
-    color: #f1f5f9;
-  }
-
-  .blog-content article pre {
-    background: #0d1117;
-    border-color: #1e293b;
-  }
-
-  .blog-content article code:not(pre code) {
-    background: #1e293b;
-    color: #e879a0;
-  }
-
-  .blog-content article a {
-    color: #60a5fa;
-    border-bottom-color: rgba(96, 165, 250, 0.3);
-  }
-
-  .blog-content article a:hover {
-    border-bottom-color: #60a5fa;
-  }
-
-  .blog-content article blockquote {
-    border-left-color: #1a5276;
-    color: #94a3b8;
-    background: rgba(26, 82, 118, 0.1);
-  }
-
-  .blog-content article img {
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
-  }
-
-  .blog-content article hr {
-    border-top-color: #1e293b;
-  }
-
-  .blog-footer {
-    border-top-color: #1e293b;
-  }
-
-  .blog-footer a {
-    color: #60a5fa;
-  }
+/* Shiki emits both themes as CSS variables on every token (astro.config.mjs
+   shikiConfig.themes); without this switch, dark mode kept the github-light
+   token colors — near-black text on a dark code block. */
+[data-theme='dark'] .astro-code,
+[data-theme='dark'] .astro-code span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
+}
+[data-theme='dark'] .blog-nav {
+  background: linear-gradient(135deg, #1a5276 0%, #154360 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+[data-theme='dark'] .blog-content h1 {
+  color: #f1f5f9;
+}
+[data-theme='dark'] .blog-meta {
+  color: #94a3b8;
+}
+[data-theme='dark'] .blog-meta .category {
+  background: rgba(96, 165, 250, 0.1);
+  color: #60a5fa;
+}
+[data-theme='dark'] .blog-content article {
+  color: #cbd5e1;
+}
+[data-theme='dark'] .blog-content article h2 {
+  color: #e2e8f0;
+}
+[data-theme='dark'] .blog-content article h3 {
+  color: #e2e8f0;
+}
+[data-theme='dark'] .blog-content article strong {
+  color: #f1f5f9;
+}
+[data-theme='dark'] .blog-content article pre {
+  background: #0d1117;
+  border-color: #1e293b;
+}
+[data-theme='dark'] .blog-content article code:not(pre code) {
+  background: #1e293b;
+  color: #e879a0;
+}
+[data-theme='dark'] .blog-content article a {
+  color: #60a5fa;
+  border-bottom-color: rgba(96, 165, 250, 0.3);
+}
+[data-theme='dark'] .blog-content article a:hover {
+  border-bottom-color: #60a5fa;
+}
+[data-theme='dark'] .blog-content article blockquote {
+  border-left-color: #1a5276;
+  color: #94a3b8;
+  background: rgba(26, 82, 118, 0.1);
+}
+[data-theme='dark'] .blog-content article img {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+[data-theme='dark'] .blog-content article hr {
+  border-top-color: #1e293b;
+}
+[data-theme='dark'] .blog-footer {
+  border-top-color: #1e293b;
+}
+[data-theme='dark'] .blog-footer a {
+  color: #60a5fa;
 }

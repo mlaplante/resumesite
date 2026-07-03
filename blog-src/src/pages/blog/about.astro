@@ -114,14 +114,12 @@ import BlogLayout from '../../layouts/BlogLayout.astro';
     opacity: 0.7;
   }
 
-  @media (prefers-color-scheme: dark) {
-    .about-info h2 { color: #f1f5f9; }
-    .about-role { color: #94a3b8; }
-    p { color: #cbd5e1; }
-    .about-links { border-top-color: #1e293b; }
-    .about-links a { color: #60a5fa; }
-    .about-photo { box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3); }
-  }
+  :global([data-theme='dark']) .about-info h2 { color: #f1f5f9; }
+  :global([data-theme='dark']) .about-role { color: #94a3b8; }
+  :global([data-theme='dark']) p { color: #cbd5e1; }
+  :global([data-theme='dark']) .about-links { border-top-color: #1e293b; }
+  :global([data-theme='dark']) .about-links a { color: #60a5fa; }
+  :global([data-theme='dark']) .about-photo { box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3); }
 
   @media (max-width: 480px) {
     .about-card {

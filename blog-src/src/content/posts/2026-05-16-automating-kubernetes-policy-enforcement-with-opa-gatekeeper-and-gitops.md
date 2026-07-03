@@ -1,5 +1,5 @@
 ---
-title: "templates/k8srequiredlabels.yaml"
+title: "Automating Kubernetes Policy Enforcement with OPA Gatekeeper and GitOps"
 date: 2026-05-16
 category: "thought-leadership"
 tags: []

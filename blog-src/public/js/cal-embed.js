@@ -40,15 +40,18 @@
 		};
 	})(window, 'https://app.cal.com/embed/embed.js', 'init');
 
-	/* Match the site's dark mode (same logic as script.js: explicit localStorage
-	   choice wins, otherwise follow the OS preference). */
-	var dark = false;
-	try {
-		var stored = localStorage.getItem('darkMode');
-		dark = stored === 'enabled' ||
-			(stored !== 'disabled' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-	} catch (e) {
-		/* localStorage unavailable — keep the light theme */
+	/* Match the site's effective theme. theme.js stamps data-theme on <html>
+	   before this runs; fall back to the same explicit-choice-then-OS logic
+	   if it didn't load. */
+	var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+	if (!document.documentElement.hasAttribute('data-theme')) {
+		try {
+			var stored = localStorage.getItem('darkMode');
+			dark = stored === 'enabled' ||
+				(stored !== 'disabled' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+		} catch (e) {
+			/* localStorage unavailable — keep the light theme */
+		}
 	}
 
 	window.Cal('init', { origin: 'https://app.cal.com' });

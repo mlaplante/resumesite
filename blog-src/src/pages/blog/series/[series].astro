@@ -232,22 +232,20 @@ const breadcrumbSchema = safeJsonLd(breadcrumbList([
   }
   .back-link a:hover { opacity: 0.7; }
 
-  @media (prefers-color-scheme: dark) {
-    h1 { color: #f1f5f9; }
-    .series-eyebrow { color: #60a5fa; }
-    .taxonomy-count { color: #94a3b8; }
-    .breadcrumbs a { color: #94a3b8; }
-    .breadcrumbs a:hover { color: #60a5fa; }
-    .breadcrumb-sep { color: #475569; }
-    .breadcrumb-current { color: #e2e8f0; }
-    .series-item { background: #1e293b; border-color: #334155; }
-    .series-item:hover { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); border-color: #475569; }
-    .series-item-num { color: #60a5fa; background: rgba(96, 165, 250, 0.12); }
-    .series-item-title { color: #f1f5f9; }
-    .series-item-meta { color: #64748b; }
-    .dot-sep { color: #475569; }
-    .series-item-excerpt { color: #94a3b8; }
-    .back-link { border-top-color: #334155; }
-    .back-link a { color: #60a5fa; }
-  }
+  :global([data-theme='dark']) h1 { color: #f1f5f9; }
+  :global([data-theme='dark']) .series-eyebrow { color: #60a5fa; }
+  :global([data-theme='dark']) .taxonomy-count { color: #94a3b8; }
+  :global([data-theme='dark']) .breadcrumbs a { color: #94a3b8; }
+  :global([data-theme='dark']) .breadcrumbs a:hover { color: #60a5fa; }
+  :global([data-theme='dark']) .breadcrumb-sep { color: #475569; }
+  :global([data-theme='dark']) .breadcrumb-current { color: #e2e8f0; }
+  :global([data-theme='dark']) .series-item { background: #1e293b; border-color: #334155; }
+  :global([data-theme='dark']) .series-item:hover { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); border-color: #475569; }
+  :global([data-theme='dark']) .series-item-num { color: #60a5fa; background: rgba(96, 165, 250, 0.12); }
+  :global([data-theme='dark']) .series-item-title { color: #f1f5f9; }
+  :global([data-theme='dark']) .series-item-meta { color: #64748b; }
+  :global([data-theme='dark']) .dot-sep { color: #475569; }
+  :global([data-theme='dark']) .series-item-excerpt { color: #94a3b8; }
+  :global([data-theme='dark']) .back-link { border-top-color: #334155; }
+  :global([data-theme='dark']) .back-link a { color: #60a5fa; }
 </style>

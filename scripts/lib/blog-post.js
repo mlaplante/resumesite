@@ -69,8 +69,10 @@ const TITLE_FORMAT_INSTRUCTIONS = [
   'Output exactly this structure:',
   '  Line 1: `TITLE: <your title>` — a clear, human-readable title in Title Case.',
   '            No slashes, no file extensions, no code identifiers. 4–14 words.',
-  '  Line 2: blank',
-  '  Line 3+: the post body in Markdown, starting with a single `# <title>` heading.',
+  '  Line 2: `TAGS: <3-6 comma-separated lowercase topic tags, e.g. kubernetes, ebpf, incident-response>`',
+  '  Line 3: blank',
+  '  Line 4+: the post body in Markdown, starting with a single `# <title>` heading',
+  '           that repeats the TITLE line exactly.',
   'Do NOT include YAML frontmatter; the toolchain adds it.',
 ].join('\n');
 
@@ -120,6 +122,30 @@ export function slugify(title) {
     .replace(/(^-|-$)/g, '');
 }
 
+// Unconditional duplicate guard, checked immediately before writing a post.
+// Similarity scoring (lexical/semantic) can be defeated by an embedding
+// outage or a threshold miss, but an exact repeat is always detectable:
+//   - the candidate title matches an existing post's title case-insensitively, or
+//   - the candidate slug matches the slug part of an existing post filename
+//     (any date prefix — the pipeline published `2026-05-03-x.md` and
+//     `2026-05-13-x.md` twice before this guard existed).
+// Returns the conflicting filename/title, or null when the post is unique.
+export function findExactDuplicate(title, slug = slugify(title), dir = POSTS_DIR) {
+  if (!existsSync(dir)) return null;
+  const files = readdirSync(dir).filter(f => f.endsWith('.md'));
+
+  const slugRe = new RegExp(`^\\d{4}-\\d{2}-\\d{2}-${slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:-\\d+)?\\.md$`);
+  const bySlug = files.find(f => slugRe.test(f));
+  if (bySlug) return bySlug;
+
+  const wanted = title.trim().toLowerCase();
+  for (const f of files) {
+    const t = readFileSync(join(dir, f), 'utf-8').match(/^title:\s*"?(.+?)"?\s*$/m)?.[1];
+    if (t && t.trim().toLowerCase() === wanted) return f;
+  }
+  return null;
+}
+
 // File extensions / code identifiers that a title must NOT end with, and
 // patterns that strongly suggest the LLM regurgitated a code identifier
 // instead of a human title (e.g. `templates/k8srequiredlabels.yaml`).
@@ -132,7 +158,7 @@ export function isValidTitle(title) {
   // Plausible length: ban very short ("AWS Side") and very long (rambling) outputs.
   if (t.length < 12 || t.length > 160) return false;
   // No path separators — file paths shouldn't become article titles.
-  if (/[\/\\]/.test(t)) return false;
+  if (/[/\\]/.test(t)) return false;
   // No file extension suffix.
   if (FILE_EXTENSIONS.test(t)) return false;
   // Must contain at least one letter and at least one space (multi-word).
@@ -185,6 +211,55 @@ export function extractTitle(content) {
     }
   }
   return null;
+}
+
+// First H1 *or* H2 heading outside fenced code blocks, after the TITLE/TAGS
+// directives. The models are told to open the body with `# <title>`, but in
+// practice sometimes emit `##` — and when the TITLE directive picks up a stray
+// code line ("Define the Lambda function"), this heading is what carries the
+// post's real topic.
+export function extractFirstHeading(content) {
+  if (typeof content !== 'string') return null;
+  let inFence = false;
+  for (const line of stripTitleDirective(content).split('\n')) {
+    if (/^```/.test(line)) {
+      inFence = !inFence;
+      continue;
+    }
+    if (inFence) continue;
+    const m = line.match(/^#{1,2}\s+(.+)$/);
+    if (m) return m[1].replace(STRIPPABLE_WRAPPERS, '');
+  }
+  return null;
+}
+
+// Cross-check the extracted title against the body's opening heading. Both are
+// supposed to be the same text; when they disagree badly, the TITLE directive
+// almost certainly latched onto a stray code line while the heading carries
+// the real topic — so prefer the heading. Published examples of this failure:
+// title "Define the Lambda function" over a body headed "Taming the Fire:
+// Automating Incident Response with Serverless and IaC".
+export function reconcileTitle(title, content) {
+  const heading = extractFirstHeading(content);
+  if (!heading || !isValidTitle(heading)) return title;
+  if (!title) return heading;
+  const { score } = findMostSimilar(title, [heading]);
+  return score < 0.3 ? heading : title;
+}
+
+// Parse the `TAGS:` directive into clean, deduped, kebab-case tags (max 6).
+// Returns [] when the directive is missing or unusable — the frontmatter
+// falls back to an empty list a human can fill in at review time.
+export function extractTags(content) {
+  if (typeof content !== 'string') return [];
+  const head = content.split('\n', 20).join('\n');
+  const m = head.match(/^\s*TAGS:\s*(.+?)\s*$/m);
+  if (!m) return [];
+  const tags = m[1]
+    .split(',')
+    .map(t => slugify(t.trim()))
+    .filter(t => t.length >= 2 && t.length <= 40);
+  return [...new Set(tags)].slice(0, 6);
 }
 
 // Small English stopword set — enough to stop "the/and/with" from inflating similarity.
@@ -326,6 +401,18 @@ export async function pickUniqueTopic(generate, existingPosts, embed) {
       })
     ).trim().replace(/^["']|["']$/g, '');
 
+    // Exact repeats never depend on scoring thresholds or a working
+    // embedding backend — reject them outright.
+    const candSlug = slugify(candidate);
+    const exact = titles.find(
+      t => t.trim().toLowerCase() === candidate.trim().toLowerCase() || slugify(t) === candSlug,
+    );
+    if (exact) {
+      console.warn(`Rejected candidate "${candidate}" — exact duplicate of existing "${exact}".`);
+      rejected.push(candidate);
+      continue;
+    }
+
     const { score, title: similarTo, mode } = await scoreSimilarity(
       { title: candidate, excerpt: '' },
       posts,
@@ -361,17 +448,21 @@ async function scoreSimilarity(candidate, posts, embed) {
   return { score, title, mode: 'lexical' };
 }
 
-// Strip the leading `TITLE: ...` directive and any immediately-following
-// blank line so it doesn't leak into the published post body.
+// Strip the leading `TITLE: ...` / `TAGS: ...` directives and any
+// immediately-following blank line so they don't leak into the published
+// post body.
 export function stripTitleDirective(content) {
   if (typeof content !== 'string') return '';
-  return content.replace(/^\s*TITLE:\s*.+?(?:\r?\n\s*\r?\n|\r?\n|$)/, '');
+  return content
+    .replace(/^\s*TITLE:\s*.+?(?:\r?\n|$)/, '')
+    .replace(/^\s*TAGS:\s*.+?(?:\r?\n|$)/, '')
+    .replace(/^\s*\r?\n/, '');
 }
 
 export function makeExcerpt(content) {
   const text = stripTitleDirective(content)
     .replace(/^#.+\n+/, '')
-    .replace(/[#*`\[\]]/g, '')
+    .replace(/[#*`[\]]/g, '')
     .trim();
   let sliced = text.slice(0, 150);
   // If the 150-char cut lands mid-word, back up to the last word boundary so
@@ -386,16 +477,17 @@ export function makeExcerpt(content) {
 // the lines are emitted as real frontmatter; otherwise a commented hint is left
 // so a human reviewer can opt the draft into a series at publish time. The hint
 // is a YAML comment, so it's ignored by the content-collection schema either way.
-export function buildFrontmatter({ title, date, category, excerpt, series, seriesOrder }) {
+export function buildFrontmatter({ title, date, category, excerpt, tags = [], series, seriesOrder }) {
   const esc = (s) => s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
   const seriesLines = series
     ? `series: "${esc(series)}"\nseriesOrder: ${Number.isFinite(seriesOrder) ? seriesOrder : 1}\n`
     : `# series: ""      # optional: set the same value on every part of a multi-part series\n# seriesOrder: 1   # this post's position within that series\n`;
+  const tagList = tags.map(t => `"${esc(t)}"`).join(', ');
   return `---
 title: "${esc(title)}"
 date: ${date}
 category: "${category}"
-tags: []
+tags: [${tagList}]
 ${seriesLines}excerpt: "${esc(excerpt)}"
 ---`;
 }
@@ -475,6 +567,9 @@ export async function runGenerator({ argv, providerName, generate, embed, suppor
     });
     title = extractTitle(content);
   }
+  // A syntactically-valid TITLE directive can still be a stray code line the
+  // model latched onto; the body's opening heading is the tiebreaker.
+  title = reconcileTitle(title, content);
   if (!title) {
     console.error('Refusing to write post: could not extract a valid title from the LLM response.');
     process.exit(1);
@@ -501,11 +596,21 @@ export async function runGenerator({ argv, providerName, generate, embed, suppor
   }
 
   const slug = slugify(title);
+
+  // Last line of defense: an exact title/slug repeat must never be written,
+  // regardless of mode or how the similarity scoring above went.
+  const duplicateOf = findExactDuplicate(title, slug);
+  if (duplicateOf) {
+    console.error(`Refusing to write duplicate post. "${title}" already exists as "${duplicateOf}".`);
+    process.exit(1);
+  }
+
   const date = new Date().toISOString().split('T')[0];
   const category = fromGit ? 'project-update' : 'thought-leadership';
+  const tags = extractTags(content);
   const body = stripTitleDirective(content);
   const excerpt = makeExcerpt(body);
-  const frontmatter = buildFrontmatter({ title, date, category, excerpt });
+  const frontmatter = buildFrontmatter({ title, date, category, excerpt, tags });
   const fullPost = `${frontmatter}\n\n${body}`;
 
   const { filename, filepath } = writePostCollisionSafe({ slug, date, content: fullPost });

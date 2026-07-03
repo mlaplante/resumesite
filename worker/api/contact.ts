@@ -1,8 +1,15 @@
 import type { Env } from '../index';
 
 const THANK_YOU = '/thank-you/';
+// Email delivery failed but the submission is safely stored — tell the sender
+// it was received rather than bouncing them to the error page (which invites
+// a duplicate resubmission).
+const THANK_YOU_DELAYED = '/thank-you/?delivery=delayed';
 const CONTACT_ERROR = '/contact-error/';
-// Rate limit: at most this many submissions from one IP within the window.
+// Rate limit: at most this many attempts from one IP within the window.
+// Counted against contact_attempts — every POST that reaches the Turnstile
+// check — so failing the challenge repeatedly can't be used to hammer
+// siteverify and D1 for free.
 const RATE_LIMIT_MAX = 5;
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
 // Submissions older than this are purged opportunistically on each accepted request.
@@ -18,6 +25,7 @@ const UPSTREAM_TIMEOUT_MS = 10_000;
 // Strip CR/LF and other control characters that could be used to inject
 // extra email headers downstream when name/email are interpolated into
 // replyTo / subject / body.
+// eslint-disable-next-line no-control-regex -- matching control chars is the point
 const stripControl = (s: string) => s.replace(/[\x00-\x1f\x7f]/g, '');
 
 // Stricter email validation than \S+@\S+\.\S+ — requires a 2+ char TLD,
@@ -35,6 +43,31 @@ function plain(status: number, body: string, extra: HeadersInit = {}): Response 
     status,
     headers: { 'Content-Type': 'text/plain; charset=utf-8', ...NO_STORE, ...extra },
   });
+}
+
+// Read the request body with a hard byte cap. The Content-Length header is
+// client-controlled and absent on chunked uploads, so the cap has to be
+// enforced on the actual stream. Returns null when the cap is exceeded.
+async function readBodyCapped(request: Request, maxBytes: number): Promise<Uint8Array | null> {
+  if (!request.body) return new Uint8Array(0);
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (let read = await reader.read(); !read.done; read = await reader.read()) {
+    total += read.value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(read.value);
+  }
+  const buf = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    buf.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return buf;
 }
 
 export async function handleContact(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -66,15 +99,22 @@ export async function handleContact(request: Request, env: Env, ctx: ExecutionCo
     return plain(415, 'Unsupported media type');
   }
 
+  // Fast reject on the declared size, then enforce the same cap on the real
+  // stream — Content-Length is client-controlled and absent on chunked bodies.
   const contentLength = Number(request.headers.get('Content-Length') ?? '0');
   if (contentLength > MAX_FORM_BYTES) {
     console.warn('contact: rejected on body size', { contentLength, max: MAX_FORM_BYTES });
     return plain(413, 'Payload too large');
   }
+  const rawBody = await readBodyCapped(request, MAX_FORM_BYTES);
+  if (rawBody === null) {
+    console.warn('contact: rejected on body size (stream cap)', { max: MAX_FORM_BYTES });
+    return plain(413, 'Payload too large');
+  }
 
   let form: FormData;
   try {
-    form = await request.formData();
+    form = await new Response(rawBody, { headers: { 'Content-Type': contentType } }).formData();
   } catch {
     return plain(400, 'Bad request');
   }
@@ -97,13 +137,26 @@ export async function handleContact(request: Request, env: Env, ctx: ExecutionCo
   const ip = request.headers.get('CF-Connecting-IP') ?? '';
 
   if (ip) {
-    const since = Date.now() - RATE_LIMIT_WINDOW_MS;
+    const now = Date.now();
+    const since = now - RATE_LIMIT_WINDOW_MS;
+    // Count *attempts*, not accepted submissions — otherwise a client that
+    // keeps failing Turnstile gets unlimited free runs at siteverify.
     const recent = await env.DB.prepare(
-      'SELECT COUNT(*) AS n FROM submissions WHERE ip = ?1 AND ts > ?2'
+      'SELECT COUNT(*) AS n FROM contact_attempts WHERE ip = ?1 AND ts > ?2'
     ).bind(ip, since).first<{ n: number }>();
     if (recent && recent.n >= RATE_LIMIT_MAX) {
       return reject('rate limit', { ip, recent: recent.n });
     }
+    await env.DB.prepare(
+      'INSERT INTO contact_attempts (ip, ts) VALUES (?1, ?2)'
+    ).bind(ip, now).run();
+    // Attempts only matter within the rate-limit window; prune the old ones
+    // on every recorded attempt so the table can't grow unbounded even if no
+    // submission is ever accepted.
+    ctx.waitUntil(
+      env.DB.prepare('DELETE FROM contact_attempts WHERE ts < ?1').bind(since).run()
+        .catch(err => console.error('attempt purge failed:', err))
+    );
   }
 
   const tsBody = new FormData();
@@ -162,17 +215,18 @@ export async function handleContact(request: Request, env: Env, ctx: ExecutionCo
       signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     });
   } catch (err) {
-    // Submission is already recorded in D1 as a backstop.
+    // The submission is safely recorded in D1 — acknowledge receipt instead
+    // of showing an error that would prompt a duplicate resubmission.
     console.error('ForwardEmail fetch failed:', String(err));
-    return redirectTo(CONTACT_ERROR);
+    return redirectTo(THANK_YOU_DELAYED);
   }
 
   if (!mailRes.ok) {
     const errBody = await mailRes.text();
     const requestId = mailRes.headers.get('X-Request-Id') ?? '';
     console.error('ForwardEmail failed', mailRes.status, 'request-id=', requestId, 'body-len=', mailBody.length, 'err=', errBody);
-    // Submission is still recorded in D1 as a backstop.
-    return redirectTo(CONTACT_ERROR);
+    // The submission is safely recorded in D1 — acknowledge receipt.
+    return redirectTo(THANK_YOU_DELAYED);
   }
   console.log('ForwardEmail sent ok', mailRes.status);
 

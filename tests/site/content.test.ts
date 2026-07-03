@@ -86,4 +86,35 @@ describe('blog content frontmatter', () => {
     const slugs = files.map((f) => f.replace(/\.md$/, ''));
     expect(new Set(slugs).size).toBe(slugs.length);
   });
+
+  // The AI pipeline once published the same post twice under different date
+  // prefixes (2026-05-03-x.md / 2026-05-13-x.md) — treat any repeat of the
+  // date-less slug or the title as a duplicate.
+  it('has unique slugs ignoring the date prefix', () => {
+    const bare = files.map((f) => f.replace(/^\d{4}-\d{2}-\d{2}-/, ''));
+    const dupes = bare.filter((s, i) => bare.indexOf(s) !== i);
+    expect(dupes, `duplicate posts: ${dupes.join(', ')}`).toEqual([]);
+  });
+
+  it('has unique titles', () => {
+    const titles = files.map(
+      (f) => frontmatter(readFileSync(join(POSTS_DIR, f), 'utf8')).title?.toLowerCase() ?? '',
+    );
+    const dupes = titles.filter((t, i) => titles.indexOf(t) !== i);
+    expect(dupes, `duplicate titles: ${dupes.join(', ')}`).toEqual([]);
+  });
+
+  // Posts published after this date must ship with tags — the draft pipeline
+  // now generates them, and empty tags mean the review checklist was skipped.
+  // Older posts are grandfathered in rather than backfilled.
+  const TAGS_REQUIRED_AFTER = '2026-07-04';
+
+  it.each(files)('%s has tags when recent enough to require them', (file) => {
+    const raw = readFileSync(join(POSTS_DIR, file), 'utf8');
+    const fm = frontmatter(raw);
+    if (fm.date <= TAGS_REQUIRED_AFTER) return;
+    expect(fm.tags, `${file}: posts dated after ${TAGS_REQUIRED_AFTER} must have at least one tag`).toMatch(
+      /\[\s*".+"\s*\]|\[\s*'.+'\s*\]/,
+    );
+  });
 });

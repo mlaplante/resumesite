@@ -25,6 +25,9 @@ const canonicalUrl = canonical ?? `${SITE_URL}${Astro.url.pathname}`;
 
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<!-- Blocking on purpose: stamps data-theme on <html> before first paint so
+     dark-theme users never see a light flash. External file for the CSP. -->
+<script is:inline src="/js/theme.js"></script>
 <title>{title}</title>
 <meta name="description" content={description} />
 <link rel="canonical" href={canonicalUrl} />

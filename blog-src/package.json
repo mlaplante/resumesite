@@ -1,16 +1,15 @@
 {
   "name": "blog-src",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Astro project for michaellaplante.com — portfolio, blog, and résumé",
+  "private": true,
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Michael LaPlante",
+  "license": "UNLICENSED",
   "type": "module",
   "overrides": {
     "yaml-language-server": {
