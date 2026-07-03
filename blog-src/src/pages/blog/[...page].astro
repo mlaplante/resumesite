@@ -13,7 +13,10 @@ export const getStaticPaths = (async ({ paginate }) => {
 
 const { page } = Astro.props;
 const posts = page.data;
-const categories = ['all', ...new Set(posts.map((p) => p.data.category))];
+// Categories come from the whole archive, not just this page's 10 posts —
+// otherwise the button row varies between pages and can omit categories.
+const allPosts = await getSortedPosts();
+const categories = ['all', ...new Set(allPosts.map((p) => p.data.category))];
 const isFirstPage = page.currentPage === 1;
 ---
 
@@ -23,12 +26,22 @@ const isFirstPage = page.currentPage === 1;
     <p class="blog-subtitle">Thoughts on security, engineering, and building things.</p>
 
     <div class="search-box">
-      <input type="text" id="blog-search" placeholder="Search posts..." autocomplete="off" />
+      <input
+        type="search"
+        id="blog-search"
+        placeholder="Search posts..."
+        autocomplete="off"
+        aria-label="Search all blog posts"
+      />
     </div>
 
-    <div class="category-filter">
+    <div class="category-filter" role="group" aria-label="Filter posts by category">
       {categories.map((cat) => (
-        <button class="filter-btn" data-category={cat}>
+        <button
+          class:list={['filter-btn', { active: cat === 'all' }]}
+          data-category={cat}
+          aria-pressed={cat === 'all' ? 'true' : 'false'}
+        >
           {cat === 'all' ? 'All' : cat.replace(/-/g, ' ')}
         </button>
       ))}
@@ -46,7 +59,7 @@ const isFirstPage = page.currentPage === 1;
       </div>
     </div>
 
-    <p class="search-status" id="search-status" hidden></p>
+    <p class="search-status" id="search-status" role="status" aria-live="polite" hidden></p>
 
     <div class="post-grid" id="search-results" hidden></div>
 
@@ -411,16 +424,7 @@ const isFirstPage = page.currentPage === 1;
 </style>
 
 <script>
-  interface IndexedPost {
-    title: string;
-    excerpt: string;
-    category: string;
-    tags: string[];
-    url: string;
-    dateShort: string;
-    dateISO: string;
-    readTime: number;
-  }
+  import { filterPosts, renderPostCard, describeResults, type IndexedPost } from '../../utils/search';
 
   const searchInput = document.getElementById('blog-search') as HTMLInputElement | null;
   const pageGrid = document.getElementById('page-grid');
@@ -429,9 +433,16 @@ const isFirstPage = page.currentPage === 1;
   const featuredBanner = document.querySelector('.featured-banner') as HTMLElement | null;
   const pagination = document.querySelector('.pagination') as HTMLElement | null;
 
+  // The listing's card styles are scoped (`.post-card[data-astro-cid-*]`), so
+  // injected cards must carry the same attribute or they render unstyled.
+  // Read it off the results grid, which is part of the static template.
+  const scopeAttr =
+    resultsGrid?.getAttributeNames().find((n) => n.startsWith('data-astro-cid-')) ?? '';
+
   // The blog is paginated 10 posts at a time, so the rendered cards only cover
-  // the current page. Searching loads a static index of every post and renders
-  // matches across the whole archive; clearing it restores the paged view.
+  // the current page. Searching — or picking a category — loads a static index
+  // of every post and renders matches across the whole archive; clearing both
+  // restores the paged view.
   let indexPromise: Promise<IndexedPost[]> | null = null;
   function loadIndex(): Promise<IndexedPost[]> {
     if (!indexPromise) {
@@ -447,64 +458,15 @@ const isFirstPage = page.currentPage === 1;
     return activeBtn?.getAttribute('data-category') || 'all';
   }
 
-  // Escapes for BOTH element and attribute contexts. The DOM-based
-  // textContent/innerHTML trick does not escape quotes, which would let a
-  // value containing `"` break out of an attribute like data-category below.
-  const HTML_ESCAPES: Record<string, string> = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;',
-  };
-  function escapeHtml(value: string): string {
-    return value.replace(/[&<>"']/g, (c) => HTML_ESCAPES[c]);
-  }
-
-  function renderResults(posts: IndexedPost[], query: string) {
-    const cat = activeCategory();
-    const matches = posts.filter((post) => {
-      const matchesCat = cat === 'all' || post.category === cat;
-      const haystack = [post.title, post.excerpt, post.category, ...post.tags]
-        .join(' ')
-        .toLowerCase();
-      return matchesCat && (!query || haystack.includes(query));
-    });
-
+  function renderResults(posts: IndexedPost[], query: string, cat: string) {
+    const matches = filterPosts(posts, query, cat);
     if (resultsGrid) {
-      resultsGrid.innerHTML = matches
-        .map(
-          (post) => `
-            <a href="${escapeHtml(post.url)}" class="post-card" data-category="${escapeHtml(post.category)}">
-              <div class="post-card-meta">
-                <time datetime="${escapeHtml(post.dateISO)}">${escapeHtml(post.dateShort)}</time>
-                <span class="dot-sep">&middot;</span>
-                <span>${Number(post.readTime) || 1} min read</span>
-              </div>
-              <h2>${escapeHtml(post.title)}</h2>
-              <p>${escapeHtml(post.excerpt)}</p>
-              <span class="category-badge">${escapeHtml(post.category.replace(/-/g, ' '))}</span>
-            </a>`
-        )
-        .join('');
+      resultsGrid.innerHTML = matches.map((post) => renderPostCard(post, scopeAttr)).join('');
     }
-
     if (status) {
       status.hidden = false;
-      status.textContent = matches.length
-        ? `${matches.length} result${matches.length === 1 ? '' : 's'} across the whole blog`
-        : 'No posts found.';
+      status.textContent = describeResults(matches.length, query, cat);
     }
-  }
-
-  // Filter just the cards on the current page (used when there's no query, so
-  // category buttons still work on the default paged view).
-  function filterCurrentPage() {
-    const cat = activeCategory();
-    pageGrid?.querySelectorAll('.post-card').forEach((card) => {
-      const el = card as HTMLElement;
-      el.style.display = cat === 'all' || el.getAttribute('data-category') === cat ? '' : 'none';
-    });
   }
 
   function showSearchView(show: boolean) {
@@ -516,25 +478,28 @@ const isFirstPage = page.currentPage === 1;
   }
 
   async function update() {
-    const query = searchInput?.value.toLowerCase().trim() || '';
-    if (query) {
+    const query = searchInput?.value.trim() || '';
+    const cat = activeCategory();
+    if (query || cat !== 'all') {
       const posts = await loadIndex();
       showSearchView(true);
-      renderResults(posts, query);
+      renderResults(posts, query, cat);
     } else {
       showSearchView(false);
-      filterCurrentPage();
     }
   }
 
   document.querySelectorAll('.filter-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.filter-btn').forEach((b) => b.classList.remove('active'));
+      document.querySelectorAll('.filter-btn').forEach((b) => {
+        b.classList.remove('active');
+        b.setAttribute('aria-pressed', 'false');
+      });
       btn.classList.add('active');
+      btn.setAttribute('aria-pressed', 'true');
       update();
     });
   });
-  document.querySelector('.filter-btn')?.classList.add('active');
 
   searchInput?.addEventListener('input', () => update());
 </script>
