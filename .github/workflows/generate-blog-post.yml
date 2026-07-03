@@ -2,8 +2,10 @@ name: Generate Daily Blog Post
 
 on:
   schedule:
-    # Every day at 8:00 AM UTC (adjust to your timezone)
-    - cron: '0 8 * * *'
+    # Mon/Wed/Fri at 8:00 AM UTC. Was daily, but ~1 post/day outpaced human
+    # review (duplicate and mis-titled drafts got merged) and reads as
+    # thin content; three a week keeps the review gate meaningful.
+    - cron: '0 8 * * 1,3,5'
   workflow_dispatch:
     inputs:
       mode:
