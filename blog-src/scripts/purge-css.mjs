@@ -11,6 +11,7 @@ const targets = [
   'css/bootstrap-grid.min.css',
   'css/bootstrap-utilities.min.css',
   'css/bootstrap.min.css',
+  'css/style.css',
 ];
 
 // Classes mutated at runtime by /js/script.js that aren't present in rendered HTML.

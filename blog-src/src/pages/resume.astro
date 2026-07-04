@@ -9,9 +9,10 @@ import { profile, summary, stats, skills, experience, certifications } from '../
 >
   <Fragment slot="head">
     <meta name="author" content="Michael LaPlante">
+    <link rel="preload" href="/fonts/poppins/poppins-400.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/poppins/poppins-700.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" type="text/css" href="/css/fonts.css">
     <link rel="stylesheet" href="/css/bootstrap.min.css">
-    <link rel="stylesheet" type="text/css" href="/css/linea.css">
     <link rel="stylesheet" type="text/css" href="/css/style.css">
   </Fragment>
 
@@ -141,7 +142,7 @@ import { profile, summary, stats, skills, experience, certifications } from '../
     </div>
   </footer>
 
-  <script is:inline src="/js/script.js"></script>
+  <script is:inline defer src="/js/script.js"></script>
   <!-- External so the CSP can serve script-src without 'unsafe-inline'. -->
   <script is:inline defer src="/js/resume-print.js"></script>
 </SiteLayout>

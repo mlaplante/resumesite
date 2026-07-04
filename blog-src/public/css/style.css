@@ -344,9 +344,9 @@ body.show-menu .menu-btn .l3{
 .service{
 	margin-bottom:40px;
 }
-.service > i{
-	font-size:68px;
-	line-height:1em;
+.service > .service-icon{
+	width:68px;
+	height:68px;
 }
 .service > h4{
 	margin-top:10px;
@@ -1161,7 +1161,7 @@ body.dark-mode .service:hover {
 	box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
-body.dark-mode .service i {
+body.dark-mode .service .service-icon {
 	color: #3F51B5;
 }
 
