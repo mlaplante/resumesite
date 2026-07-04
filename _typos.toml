@@ -10,6 +10,7 @@ extend-exclude = [
 [default.extend-words]
 # Brand names, acronyms, and accepted variants the default dictionary flags.
 aks = "aks"                  # Azure Kubernetes Service
+cose = "cose"                # COSE (CBOR Object Signing and Encryption)
 counterfit = "counterfit"    # Microsoft Counterfit (AI security tool)
 hashi = "hashi"              # HashiCorp
 hav = "hav"                  # hardware-assisted virtualization
