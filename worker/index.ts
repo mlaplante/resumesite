@@ -16,6 +16,12 @@ const ALLOW_HEADERS: HeadersInit = {
   'Referrer-Policy': 'strict-origin-when-cross-origin',
 };
 
+// Fingerprinted asset produced by blog-src/scripts/fingerprint-assets.mjs,
+// e.g. /css/style.4c1f0b9a2e.css. Captures the unhashed path so a hash from
+// a previous deploy (referenced by CDN-cached HTML) can fall back to the
+// current copy instead of 404ing.
+const HASHED_ASSET = /^(\/(?:css|js)\/.+)\.[0-9a-f]{10}(\.(?:css|js))$/;
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
@@ -26,6 +32,16 @@ export default {
       return new Response('Method not allowed', { status: 405, headers: ALLOW_HEADERS });
     }
 
-    return env.ASSETS.fetch(request);
+    const response = await env.ASSETS.fetch(request);
+
+    if (response.status === 404) {
+      const stale = url.pathname.match(HASHED_ASSET);
+      if (stale) {
+        const current = new URL(stale[1] + stale[2], url);
+        return env.ASSETS.fetch(new Request(current, request));
+      }
+    }
+
+    return response;
   },
 } satisfies ExportedHandler<Env>;

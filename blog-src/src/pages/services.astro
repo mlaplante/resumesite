@@ -1,31 +1,32 @@
 ---
 import SiteLayout from '../layouts/SiteLayout.astro';
+import Icon from '../components/Icon.astro';
 import { stats } from '../data/resume';
 import { SITE_URL, CAL_LINK } from '../config';
 
 const bookingUrl = CAL_LINK ? `https://cal.com/${CAL_LINK}` : '';
 
-const services = [
+const services: { icon: 'shield' | 'cloud' | 'lock' | 'lightbulb'; title: string; description: string }[] = [
   {
-    icon: 'icon-basic-shield',
+    icon: 'shield',
     title: 'Security Architecture Reviews',
     description:
       'Assess your infrastructure, identify gaps, and design defense-in-depth strategies tailored to your risk profile and compliance requirements.',
   },
   {
-    icon: 'icon-basic-cloud',
+    icon: 'cloud',
     title: 'Cloud Security Strategy',
     description:
       'Build secure multi-cloud architectures across AWS, Azure, and GCP with zero-trust principles, least-privilege access, and continuous monitoring.',
   },
   {
-    icon: 'icon-basic-lock',
+    icon: 'lock',
     title: 'Compliance & Risk Assessment',
     description:
       'Navigate SOC 2, ISO 27001, HIPAA, and PCI-DSS with practical frameworks that satisfy auditors without slowing your teams down.',
   },
   {
-    icon: 'icon-basic-lightbulb',
+    icon: 'lightbulb',
     title: 'Engineering Leadership Advisory',
     description:
       'Scale engineering organizations, establish DevSecOps practices, and build the security culture that keeps your company out of the headlines.',
@@ -105,9 +106,10 @@ const professionalServiceSchema = JSON.stringify({
     <meta name="keywords" content="security consulting, cloud security consultant, security architecture review, SOC 2, ISO 27001, DevSecOps advisory, Michael LaPlante">
     <meta name="author" content="Michael LaPlante">
     <script type="application/ld+json" set:html={professionalServiceSchema} />
+    <link rel="preload" href="/fonts/poppins/poppins-400.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/poppins/poppins-700.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" type="text/css" href="/css/fonts.css">
     <link rel="stylesheet" href="/css/bootstrap.min.css">
-    <link rel="stylesheet" type="text/css" href="/css/linea.css">
     <link rel="stylesheet" type="text/css" href="/css/style.css">
   </Fragment>
 
@@ -180,7 +182,7 @@ const professionalServiceSchema = JSON.stringify({
         {services.map((service) => (
           <div class="col-sm-6">
             <div class="service" data-aos="fade-up">
-              <i class={service.icon}></i>
+              <Icon name={service.icon} />
               <h4>{service.title}</h4>
               <p>{service.description}</p>
             </div>
@@ -284,7 +286,7 @@ const professionalServiceSchema = JSON.stringify({
   <!--========================================
     JavaScript Files
   =========================================-->
-  <script is:inline src="/js/script.js"></script>
+  <script is:inline defer src="/js/script.js"></script>
   {bookingUrl && <script is:inline defer src="/js/cal-embed.js"></script>}
 </SiteLayout>
 
