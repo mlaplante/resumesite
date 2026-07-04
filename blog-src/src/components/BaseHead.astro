@@ -61,6 +61,6 @@ const canonicalUrl = canonical ?? `${SITE_URL}${Astro.url.pathname}`;
 <link rel="alternate" type="application/rss+xml" title={BLOG_TITLE} href="/blog/rss.xml" />
 <link rel="alternate" type="application/feed+json" title={`${BLOG_TITLE} (JSON Feed)`} href="/feed.json" />
 
-<!-- Self-hosted Umami analytics -->
+<!-- Self-hosted Umami analytics — injected on first interaction (see analytics.js). -->
 <link rel="preconnect" href="https://laplantedevanalytics.netlify.app" crossorigin />
-<script defer src="https://laplantedevanalytics.netlify.app/script.js" data-website-id="b7f548e1-c6ab-4900-8693-e500f5400f0f"></script>
+<script defer src="/js/analytics.js"></script>
