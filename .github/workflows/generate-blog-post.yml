@@ -2,10 +2,11 @@ name: Generate Blog Post
 
 on:
   schedule:
-    # Mon/Wed/Fri at 8:00 AM UTC. Was daily, but ~1 post/day outpaced human
-    # review (duplicate and mis-titled drafts got merged) and reads as
-    # thin content; three a week keeps the review gate meaningful.
-    - cron: '0 8 * * 1,3,5'
+    # Daily at 8:00 AM UTC. The duplicate/mis-title problems that once
+    # justified a 3x/week cadence are now caught by the pipeline's hard
+    # duplicate guard, H1 title reconciliation, and the CI content tests,
+    # so daily drafting is safe again.
+    - cron: '0 8 * * *'
   workflow_dispatch:
     inputs:
       mode:
