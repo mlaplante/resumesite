@@ -12,6 +12,9 @@ export default tseslint.config(
       'blog-src/public/css/**',
       'blog-src/.astro/**',
       '.wrangler/**',
+      // Claude Code agent/skill config + skill-shipped helper scripts are
+      // tooling, not app source — outside the app's lint surface (like .vscode).
+      '.claude/**',
     ],
   },
 
