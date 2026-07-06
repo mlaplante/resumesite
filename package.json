@@ -35,7 +35,7 @@
     "@cloudflare/vitest-pool-workers": "^0.16.13",
     "@eslint/js": "^10.0.1",
     "eslint": "^10.6.0",
-    "eslint-plugin-astro": "^1.7.0",
+    "eslint-plugin-astro": "^2.1.1",
     "globals": "^17.7.0",
     "typescript-eslint": "^8.62.1",
     "vitest": "^4.1.9"
