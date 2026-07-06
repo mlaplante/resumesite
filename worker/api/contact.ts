@@ -33,6 +33,11 @@ const stripControl = (s: string) => s.replace(/[\x00-\x1f\x7f]/g, '');
 // rejects whitespace, multiple @, leading/trailing dots, etc.
 const EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,63}$/;
 
+// Display-name for the notification's Reply-To, quoted per RFC 5322 with `"`
+// and `\` stripped. Without quoting, a crafted name like `x <a@evil.com>,`
+// could smuggle a second address into the address list ForwardEmail parses.
+const quoteDisplayName = (s: string) => `"${s.replace(/[\\"]/g, '')}"`;
+
 const NO_STORE: HeadersInit = {
   'Cache-Control': 'no-store',
   'X-Content-Type-Options': 'nosniff',
@@ -255,7 +260,7 @@ export async function handleContact(request: Request, env: Env, ctx: ExecutionCo
     mailRes = await sendMail(env, {
       from: env.CONTACT_FROM,
       to: env.CONTACT_TO,
-      replyTo: `${name} <${email}>`,
+      replyTo: `${quoteDisplayName(name)} <${email}>`,
       subject: notification.subject,
       html: notification.html,
       text: notification.text,

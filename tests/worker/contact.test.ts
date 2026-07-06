@@ -459,9 +459,10 @@ describe('contact form: branded emails', () => {
 
     const notification = mails.find(m => String(m.subject).startsWith('Contact form:'));
     expect(notification).toBeDefined();
-    // Goes to the owner, reply routes back to the sender.
+    // Goes to the owner, reply routes back to the sender. The display-name is
+    // quoted (RFC 5322) so a crafted name can't smuggle a second address.
     expect(notification!.to).toBe(env.CONTACT_TO);
-    expect(notification!.replyTo).toBe('Test User <test@example.com>');
+    expect(notification!.replyTo).toBe('"Test User" <test@example.com>');
     // Branded HTML: the site's Indigo primary and the sender's details.
     expect(String(notification!.html)).toContain('#3F51B5');
     expect(String(notification!.html)).toContain('New contact form submission');
@@ -509,6 +510,28 @@ describe('contact form: branded emails', () => {
     expect(html).not.toContain('<script>alert(1)</script>');
     expect(html).toContain('&lt;script&gt;');
     expect(html).toContain('Evil &lt;b&gt;Name&lt;/b&gt;');
+  });
+
+  it('quotes the Reply-To display-name so a crafted name can\'t smuggle an address', async () => {
+    const mails = stubAndCapture();
+    const ctx = createExecutionContext();
+    const res = await worker.fetch(
+      makeContactRequest({
+        // Without quoting, this parses as TWO addresses: attacker@evil.com
+        // and "spoof" <test@example.com>. Quoted, it's inert display text.
+        fields: { name: 'x <attacker@evil.com>, "spoof' },
+      }),
+      env,
+      ctx,
+    );
+    await waitOnExecutionContext(ctx);
+    expect(res.status).toBe(303);
+
+    const notification = mails.find(m => String(m.subject).startsWith('Contact form:'));
+    expect(notification).toBeDefined();
+    // The whole name lands inside one quoted-string (inner `"` stripped), and
+    // the only mailbox in the list is the sender's real address.
+    expect(notification!.replyTo).toBe('"x <attacker@evil.com>, spoof" <test@example.com>');
   });
 
   it('does not block the redirect on an auto-reply failure', async () => {
