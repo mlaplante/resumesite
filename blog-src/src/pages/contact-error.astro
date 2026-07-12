@@ -8,7 +8,7 @@ import SiteLayout from '../layouts/SiteLayout.astro';
     <link rel="stylesheet" href="/css/bootstrap-reboot.min.css">
     <link rel="stylesheet" type="text/css" href="/css/style.css">
   </Fragment>
-  <div class="contact-error">
+  <main class="contact-error">
     <div>
       <svg class="robot" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 220" fill="none">
         <defs>
@@ -42,7 +42,7 @@ import SiteLayout from '../layouts/SiteLayout.astro';
       <p>I couldn't send your message right now. Please try again in a few minutes &mdash; or reach out on <a href="https://www.linkedin.com/in/mlaplante/" rel="noopener noreferrer">LinkedIn</a>.</p>
       <a href="/#contact" class="btn btn-custom">Back to the form</a>
     </div>
-  </div>
+  </main>
   <script is:inline defer src="/js/script.js"></script>
 </SiteLayout>
 
@@ -158,4 +158,22 @@ import SiteLayout from '../layouts/SiteLayout.astro';
 
   :global([data-theme='dark']) .robot-eye-left,
   :global([data-theme='dark']) .robot-eye-right { fill: #ff9b9b; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .contact-error h1,
+    .contact-error p,
+    .contact-error .btn,
+    .robot,
+    .robot-body,
+    .robot-shadow,
+    .robot-eye-left,
+    .robot-eye-right,
+    .robot-arm-left,
+    .robot-arm-right,
+    .robot-ear-left,
+    .robot-ear-right {
+      animation: none;
+      opacity: 1;
+    }
+  }
 </style>

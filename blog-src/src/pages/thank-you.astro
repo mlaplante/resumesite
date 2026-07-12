@@ -8,7 +8,7 @@ import SiteLayout from '../layouts/SiteLayout.astro';
     <link rel="stylesheet" href="/css/bootstrap-reboot.min.css">
     <link rel="stylesheet" type="text/css" href="/css/style.css">
   </Fragment>
-  <div class="thank-you">
+  <main class="thank-you">
     <div>
       <!-- Animated Anima Bot SVG -->
       <svg class="robot" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 220" fill="none">
@@ -57,7 +57,7 @@ import SiteLayout from '../layouts/SiteLayout.astro';
       </p>
       <a href="/" class="btn btn-custom">Back to Home</a>
     </div>
-  </div>
+  </main>
   <script is:inline defer src="/js/script.js"></script>
   <script>
     // The Worker redirects here with ?delivery=delayed when the submission
@@ -193,4 +193,22 @@ import SiteLayout from '../layouts/SiteLayout.astro';
   /* Dark mode - slightly brighter robot */
   :global([data-theme='dark']) .robot-eye-left,
   :global([data-theme='dark']) .robot-eye-right { fill: #93a0ff; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .thank-you h1,
+    .thank-you p,
+    .thank-you .btn,
+    .robot,
+    .robot-body,
+    .robot-shadow,
+    .robot-eye-left,
+    .robot-eye-right,
+    .robot-arm-left,
+    .robot-arm-right,
+    .robot-ear-left,
+    .robot-ear-right {
+      animation: none;
+      opacity: 1;
+    }
+  }
 </style>
