@@ -77,20 +77,20 @@ const posts = (await getSortedPosts()).slice(0, 4);
   <nav class="top-nav" aria-label="Main navigation">
     <div class="container">
 
-      <a href="#" class="menu-btn white-btn" aria-label="Toggle menu" aria-expanded="false">
+      <button type="button" class="menu-btn white-btn" aria-label="Toggle menu" aria-expanded="false" aria-controls="site-menu">
         <span class="lines">
           <span class="l1"></span>
           <span class="l2"></span>
           <span class="l3"></span>
         </span>
-      </a>
+      </button>
 
       <button class="dark-mode-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
         <span class="sun-icon">☀️</span>
         <span class="moon-icon">🌙</span>
       </button>
 
-      <div class="menu" role="menu">
+      <div class="menu" id="site-menu">
         <ul>
           <li>
             <a data-scroll href="#home">Home</a>

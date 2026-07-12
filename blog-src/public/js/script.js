@@ -150,6 +150,16 @@
 				}
 			});
 		});
+
+		document.addEventListener('keydown', function(event) {
+			if (event.key === 'Escape' && body.classList.contains('show-menu')) {
+				body.classList.remove('show-menu');
+				if (menuBtn) {
+					menuBtn.setAttribute('aria-expanded', 'false');
+					menuBtn.focus();
+				}
+			}
+		});
 	}
 
 	/*========================================

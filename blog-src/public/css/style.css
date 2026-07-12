@@ -7,6 +7,8 @@
 body{
 	font-family:'Poppins', sans-serif;
 	background:#F1F1F1;
+	color:#1f2937;
+	line-height:1.55;
 }
 .intro-info,
 .material-input > label,
@@ -20,6 +22,14 @@ img{
 }
 .container{
 	max-width:1024px;
+}
+.top-nav,
+.section,
+footer,
+.service,
+.btn-custom,
+.post-preview{
+	-webkit-font-smoothing:antialiased;
 }
 .section-header{
 	margin-bottom:40px;
@@ -51,6 +61,18 @@ img{
 	padding-top:90px;
 }
 
+/* A shared focus treatment keeps keyboard navigation clear without changing
+   the visual character of the site. */
+:where(a, button, input, textarea, select):focus-visible{
+	outline:3px solid #f0b429;
+	outline-offset:3px;
+}
+.menu-btn:focus-visible,
+.dark-mode-toggle:focus-visible{
+	outline:3px solid #f0b429 !important;
+	outline-offset:3px;
+}
+
 
 /*==================================================
 	Menu
@@ -62,10 +84,13 @@ img{
 	width:100%;
 	z-index:99;
 	border:none;
+	pointer-events:none;
 }
 .top-nav > .container{
 	position:relative;
+	pointer-events:none;
 }
+.top-nav :is(.menu-btn, .dark-mode-toggle, .menu){ pointer-events:auto; }
 .menu-btn{
 	position:absolute;
 	top:17px;
@@ -73,6 +98,9 @@ img{
 	padding:22px 17px;
 	z-index:99;
 	outline:none !important;
+	border:0;
+	background:transparent;
+	cursor:pointer;
 }
 .show-menu .menu-btn{
 	box-shadow:none;
@@ -244,7 +272,7 @@ body.show-menu .menu-btn .l3{
 .main-section{
 	padding-top:120px;
 	padding-bottom:100px;
-	background:#3F51B5;
+	background:linear-gradient(135deg, #233a83 0%, #3f51b5 58%, #4268bf 100%);
 	box-shadow:0 0 40px 0 rgba(0,0,0,.45);
 }
 .person-img{
@@ -278,6 +306,28 @@ body.show-menu .menu-btn .l3{
 	z-index:3;
 	color:rgba(255,255,255,.85);
 	font-weight:300;
+}
+.main-section .btn-custom{
+	background:#fff;
+	border-color:#fff;
+	color:#283f8b;
+	box-shadow:0 8px 24px rgba(9, 19, 55, .22);
+}
+.main-section .btn-custom:hover{
+	background:transparent;
+	color:#fff;
+	box-shadow:0 10px 30px rgba(9, 19, 55, .3);
+}
+.main-section .btn-ghost{
+	background:transparent;
+	border-color:rgba(255,255,255,.78);
+	color:#fff;
+	box-shadow:none;
+}
+.main-section .btn-ghost:hover{
+	background:#fff;
+	border-color:#fff;
+	color:#283f8b;
 }
 
 
@@ -343,6 +393,18 @@ body.show-menu .menu-btn .l3{
 ==================================================*/
 .service{
 	margin-bottom:40px;
+	padding:24px;
+	border:1px solid rgba(31,41,55,.09);
+	border-radius:10px;
+	background:rgba(255,255,255,.42);
+	box-shadow:0 1px 1px rgba(15,23,42,.02);
+	transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease, background .25s ease;
+}
+.service:hover{
+	transform:translateY(-3px);
+	border-color:rgba(63,81,181,.28);
+	background:#fff;
+	box-shadow:0 14px 32px rgba(15,23,42,.08);
 }
 .service > .service-icon{
 	width:68px;
@@ -356,6 +418,14 @@ body.show-menu .menu-btn .l3{
 	font-weight:700;
 	letter-spacing:2px;
 }
+.service > h3 a,
+.service > h4 a{
+	color:inherit;
+	text-decoration-color:rgba(63,81,181,.4);
+	text-underline-offset:3px;
+}
+.service > h3 a:hover,
+.service > h4 a:hover{ color:#304aa4; }
 .service > p{
 	margin-top:15px;
 	margin-bottom:0;
@@ -1165,10 +1235,13 @@ body.dark-mode .funfact span {
 
 body.dark-mode .service {
 	border-color: rgba(255, 255, 255, 0.1);
+	background:#202735;
 }
 
 body.dark-mode .service:hover {
 	box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+	background:#252f40;
+	border-color:rgba(116,137,224,.48);
 }
 
 body.dark-mode .service .service-icon {
@@ -1286,7 +1359,7 @@ body.dark-mode .material-input > label {
 	font-size: 16px;
 	text-transform: uppercase;
 	letter-spacing: 1.5px;
-	transition: all 0.3s ease;
+	transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
 	border: 2px solid #3F51B5;
 	box-shadow: 0 4px 15px rgba(63, 81, 181, 0.4);
 }
@@ -1349,6 +1422,25 @@ body.dark-mode .btn-ghost:hover {
 		padding: 14px 28px;
 		font-size: 14px;
 	}
+}
+
+/* Finishing layer: a little more breathing room on small screens, without
+   turning the compact portfolio into a card-heavy mobile layout. */
+footer{
+	padding-top:52px;
+	border-top:1px solid rgba(31,41,55,.09);
+}
+body.dark-mode footer{ border-top-color:rgba(255,255,255,.1); }
+
+@media (max-width: 620px){
+	.section{ padding-top:64px; }
+	.section-header{ margin-bottom:28px; }
+	.about-text > .large{ font-size:clamp(30px, 9vw, 40px); line-height:1.18; }
+	.intro-name{ font-size:clamp(42px, 14vw, 60px); }
+	.person-img{ width:180px; height:180px; }
+	.service{ padding:20px; margin-bottom:20px; }
+	.intro-actions a,
+	.intro-actions a + a{ display:block; width:100%; margin-left:0; }
 }
 
 /*========================================

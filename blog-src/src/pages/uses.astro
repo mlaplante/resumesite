@@ -22,20 +22,20 @@ import SiteLayout from '../layouts/SiteLayout.astro';
   <nav class="top-nav" aria-label="Main navigation">
     <div class="container">
 
-      <a href="#" class="menu-btn" aria-label="Toggle menu" aria-expanded="false">
+      <button type="button" class="menu-btn" aria-label="Toggle menu" aria-expanded="false" aria-controls="site-menu">
         <span class="lines">
           <span class="l1"></span>
           <span class="l2"></span>
           <span class="l3"></span>
         </span>
-      </a>
+      </button>
 
       <button class="dark-mode-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
         <span class="sun-icon">☀️</span>
         <span class="moon-icon">🌙</span>
       </button>
 
-      <div class="menu" role="menu">
+      <div class="menu" id="site-menu">
         <ul>
           <li><a href="/">Home</a></li>
           <li><a href="/services/">Services</a></li>
