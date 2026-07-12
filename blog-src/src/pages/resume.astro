@@ -59,10 +59,10 @@ import { profile, summary, stats, skills, experience, certifications } from '../
       </div>
     </div>
 
-    <article class="resume-paper">
+    <article class="resume-paper" aria-labelledby="resume-name">
 
       <header class="resume-header">
-        <h1>{profile.name}</h1>
+        <h1 id="resume-name">{profile.name}</h1>
         <p class="resume-title">{profile.title}</p>
         <p class="resume-contact">
           <a href={`mailto:${profile.email}`}>{profile.email}</a>
@@ -150,8 +150,15 @@ import { profile, summary, stats, skills, experience, certifications } from '../
 <style>
   .resume-page {
     padding: 110px 16px 40px;
-    background: #f1f3f5;
+    background:
+      radial-gradient(circle at top right, rgba(41, 128, 185, 0.12), transparent 28rem),
+      #f1f3f5;
     min-height: 100vh;
+  }
+
+  .resume-page :focus-visible {
+    outline: 3px solid #f0b429;
+    outline-offset: 3px;
   }
 
   .resume-toolbar {
@@ -160,6 +167,10 @@ import { profile, summary, stats, skills, experience, certifications } from '../
     display: flex;
     align-items: center;
     justify-content: space-between;
+    padding: 10px 12px;
+    border: 1px solid rgba(41, 128, 185, 0.13);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.72);
   }
 
   .resume-back {
@@ -169,7 +180,7 @@ import { profile, summary, stats, skills, experience, certifications } from '../
     color: #2980b9;
     text-decoration: none;
   }
-  .resume-back:hover { opacity: 0.7; }
+  .resume-back:hover { color: #1a5276; text-decoration: underline; text-underline-offset: 3px; }
 
   .resume-toolbar-actions {
     display: flex;
@@ -186,11 +197,11 @@ import { profile, summary, stats, skills, experience, certifications } from '../
     background: #2980b9;
     color: #fff;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
     text-decoration: none;
     display: inline-block;
   }
-  .resume-print-btn:hover { background: #1a6da3; color: #fff; }
+  .resume-print-btn:hover { background: #1a6da3; color: #fff; transform: translateY(-1px); box-shadow: 0 5px 12px rgba(26, 82, 118, 0.18); }
 
   .resume-btn-ghost {
     background: transparent;
@@ -210,14 +221,15 @@ import { profile, summary, stats, skills, experience, certifications } from '../
     background: #fff;
     color: #1f2937;
     padding: 56px 60px;
-    border-radius: 10px;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(31, 41, 55, 0.08);
+    border-radius: 12px;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.1);
   }
 
   .resume-header {
     border-bottom: 2px solid #1a5276;
     padding-bottom: 18px;
-    margin-bottom: 26px;
+    margin-bottom: 30px;
   }
 
   .resume-header h1 {
@@ -249,6 +261,8 @@ import { profile, summary, stats, skills, experience, certifications } from '../
 
   .resume-section { margin-bottom: 30px; }
 
+  .resume-section:last-child { margin-bottom: 0; }
+
   .resume-section > h2 {
     font-family: 'Poppins', sans-serif;
     font-size: 14px;
@@ -277,10 +291,10 @@ import { profile, summary, stats, skills, experience, certifications } from '../
   .resume-stat {
     flex: 1 1 140px;
     text-align: center;
-    background: #f8fafc;
+    background: linear-gradient(145deg, #f8fafc, #f1f6fa);
     border: 1px solid #e5e7eb;
     border-radius: 8px;
-    padding: 14px 10px;
+    padding: 16px 10px;
   }
   .resume-stat strong {
     display: block;
@@ -336,8 +350,11 @@ import { profile, summary, stats, skills, experience, certifications } from '../
   .resume-certs span { color: #6b7280; }
 
   .resume-job {
-    margin-bottom: 20px;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #eef1f4;
   }
+  .resume-job:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: 0; }
   .resume-job-head {
     display: flex;
     align-items: baseline;
@@ -367,15 +384,24 @@ import { profile, summary, stats, skills, experience, certifications } from '../
   }
 
   @media (max-width: 600px) {
+    .resume-page { padding: 92px 12px 28px; }
+    .resume-toolbar { align-items: flex-start; flex-direction: column; gap: 12px; padding: 12px; }
+    .resume-toolbar-actions { width: 100%; }
+    .resume-print-btn { flex: 1; padding: 10px 12px; text-align: center; }
     .resume-paper { padding: 32px 22px; }
+    .resume-header h1 { font-size: 29px; }
+    .resume-contact { line-height: 1.8; }
+    .resume-contact-sep { margin: 0 5px; }
     .resume-skills { grid-template-columns: 1fr; }
     .resume-certs { grid-template-columns: 1fr; }
     .resume-job-head { flex-direction: column; gap: 2px; }
   }
 
   /* Page chrome (background) follows dark mode; the paper stays light. */
-  :global([data-theme='dark']) .resume-page { background: #0f172a; }
-  :global(body.dark-mode) .resume-page { background: #0f172a; }
+  :global([data-theme='dark']) .resume-page { background: radial-gradient(circle at top right, rgba(26, 82, 118, 0.22), transparent 28rem), #0f172a; }
+  :global(body.dark-mode) .resume-page { background: radial-gradient(circle at top right, rgba(26, 82, 118, 0.22), transparent 28rem), #0f172a; }
+  :global([data-theme='dark']) .resume-toolbar { background: rgba(30, 41, 59, 0.72); border-color: #334155; }
+  :global(body.dark-mode) .resume-toolbar { background: rgba(30, 41, 59, 0.72); border-color: #334155; }
 
   /* Print: strip chrome, flatten the paper to the page. */
   @media print {
