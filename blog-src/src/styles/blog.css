@@ -2,10 +2,30 @@
 
 /* ===== Base ===== */
 body {
-  background: #f8f9fa;
+  background: #f6f8fb;
+  color: #243247;
   margin: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+:root {
+  --blog-ink: #172033;
+  --blog-muted: #5f6d80;
+  --blog-line: #dbe2ea;
+  --blog-accent: #246fa8;
+  --blog-accent-deep: #1a5276;
+  --blog-focus: #f0b429;
+}
+
+:where(.blog-content, .blog-nav, .blog-site-footer) :focus-visible {
+  outline: 3px solid var(--blog-focus);
+  outline-offset: 3px;
+}
+
+.blog-content :is(a, button, input, summary):focus-visible {
+  outline: 3px solid var(--blog-focus) !important;
+  outline-offset: 3px;
 }
 
 /* ===== Reading Progress Bar ===== */
@@ -33,12 +53,12 @@ body {
 
 /* ===== Navigation ===== */
 .blog-nav {
-  background: linear-gradient(135deg, #2980b9 0%, #1a6da3 100%);
-  padding: 16px 0;
+  background: linear-gradient(135deg, #1f3c88 0%, #246fa8 100%);
+  padding: 12px 0;
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 14px rgba(19, 36, 72, 0.18);
 }
 
 .blog-nav .container {
@@ -57,11 +77,36 @@ body {
   font-size: 14px;
   letter-spacing: 1px;
   text-transform: lowercase;
-  transition: opacity 0.2s;
+  transition: color 0.2s ease, opacity 0.2s ease;
 }
 
 .blog-nav a:hover {
   opacity: 0.8;
+}
+
+.blog-nav .nav-links a {
+  position: relative;
+  padding: 8px 0;
+}
+
+.blog-nav .nav-links a::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 3px;
+  left: 0;
+  height: 2px;
+  background: currentColor;
+  border-radius: 100px;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.2s ease;
+}
+
+.blog-nav .nav-links a:hover::after,
+.blog-nav .nav-links a[aria-current='page']::after {
+  transform: scaleX(1);
+  transform-origin: left;
 }
 
 .blog-nav .nav-links {
@@ -203,17 +248,17 @@ body {
 .blog-content {
   max-width: 1080px;
   margin: 0 auto;
-  padding: 48px 20px 80px;
+  padding: 56px 24px 72px;
 }
 
 .blog-content h1 {
   font-family: 'Poppins', sans-serif;
   font-size: 36px;
   font-weight: 700;
-  color: #1a1a1a;
-  margin-bottom: 12px;
-  line-height: 1.25;
-  letter-spacing: -0.5px;
+  color: var(--blog-ink);
+  margin-bottom: 14px;
+  line-height: 1.18;
+  letter-spacing: -0.7px;
 }
 
 /* ===== Post Meta ===== */
@@ -243,7 +288,7 @@ body {
   font-family: 'Poppins', sans-serif;
   font-size: 17px;
   line-height: 1.8;
-  color: #374151;
+  color: #344054;
 }
 
 .blog-content article h2 {
@@ -251,7 +296,7 @@ body {
   font-weight: 700;
   margin-top: 48px;
   margin-bottom: 16px;
-  color: #1a1a1a;
+  color: var(--blog-ink);
   letter-spacing: -0.3px;
 }
 
@@ -260,7 +305,7 @@ body {
   font-weight: 600;
   margin-top: 36px;
   margin-bottom: 12px;
-  color: #1f2937;
+  color: #27364c;
 }
 
 .blog-content article p {
@@ -306,6 +351,10 @@ body {
 
 .blog-content article a:hover {
   border-bottom-color: #2980b9;
+}
+
+.blog-content article a:focus-visible {
+  border-bottom-color: transparent;
 }
 
 .blog-content article blockquote {
@@ -356,6 +405,43 @@ body {
   opacity: 0.7;
 }
 
+/* Shared card geometry is deliberately subtle: it works for lists, taxonomy
+   pages, related posts, and the homepage without competing with the writing. */
+.blog-content :is(.post-card, .series-item, .related-post-card, .post-preview) {
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.blog-content :is(.post-card, .series-item, .related-post-card, .post-preview):hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(20, 44, 78, 0.09);
+}
+
+.blog-site-footer {
+  border-top: 1px solid var(--blog-line);
+  padding: 28px 24px 34px;
+}
+
+.blog-site-footer .container {
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+.blog-site-footer p {
+  margin: 0;
+  color: var(--blog-muted);
+  font-family: 'Roboto Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+.blog-site-footer a {
+  color: var(--blog-accent);
+  text-decoration: none;
+}
+
+.blog-site-footer a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
 /* ===== Dark Mode ===== */
 [data-theme='dark'] body {
   background: #0f172a;
@@ -370,7 +456,7 @@ body {
   background-color: var(--shiki-dark-bg) !important;
 }
 [data-theme='dark'] .blog-nav {
-  background: linear-gradient(135deg, #1a5276 0%, #154360 100%);
+  background: linear-gradient(135deg, #162857 0%, #1a5276 100%);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 [data-theme='dark'] .blog-content h1 {
@@ -426,4 +512,16 @@ body {
 }
 [data-theme='dark'] .blog-footer a {
   color: #60a5fa;
+}
+[data-theme='dark'] .blog-site-footer { border-top-color: #26364e; }
+[data-theme='dark'] .blog-site-footer p { color: #94a3b8; }
+[data-theme='dark'] .blog-site-footer a { color: #7dc4f6; }
+
+@media (max-width: 640px) {
+  .blog-content { padding: 40px 18px 56px; }
+  .blog-content h1 { font-size: clamp(30px, 9vw, 36px); }
+  .blog-content article { font-size: 16px; line-height: 1.75; }
+  .blog-content article h2 { font-size: 23px; margin-top: 40px; }
+  .blog-content article h3 { font-size: 19px; margin-top: 30px; }
+  .blog-site-footer { padding: 24px 18px 28px; }
 }

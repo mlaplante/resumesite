@@ -20,6 +20,7 @@ const {
 } = Astro.props;
 const baseUrl = '/blog';
 const fullTitle = `${title} | Michael LaPlante`;
+const currentPath = Astro.url.pathname;
 ---
 
 <!DOCTYPE html>
@@ -48,7 +49,7 @@ const fullTitle = `${title} | Michael LaPlante`;
     )}
     <nav class="blog-nav" aria-label="Blog navigation">
       <div class="container">
-        <a href="/" class="nav-brand">Michael LaPlante</a>
+        <a href="/" class="nav-brand" aria-label="Michael LaPlante home">Michael LaPlante</a>
         <button
           class="nav-toggle"
           type="button"
@@ -61,12 +62,12 @@ const fullTitle = `${title} | Michael LaPlante`;
           <span class="nav-toggle-bar"></span>
         </button>
         <div class="nav-links" id="blog-nav-links">
-          <a href="/">Home</a>
-          <a href="/services/">Services</a>
-          <a href={baseUrl}>Blog</a>
-          <a href={`${baseUrl}/about/`}>About</a>
-          <a href="/uses/">Uses</a>
-          <a href="/resume/">Résumé</a>
+          <a href="/" aria-current={currentPath === '/' ? 'page' : undefined}>Home</a>
+          <a href="/services/" aria-current={currentPath === '/services/' ? 'page' : undefined}>Services</a>
+          <a href={baseUrl} aria-current={currentPath.startsWith('/blog/') && !currentPath.includes('/about/') ? 'page' : undefined}>Blog</a>
+          <a href={`${baseUrl}/about/`} aria-current={currentPath === '/blog/about/' ? 'page' : undefined}>About</a>
+          <a href="/uses/" aria-current={currentPath === '/uses/' ? 'page' : undefined}>Uses</a>
+          <a href="/resume/" aria-current={currentPath === '/resume/' ? 'page' : undefined}>Résumé</a>
           <a href={`${baseUrl}/rss.xml`} title="RSS Feed">RSS</a>
         </div>
         <button class="theme-toggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">
@@ -80,6 +81,11 @@ const fullTitle = `${title} | Michael LaPlante`;
     <main id="blog-main-content" class="blog-content">
       <slot />
     </main>
+    <footer class="blog-site-footer">
+      <div class="container">
+        <p>© Michael LaPlante <span aria-hidden="true">·</span> <a href="/privacy/">Privacy</a> <span aria-hidden="true">·</span> <a href="/blog/rss.xml">RSS</a></p>
+      </div>
+    </footer>
   </body>
 </html>
 
