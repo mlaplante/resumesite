@@ -27,7 +27,7 @@ jobs:
           persist-credentials: false
 
       - name: Check links in blog content
-        uses: lycheeverse/lychee-action@8646ba30535128ac92d33dfc9133794bfdd9b411 # v2.8.0
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
         with:
           # http(s) only: relative links resolve to site routes, not files on
           # disk, so checking them here would only produce false positives.
