@@ -29,7 +29,7 @@
     "personal-website"
   ],
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.110.0"
+    "@anthropic-ai/sdk": "^0.111.0"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.18.0",
