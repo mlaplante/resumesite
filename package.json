@@ -29,10 +29,10 @@
     "personal-website"
   ],
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.106.0"
+    "@anthropic-ai/sdk": "^0.110.0"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.16.13",
+    "@cloudflare/vitest-pool-workers": "^0.18.0",
     "@eslint/js": "^10.0.1",
     "eslint": "^10.6.0",
     "eslint-plugin-astro": "^1.7.0",
