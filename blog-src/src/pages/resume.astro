@@ -64,10 +64,10 @@ import { profile, summary, stats, skills, experience, certifications } from '../
       <header class="resume-header">
         <h1 id="resume-name">{profile.name}</h1>
         <p class="resume-title">{profile.title}</p>
+        <!-- {' '} keeps a wrap point between the links; compressHTML strips
+             plain template whitespace, which made this line unbreakable. -->
         <p class="resume-contact">
-          <a href={`mailto:${profile.email}`}>{profile.email}</a>
-          <span class="resume-contact-sep">&middot;</span>
-          <a href={profile.websiteUrl}>{profile.website}</a>
+          <a href={`mailto:${profile.email}`}>{profile.email}</a>{' '}<span class="resume-contact-sep">&middot;</span>{' '}<a href={profile.websiteUrl}>{profile.website}</a>
         </p>
       </header>
 
@@ -254,6 +254,7 @@ import { profile, summary, stats, skills, experience, certifications } from '../
     font-size: 13px;
     margin: 0;
     color: #6b7280;
+    overflow-wrap: anywhere;
   }
   .resume-contact a { color: #2980b9; text-decoration: none; }
   .resume-contact a:hover { opacity: 0.7; }
