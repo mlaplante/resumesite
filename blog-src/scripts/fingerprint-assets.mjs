@@ -13,13 +13,20 @@ const here = dirname(fileURLToPath(import.meta.url));
 const distDir = resolve(here, '../../dist');
 
 const HASH_LENGTH = 10;
+
+// Salted into every hash so bumping it rotates all fingerprinted URLs even
+// when file content is unchanged. Bumped to v2 after clients cached 404s for
+// these URLs as immutable (see worker/index.ts uncacheable()): a content-only
+// hash would regenerate the exact poisoned URLs, so affected browsers would
+// keep replaying the cached 404 for up to a year.
+const FINGERPRINT_SALT = 'v2';
 const renames = new Map();
 
 for (const dir of ['css', 'js']) {
   for (const file of await readdir(join(distDir, dir))) {
     if (!/\.(css|js)$/.test(file)) continue;
     const content = await readFile(join(distDir, dir, file));
-    const hash = createHash('sha256').update(content).digest('hex').slice(0, HASH_LENGTH);
+    const hash = createHash('sha256').update(FINGERPRINT_SALT).update(content).digest('hex').slice(0, HASH_LENGTH);
     const hashed = file.replace(/\.(css|js)$/, `.${hash}.$1`);
     await copyFile(join(distDir, dir, file), join(distDir, dir, hashed));
     renames.set(`/${dir}/${file}`, `/${dir}/${hashed}`);

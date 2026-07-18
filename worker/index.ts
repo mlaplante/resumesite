@@ -28,6 +28,29 @@ const HASHED_ASSET = /^(\/(?:css|js)\/.+)\.[0-9a-f]{10}(\.(?:css|js))$/;
 // which maps the stable base name to the current build's file.
 const ASTRO_ASSET = /^\/_astro\/(.+)\.[A-Za-z0-9_-]{8}(\.(?:css|js))$/;
 
+// The assets layer attaches _headers path rules (max-age=31536000, immutable
+// for /css, /js, /_astro) to 404 responses too. A 404 cached as immutable
+// poisons that URL in the browser for a year — and fingerprinted URLs never
+// change while the file's content is unchanged, so the client never recovers
+// on its own. No 404 may leave this worker with a cacheable lifetime.
+function uncacheable(response: Response): Response {
+  const headers = new Headers(response.headers);
+  headers.set('Cache-Control', 'no-store');
+  headers.delete('CDN-Cache-Control');
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}
+
+// Fallback responses bridge stale cached HTML to the current build, but they
+// are served under the *stale* URL — they must not inherit the current
+// asset's immutable header, or the bridge content gets pinned for a year.
+function bridged(response: Response): Response {
+  if (!response.ok) return uncacheable(response);
+  const headers = new Headers(response.headers);
+  headers.set('Cache-Control', 'public, max-age=300, must-revalidate');
+  headers.set('CDN-Cache-Control', 'public, max-age=300, must-revalidate');
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
@@ -44,7 +67,7 @@ export default {
       const stale = url.pathname.match(HASHED_ASSET);
       if (stale) {
         const current = new URL(stale[1] + stale[2], url);
-        return env.ASSETS.fetch(new Request(current, request));
+        return bridged(await env.ASSETS.fetch(new Request(current, request)));
       }
 
       const astro = url.pathname.match(ASTRO_ASSET);
@@ -53,9 +76,11 @@ export default {
         if (manifestRes.ok) {
           const manifest = (await manifestRes.json()) as Record<string, string>;
           const current = manifest[astro[1] + astro[2]];
-          if (current) return env.ASSETS.fetch(new Request(new URL(current, url), request));
+          if (current) return bridged(await env.ASSETS.fetch(new Request(new URL(current, url), request)));
         }
       }
+
+      return uncacheable(response);
     }
 
     return response;

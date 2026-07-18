@@ -35,6 +35,23 @@
 /*==================================================
 	General CSS
 ==================================================*/
+/* Structural resets duplicated from bootstrap-reboot. If the reboot
+   stylesheet ever fails to load (an immutable-cached 404 did exactly that on
+   iOS Safari), the default 8px body margin plus content-box sizing shifts
+   the whole page and lets it pan horizontally — the "gap around the mobile
+   header" failure. These few rules keep the layout structurally sound on
+   style.css alone; overflow-x:clip (not hidden — hidden creates a scroll
+   container) blocks horizontal panning outright. */
+*,
+*::before,
+*::after{
+	box-sizing:border-box;
+}
+html,
+body{
+	margin:0;
+	overflow-x:clip;
+}
 *{
 	font-family:inherit;
 }
