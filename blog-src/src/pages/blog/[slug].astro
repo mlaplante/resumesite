@@ -587,6 +587,24 @@ const breadcrumbSchema = safeJsonLd(breadcrumbList([
   :global([data-theme='dark']) .tag-link:hover { background: rgba(96, 165, 250, 0.2); }
   :global([data-theme='dark']) .blog-meta .category { color: #94a3b8; }
   :global([data-theme='dark']) .blog-meta .category:hover { color: #60a5fa; }
+
+  /* Article-specific identity treatment. */
+  .article-main article h1 {
+    font-family: var(--display-font);
+    font-size: clamp(2.15rem, 5vw, 3.7rem);
+    font-weight: 700;
+    letter-spacing: -.02em;
+    color: var(--ink);
+  }
+  .blog-meta {
+    font-family: var(--mono-font);
+    font-size: 11px;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--slate);
+  }
+  :global([data-theme='dark']) .article-main article h1 { color: var(--paper); }
+  :global([data-theme='dark']) .blog-meta { color: var(--text-muted); }
 </style>
 
 <script>

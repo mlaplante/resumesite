@@ -13,6 +13,8 @@ export const getStaticPaths = (async ({ paginate }) => {
 
 const { page } = Astro.props;
 const posts = page.data;
+const isFirstPage = page.currentPage === 1;
+const [newestPost, ...remainingPosts] = posts;
 // Categories come from the whole archive, not just this page's 10 posts —
 // otherwise the button row varies between pages and can omit categories.
 const allPosts = await getSortedPosts();
@@ -48,6 +50,19 @@ const categories = ['all', ...new Set(allPosts.map((p) => p.data.category))];
 
     {posts.length === 0 && <p class="no-posts">No posts yet. Check back soon.</p>}
 
+    {isFirstPage && newestPost && (
+      <a href={`/blog/${newestPost.id}/`} class="post-card post-card-featured" data-category={newestPost.data.category}>
+        <div class="post-card-meta">
+          <time datetime={newestPost.data.date.toISOString()}>{formatDateShort(newestPost.data.date)}</time>
+          <span class="dot-sep">&middot;</span>
+          <span>{getReadTime(newestPost.body)} min read</span>
+        </div>
+        <h2>{newestPost.data.title}</h2>
+        <p>{newestPost.data.excerpt}</p>
+        <span class="category-badge">{newestPost.data.category.replace(/-/g, ' ')}</span>
+      </a>
+    )}
+
     <!-- Sponsored/Featured Content Slot -->
     <div class="featured-banner">
       <div class="featured-banner-content">
@@ -63,7 +78,7 @@ const categories = ['all', ...new Set(allPosts.map((p) => p.data.category))];
     <div class="post-grid" id="search-results" hidden></div>
 
     <div class="post-grid" id="page-grid">
-      {posts.map((post) => {
+      {(isFirstPage ? remainingPosts : posts).map((post) => {
         const readTime = getReadTime(post.body);
         return (
           <a href={`/blog/${post.id}/`} class="post-card" data-category={post.data.category}>
@@ -418,6 +433,72 @@ const categories = ['all', ...new Set(allPosts.map((p) => p.data.category))];
   :global([data-theme='dark']) .pagination-link { color: #60a5fa; }
   :global([data-theme='dark']) .pagination-link.disabled { color: #475569; }
   :global([data-theme='dark']) .pagination-info { color: #94a3b8; }
+
+  /* Executive-security visual identity overrides. */
+  .listing-wrapper h1,
+  .post-card h2,
+  .featured-banner h3 {
+    font-family: var(--display-font);
+    letter-spacing: -0.02em;
+  }
+  .blog-subtitle { color: var(--slate); }
+  .post-card {
+    position: relative;
+    overflow: hidden;
+    border: 0;
+    border-radius: 8px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+  .post-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 2px;
+    background: transparent;
+    transition: background-color .2s ease;
+  }
+  @media (hover: hover) {
+    .post-card:hover { transform: translateY(-2px); border-color: transparent; box-shadow: 0 18px 42px rgba(10, 21, 40, .14); }
+    .post-card:hover::before { background: var(--signal); }
+  }
+  .post-card h2 { color: var(--ink); }
+  .post-card-meta { font-family: var(--mono-font); font-size: 11px; letter-spacing: .04em; color: var(--slate); }
+  .post-card p { color: var(--slate); }
+  .category-badge {
+    font-family: var(--mono-font);
+    font-size: 10px;
+    letter-spacing: .06em;
+    color: var(--signal-deep);
+    background: rgba(226, 163, 60, .12);
+    text-transform: uppercase;
+  }
+  .post-card-featured {
+    display: flex;
+    min-height: 300px;
+    margin-bottom: 24px;
+    padding: 30px;
+    background: var(--ink);
+    box-shadow: none;
+  }
+  .post-card-featured::before { background: var(--signal); }
+  .post-card-featured h2 { max-width: 760px; font-size: clamp(1.75rem, 4vw, 2.8rem); color: var(--paper); }
+  .post-card-featured p { max-width: 700px; color: #B9C5D5; }
+  .post-card-featured .post-card-meta { color: #B9C5D5; }
+  .post-card-featured .category-badge { color: var(--ink); background: var(--signal); }
+  .featured-banner { background: var(--ink-2); border: 0; border-radius: 8px; }
+  .featured-label { font-family: var(--mono-font); font-size: 10px; letter-spacing: .08em; color: var(--ink); background: var(--signal); }
+  .featured-banner h3 { color: var(--paper); }
+  .featured-banner p { color: #B9C5D5; }
+  .featured-cta { color: var(--signal); }
+  :global([data-theme='dark']) .post-card:not(.post-card-featured) { background: var(--ink-2); box-shadow: var(--shadow); }
+  :global([data-theme='dark']) .post-card h2 { color: var(--paper); }
+  :global([data-theme='dark']) .post-card p,
+  :global([data-theme='dark']) .post-card-meta { color: var(--text-muted); }
+  :global([data-theme='dark']) .featured-banner { background: var(--ink-2); }
 </style>
 
 <script>
