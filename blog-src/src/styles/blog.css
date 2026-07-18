@@ -1,3 +1,37 @@
+/* KEEP IN SYNC with <other file> */
+:root{
+	--ink:#0A1528;
+	--ink-2:#122240;
+	--paper:#F4F6F9;
+	--surface:#FFFFFF;
+	--slate:#46566E;
+	--signal:#E2A33C;
+	--signal-deep:#B57A1E;
+	--grid-line:rgba(122, 152, 205, 0.10);
+	--display-font:'Space Grotesk', 'Poppins', system-ui, sans-serif;
+	--body-font:'Poppins', sans-serif;
+	--mono-font:'Roboto Mono', monospace;
+	--shadow:0 14px 36px rgba(10, 21, 40, 0.10);
+	--page-bg:var(--paper);
+	--card-bg:var(--surface);
+	--text:var(--ink);
+	--text-muted:var(--slate);
+	/* Legacy aliases are retired as their corresponding components are restyled. */
+	--blog-ink:#172033;
+	--blog-muted:#5F6D80;
+	--blog-line:#DBE2EA;
+	--blog-accent:#246FA8;
+	--blog-accent-deep:#1A5276;
+	--blog-focus:#F0B429;
+}
+:root[data-theme='dark']{
+	--page-bg:var(--ink);
+	--card-bg:var(--ink-2);
+	--text:var(--paper);
+	--text-muted:#B9C5D5;
+	--shadow:0 14px 36px rgba(0, 0, 0, 0.28);
+}
+
 /* Blog-specific styles */
 
 /* ===== Base ===== */
@@ -9,23 +43,14 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-:root {
-  --blog-ink: #172033;
-  --blog-muted: #5f6d80;
-  --blog-line: #dbe2ea;
-  --blog-accent: #246fa8;
-  --blog-accent-deep: #1a5276;
-  --blog-focus: #f0b429;
-}
-
 :where(.blog-content, .blog-nav, .blog-site-footer) :focus-visible {
-  outline: 3px solid var(--blog-focus);
-  outline-offset: 3px;
+  outline: 2px solid var(--signal) !important;
+  outline-offset: 2px !important;
 }
 
 .blog-content :is(a, button, input, summary):focus-visible {
-  outline: 3px solid var(--blog-focus) !important;
-  outline-offset: 3px;
+  outline: 2px solid var(--signal) !important;
+  outline-offset: 2px !important;
 }
 
 /* ===== Reading Progress Bar ===== */
