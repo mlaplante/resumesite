@@ -8,6 +8,13 @@ export default defineConfig({
   output: 'static',
   build: {
     format: 'directory',
+    // Renamed from the default _astro to rotate every bundle URL: clients and
+    // the CDN edge cached 404s for /_astro/* URLs as immutable (the _headers
+    // path rule used to apply to 404s too), and vite's content hashes
+    // regenerate the same URLs, so poisoned caches never recovered. Bump the
+    // suffix if URL rotation is ever needed again; keep ASTRO_ASSET in
+    // worker/index.ts and scripts/astro-manifest.mjs in sync.
+    assets: '_astro2',
   },
   prefetch: {
     defaultStrategy: 'viewport',

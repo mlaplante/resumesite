@@ -10,7 +10,7 @@
     "not_found_handling": "404-page",
     // /css and /js run through the Worker so requests for a fingerprinted
     // filename from a previous deploy can fall back to the current asset.
-    "run_worker_first": ["/api/*", "/css/*", "/js/*", "/_astro/*"]
+    "run_worker_first": ["/api/*", "/css/*", "/js/*", "/_astro/*", "/_astro2/*"]
   },
   "observability": {
     "enabled": true
