@@ -61,3 +61,43 @@ describe('fingerprinted asset fallback', () => {
     expect(response.status).toBe(404);
   });
 });
+
+describe('astro bundle asset fallback', () => {
+  const assets = stubAssets({
+    '/_astro/BlogLayout.CBvvIjZz.css': 'current blog css',
+    '/_astro/page.BivElXX4.js': 'current page js',
+    '/_astro-manifest.json': JSON.stringify({
+      'BlogLayout.css': '/_astro/BlogLayout.CBvvIjZz.css',
+      'page.js': '/_astro/page.BivElXX4.js',
+    }),
+  });
+
+  it('serves an existing astro asset directly', async () => {
+    const response = await get('/_astro/BlogLayout.CBvvIjZz.css', assets);
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe('current blog css');
+  });
+
+  it('resolves a stale astro css hash through the manifest', async () => {
+    const response = await get('/_astro/BlogLayout.OLDHASH1.css', assets);
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe('current blog css');
+  });
+
+  it('resolves a stale astro js hash through the manifest', async () => {
+    const response = await get('/_astro/page.AAAAAAAA.js', assets);
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe('current page js');
+  });
+
+  it('404s for a base name the manifest does not know', async () => {
+    const response = await get('/_astro/unknown.BBBBBBBB.css', assets);
+    expect(response.status).toBe(404);
+  });
+
+  it('404s when the manifest itself is missing', async () => {
+    const bare = stubAssets({});
+    const response = await get('/_astro/BlogLayout.OLDHASH1.css', bare);
+    expect(response.status).toBe(404);
+  });
+});

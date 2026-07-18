@@ -22,6 +22,12 @@ const ALLOW_HEADERS: HeadersInit = {
 // current copy instead of 404ing.
 const HASHED_ASSET = /^(\/(?:css|js)\/.+)\.[0-9a-f]{10}(\.(?:css|js))$/;
 
+// Astro/Vite bundle asset, e.g. /_astro/BlogLayout.CBvvIjZz.css. There is no
+// unhashed original for these, so a stale hash is resolved through
+// /_astro-manifest.json (written by blog-src/scripts/astro-manifest.mjs),
+// which maps the stable base name to the current build's file.
+const ASTRO_ASSET = /^\/_astro\/(.+)\.[A-Za-z0-9_-]{8}(\.(?:css|js))$/;
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
@@ -39,6 +45,16 @@ export default {
       if (stale) {
         const current = new URL(stale[1] + stale[2], url);
         return env.ASSETS.fetch(new Request(current, request));
+      }
+
+      const astro = url.pathname.match(ASTRO_ASSET);
+      if (astro) {
+        const manifestRes = await env.ASSETS.fetch(new Request(new URL('/_astro-manifest.json', url)));
+        if (manifestRes.ok) {
+          const manifest = (await manifestRes.json()) as Record<string, string>;
+          const current = manifest[astro[1] + astro[2]];
+          if (current) return env.ASSETS.fetch(new Request(new URL(current, url), request));
+        }
       }
     }
 
