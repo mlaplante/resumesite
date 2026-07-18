@@ -11,7 +11,7 @@
 # Path rules APPEND to the global /* block rather than replace it, which sent
 # every asset out with two conflicting Cache-Control values. The `!` lines
 # detach the inherited header before the block sets its own.
-/_astro/*
+/_astro2/*
   ! Cache-Control
   ! CDN-Cache-Control
   Cache-Control: public, max-age=31536000, immutable

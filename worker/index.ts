@@ -22,11 +22,14 @@ const ALLOW_HEADERS: HeadersInit = {
 // current copy instead of 404ing.
 const HASHED_ASSET = /^(\/(?:css|js)\/.+)\.[0-9a-f]{10}(\.(?:css|js))$/;
 
-// Astro/Vite bundle asset, e.g. /_astro/BlogLayout.CBvvIjZz.css. There is no
+// Astro/Vite bundle asset, e.g. /_astro2/BlogLayout.CBvvIjZz.css (directory
+// name set by build.assets in blog-src/astro.config.mjs). There is no
 // unhashed original for these, so a stale hash is resolved through
 // /_astro-manifest.json (written by blog-src/scripts/astro-manifest.mjs),
-// which maps the stable base name to the current build's file.
-const ASTRO_ASSET = /^\/_astro\/(.+)\.[A-Za-z0-9_-]{8}(\.(?:css|js))$/;
+// which maps the stable base name to the current build's file. The legacy
+// /_astro prefix is still matched so HTML cached before the directory was
+// renamed keeps resolving its stylesheets through the manifest.
+const ASTRO_ASSET = /^\/_astro2?\/(.+)\.[A-Za-z0-9_-]{8}(\.(?:css|js))$/;
 
 // The assets layer attaches _headers path rules (max-age=31536000, immutable
 // for /css, /js, /_astro) to 404 responses too. A 404 cached as immutable

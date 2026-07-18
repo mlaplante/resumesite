@@ -16,7 +16,7 @@ function stubAssets(existing: Record<string, string>) {
     fetch: (request: Request) => {
       const { pathname } = new URL(request.url);
       const body = existing[pathname];
-      const headers = /^\/(?:css|js|_astro)\//.test(pathname)
+      const headers = /^\/(?:css|js|_astro2?)\//.test(pathname)
         ? { 'Cache-Control': IMMUTABLE, 'CDN-Cache-Control': IMMUTABLE }
         : undefined;
       return Promise.resolve(
@@ -89,46 +89,53 @@ describe('fingerprinted asset fallback', () => {
 
 describe('astro bundle asset fallback', () => {
   const assets = stubAssets({
-    '/_astro/BlogLayout.CBvvIjZz.css': 'current blog css',
-    '/_astro/page.BivElXX4.js': 'current page js',
+    '/_astro2/BlogLayout.CBvvIjZz.css': 'current blog css',
+    '/_astro2/page.BivElXX4.js': 'current page js',
     '/_astro-manifest.json': JSON.stringify({
-      'BlogLayout.css': '/_astro/BlogLayout.CBvvIjZz.css',
-      'page.js': '/_astro/page.BivElXX4.js',
+      'BlogLayout.css': '/_astro2/BlogLayout.CBvvIjZz.css',
+      'page.js': '/_astro2/page.BivElXX4.js',
     }),
   });
 
   it('serves an existing astro asset directly', async () => {
-    const response = await get('/_astro/BlogLayout.CBvvIjZz.css', assets);
+    const response = await get('/_astro2/BlogLayout.CBvvIjZz.css', assets);
     expect(response.status).toBe(200);
     expect(await response.text()).toBe('current blog css');
   });
 
   it('resolves a stale astro css hash through the manifest', async () => {
-    const response = await get('/_astro/BlogLayout.OLDHASH1.css', assets);
+    const response = await get('/_astro2/BlogLayout.OLDHASH1.css', assets);
     expect(response.status).toBe(200);
     expect(await response.text()).toBe('current blog css');
   });
 
   it('resolves a stale astro js hash through the manifest', async () => {
-    const response = await get('/_astro/page.AAAAAAAA.js', assets);
+    const response = await get('/_astro2/page.AAAAAAAA.js', assets);
     expect(response.status).toBe(200);
     expect(await response.text()).toBe('current page js');
   });
 
+  it('resolves legacy /_astro URLs from pre-rename cached HTML', async () => {
+    const response = await get('/_astro/BlogLayout.CBvvIjZz.css', assets);
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe('current blog css');
+    expect(response.headers.get('Cache-Control')).toBe('public, max-age=300, must-revalidate');
+  });
+
   it('serves manifest fallbacks with a short lifetime, not the immutable header', async () => {
-    const response = await get('/_astro/BlogLayout.OLDHASH1.css', assets);
+    const response = await get('/_astro2/BlogLayout.OLDHASH1.css', assets);
     expect(response.headers.get('Cache-Control')).toBe('public, max-age=300, must-revalidate');
   });
 
   it('404s for a base name the manifest does not know', async () => {
-    const response = await get('/_astro/unknown.BBBBBBBB.css', assets);
+    const response = await get('/_astro2/unknown.BBBBBBBB.css', assets);
     expect(response.status).toBe(404);
     expect(response.headers.get('Cache-Control')).toBe('no-store');
   });
 
   it('404s when the manifest itself is missing', async () => {
     const bare = stubAssets({});
-    const response = await get('/_astro/BlogLayout.OLDHASH1.css', bare);
+    const response = await get('/_astro2/BlogLayout.OLDHASH1.css', bare);
     expect(response.status).toBe(404);
     expect(response.headers.get('Cache-Control')).toBe('no-store');
   });
