@@ -1063,28 +1063,37 @@ footer .copyright a:hover{
 
 /*==================================================
 	Scroll Animations (replaces AOS.js)
+
+	Content is VISIBLE BY DEFAULT so the page is never blank if the animation
+	JS fails to run. The hidden starting state is applied only once JS confirms
+	it will drive the reveal: theme.js adds `js-anim` to <html> before first
+	paint, and script.js reveals elements (adding `.aos-animate`). If either
+	script fails, [data-aos] elements simply stay visible.
 ==================================================*/
 [data-aos] {
-	opacity: 0;
 	transition: opacity 0.6s ease, transform 0.6s ease;
 }
 
-[data-aos='fade-up'] {
+.js-anim [data-aos] {
+	opacity: 0;
+}
+
+.js-anim [data-aos='fade-up'] {
 	transform: translateY(30px);
 }
 
-[data-aos='zoom-out-up'] {
+.js-anim [data-aos='zoom-out-up'] {
 	transform: translateY(30px) scale(1.1);
 }
 
-[data-aos].aos-animate {
+.js-anim [data-aos].aos-animate {
 	opacity: 1;
 	transform: translateY(0) scale(1);
 }
 
 /* Respect reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
-	[data-aos] {
+	.js-anim [data-aos] {
 		opacity: 1;
 		transform: none;
 		transition: none;

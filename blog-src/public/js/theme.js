@@ -16,6 +16,26 @@
 	var root = document.documentElement;
 	var media = window.matchMedia('(prefers-color-scheme: dark)');
 
+	/* Scroll-animation guard. This blocking head script runs before first
+	   paint, so adding `js-anim` here lets style.css apply the hidden starting
+	   state (opacity:0) to [data-aos] elements with no flash. Content is
+	   visible by default in CSS, so if this script never runs the page still
+	   renders fully instead of blanking.
+
+	   Failsafe: script.js normally reveals the content (and sets
+	   window.__aosReady). If it fails to run for any reason, reveal everything
+	   after load so the page is never left blank. */
+	root.classList.add('js-anim');
+	window.addEventListener('load', function () {
+		window.setTimeout(function () {
+			if (window.__aosReady) return; /* reveal script ran; it owns the animation */
+			var nodes = document.querySelectorAll('[data-aos]');
+			for (var i = 0; i < nodes.length; i++) {
+				nodes[i].classList.add('aos-animate');
+			}
+		}, 300);
+	});
+
 	function stored() {
 		try {
 			return localStorage.getItem('darkMode');
