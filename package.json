@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "cd blog-src && npm run dev",
-    "build": "find blog-src/src -name 'CLAUDE.md' -delete && cd blog-src && npm run build && node scripts/purge-css.mjs && node scripts/fingerprint-assets.mjs && node scripts/astro-manifest.mjs",
+    "build": "find blog-src/src -name 'CLAUDE.md' -delete && cd blog-src && npm run build",
     "preview": "cd blog-src && npm run preview",
     "typecheck": "cd blog-src && npx astro check",
     "worker:dev": "npx wrangler dev",
