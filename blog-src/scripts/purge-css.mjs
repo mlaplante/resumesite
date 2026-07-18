@@ -17,7 +17,7 @@ const targets = [
 // Classes mutated at runtime by /js/script.js that aren't present in rendered HTML.
 const safelist = {
   standard: [
-    'dark-mode', 'aos-animate', 'white-btn', 'show-menu',
+    'dark-mode', 'js-anim', 'aos-animate', 'white-btn', 'show-menu',
     'ripple-target', 'ripple', 'used',
     'pink', 'green', 'blue', 'teal', 'blue-grey', 'default', 'purple',
     'show', 'active', 'fade', 'collapsing', 'collapsed',

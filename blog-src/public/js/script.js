@@ -55,6 +55,7 @@
 			animatedElements.forEach(function(el) {
 				el.classList.add('aos-animate');
 			});
+			window.__aosReady = true;
 			return;
 		}
 
@@ -73,6 +74,11 @@
 		animatedElements.forEach(function(el) {
 			observer.observe(el);
 		});
+
+		// Tell theme.js's failsafe the reveal script ran and owns the
+		// animation, so it won't force-reveal (which would skip the
+		// scroll-triggered entrance on desktop).
+		window.__aosReady = true;
 	}
 
 	/*========================================
