@@ -1783,6 +1783,10 @@ body{
 	color:var(--slate);
 }
 .contact-section{ border-top:1px solid rgba(10, 21, 40, .08); }
+/* .section only carries top padding (gaps come from the next section's
+   padding-top); the last section on each page needs its own bottom
+   padding so content never sits flush against the ink footer. */
+main > .section:last-of-type{ padding-bottom:96px; }
 .contact-booking-note{ color:var(--slate); }
 .contact-booking-note a{ color:var(--signal-deep); }
 .material-input > .form-control{ color:var(--ink); border-bottom-color:rgba(10, 21, 40, .22); }
