@@ -1498,7 +1498,6 @@ body.dark-mode footer{ border-top-color:rgba(255,255,255,.1); }
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.4);
   transform: scale(0);
-  animation: ripple-effect 0.6s ease-out;
   pointer-events: none;
 }
 
@@ -1590,12 +1589,16 @@ body.dark-mode footer{ border-top-color:rgba(255,255,255,.1); }
 	color:var(--signal);
 	box-shadow:none;
 }
-.main-section .btn-ghost{
+/* Listed with the a.btn-custom variant so these outrank the global
+   a.btn-custom.btn-ghost rules at the end of this file. */
+.main-section .btn-ghost,
+.main-section a.btn-custom.btn-ghost{
 	background:transparent;
 	border-color:rgba(244, 246, 249, .62);
 	color:var(--paper);
 }
-.main-section .btn-ghost:hover{
+.main-section .btn-ghost:hover,
+.main-section a.btn-custom.btn-ghost:hover{
 	background:var(--paper);
 	border-color:var(--paper);
 	color:var(--ink);
@@ -1831,3 +1834,94 @@ body.dark-mode .timeline > li > .content::before,
 body.dark-mode .timeline > li.current > .content::before{ border-color:var(--ink); }
 body.dark-mode .material-input > .form-control{ color:var(--paper); border-bottom-color:rgba(244, 246, 249, .24); }
 body.dark-mode footer{ background:var(--ink); border-top:0; }
+
+/*==================================================
+	Global interaction and compact-screen audit
+==================================================*/
+.section a:not(.btn-custom),
+.contact-booking-note a,
+footer .copyright a,
+.social-links > li > a{
+	background-image:linear-gradient(var(--signal), var(--signal));
+	background-repeat:no-repeat;
+	background-position:0 100%;
+	background-size:0 1px;
+	text-decoration:none;
+	transition:background-size .2s ease, color .2s ease;
+}
+.section a:not(.btn-custom):hover,
+.contact-booking-note a:hover,
+footer .copyright a:hover,
+.social-links > li > a:hover{
+	background-size:100% 1px;
+	color:var(--signal-deep);
+	opacity:1;
+}
+/* a.btn-custom carries 0,1,1 specificity from the legacy base styles, so the
+   anchor variants must be listed here for these rules to win the cascade. */
+.btn-custom,
+a.btn-custom{
+	border-color:var(--signal);
+	background:var(--signal);
+	color:var(--ink);
+	box-shadow:none;
+	transition:transform .2s ease, background-color .2s ease, border-color .2s ease, color .2s ease;
+}
+.btn-custom:hover,
+a.btn-custom:hover{
+	background:var(--signal-deep);
+	border-color:var(--signal-deep);
+	color:var(--paper);
+	transform:translateY(-1px);
+	box-shadow:none;
+}
+.btn-custom:active{ transform:translateY(0); }
+.btn-ghost,
+a.btn-custom.btn-ghost,
+body.dark-mode .btn-ghost{
+	background:transparent;
+	border-color:currentColor;
+	color:var(--ink);
+}
+.btn-ghost:hover,
+a.btn-custom.btn-ghost:hover,
+body.dark-mode .btn-ghost:hover{
+	background:var(--ink);
+	border-color:var(--ink);
+	color:var(--paper);
+}
+body.dark-mode .btn-custom{
+	background:var(--signal);
+	border-color:var(--signal);
+	color:var(--ink);
+}
+body.dark-mode .btn-custom:hover{
+	background:var(--signal-deep);
+	border-color:var(--signal-deep);
+	color:var(--paper);
+}
+body.dark-mode .btn-ghost,
+body.dark-mode a.btn-custom.btn-ghost{ color:var(--paper); border-color:currentColor; background:transparent; }
+body.dark-mode .btn-ghost:hover,
+body.dark-mode a.btn-custom.btn-ghost:hover{ background:var(--paper); border-color:var(--paper); color:var(--ink); }
+.ripple-target .ripple{ animation:none; }
+@media (prefers-reduced-motion: no-preference){
+	.ripple-target .ripple{ animation:ripple-effect .6s ease-out; }
+}
+@media (prefers-reduced-motion: reduce){
+	*, *::before, *::after{
+		animation-duration:.01ms !important;
+		animation-iteration-count:1 !important;
+		transition-duration:.01ms !important;
+		scroll-behavior:auto !important;
+	}
+}
+@media (max-width:390px){
+	.main-section{ padding-top:110px; }
+	.briefing-label{ font-size:10px; letter-spacing:.06em; }
+	.person-img{ width:108px; height:108px; }
+	.intro-name{ font-size:clamp(2.75rem, 15vw, 3.65rem); }
+	.stat-readout-item{ padding:15px 12px; }
+	.stat-readout-item span{ font-size:9px; letter-spacing:.04em; }
+	.service{ padding:22px; }
+}

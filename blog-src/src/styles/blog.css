@@ -67,8 +67,6 @@ body {
 .reading-progress-bar {
   height: 3px;
   background: var(--signal);
-  animation-timeline: scroll(y);
-  animation-name: reading-progress;
 }
 
 @keyframes reading-progress {
@@ -611,3 +609,41 @@ body {
 [data-theme='dark'] .blog-content article { color: var(--text-muted); }
 [data-theme='dark'] .blog-meta .category { color: var(--signal); }
 [data-theme='dark'] .blog-content article a { color: var(--signal); border-bottom-color: rgba(226, 163, 60, .45); }
+
+/* ===== Shared interaction states and compact-screen audit ===== */
+.blog-content a:not(.post-card):not(.related-post-card),
+.blog-site-footer a {
+  background-image: linear-gradient(var(--signal), var(--signal));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0 1px;
+  text-decoration: none;
+  transition: background-size .2s ease, color .2s ease;
+}
+.blog-content a:not(.post-card):not(.related-post-card):hover,
+.blog-site-footer a:hover {
+  background-size: 100% 1px;
+  color: var(--signal-deep);
+}
+.blog-nav .nav-links a { transition: color .2s ease; }
+.reading-progress-bar { animation: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .reading-progress-bar {
+    animation-timeline: scroll(y);
+    animation-name: reading-progress;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+@media (max-width: 390px) {
+  .blog-content { padding: 32px 16px 48px; }
+  .post-card-featured { min-height: 260px; padding: 24px 20px; }
+  .post-card-featured h2 { font-size: 1.7rem; }
+  .blog-nav .container { padding: 0 16px; }
+}

@@ -115,15 +115,16 @@ const wrapperClass = variant === 'centered' ? 'newsletter-signup' : 'newsletter-
     padding: 10px 24px;
     border: none;
     border-radius: 8px;
-    background: #2980b9;
-    color: #fff;
+    background: var(--signal, #2980b9);
+    color: var(--ink, #fff);
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background 0.2s, color 0.2s;
     white-space: nowrap;
   }
 
   .newsletter-form-row button:hover {
-    background: #1a6da3;
+    background: var(--signal-deep, #1a6da3);
+    color: var(--paper, #fff);
   }
 
   .newsletter-alt {
