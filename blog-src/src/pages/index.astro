@@ -136,8 +136,10 @@ const posts = (await getSortedPosts()).slice(0, 4);
       <!-- Your Name -->
       <h1 class="intro-name" data-aos="fade-up">I am <strong>Michael <br>La Plante</strong></h1>
 
-      <!-- Person Image -->
-      <div class="person-img" data-aos="zoom-out-up">
+      <!-- Person Image: no data-aos — the photo must never depend on the
+           reveal script; on flaky mobile connections a failed/late script.js
+           left it stuck at opacity 0 ("photo doesn't load" on iPhone). -->
+      <div class="person-img">
         <picture>
           <source srcset="/images/mike-laplante-400.webp" type="image/webp">
           <img src="/images/mike-laplante-400.jpg" alt="Michael LaPlante" width="400" height="400" loading="eager" fetchpriority="high">

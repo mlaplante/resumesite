@@ -24,17 +24,27 @@
 
 	   Failsafe: script.js normally reveals the content (and sets
 	   window.__aosReady). If it fails to run for any reason, reveal everything
-	   after load so the page is never left blank. */
+	   so the page is never left blank. Two triggers: shortly after `load`,
+	   plus a hard deadline from now — on flaky mobile connections `load` can
+	   be delayed indefinitely by a hanging subresource, which used to leave
+	   [data-aos] content invisible with no recovery. */
 	root.classList.add('js-anim');
-	window.addEventListener('load', function () {
-		window.setTimeout(function () {
-			if (window.__aosReady) return; /* reveal script ran; it owns the animation */
-			var nodes = document.querySelectorAll('[data-aos]');
-			for (var i = 0; i < nodes.length; i++) {
-				nodes[i].classList.add('aos-animate');
-			}
-		}, 300);
+	var forceReveal = function () {
+		if (window.__aosReady) return; /* reveal script ran; it owns the animation */
+		var nodes = document.querySelectorAll('[data-aos]');
+		for (var i = 0; i < nodes.length; i++) {
+			nodes[i].classList.add('aos-animate');
+		}
+	};
+	/* script.js is deferred, so it has already run (and set __aosReady) by
+	   the time DOMContentLoaded fires — unless its request failed. */
+	document.addEventListener('DOMContentLoaded', function () {
+		window.setTimeout(forceReveal, 300);
 	});
+	window.addEventListener('load', function () {
+		window.setTimeout(forceReveal, 300);
+	});
+	window.setTimeout(forceReveal, 2500);
 
 	function stored() {
 		try {

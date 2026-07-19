@@ -241,6 +241,35 @@
 	}
 
 	/*========================================
+		Hero Image Recovery
+		Safari (notably iOS on a flaky cellular connection) does not retry
+		an image whose request was dropped, so the header photo could stay
+		missing until a manual reload. Retry once with a fresh request,
+		dropping the <source> so the retry uses the plain JPEG.
+	==========================================*/
+	function initHeroImageRecovery() {
+		var img = document.querySelector('.person-img img');
+		if (!img) return;
+
+		var retried = false;
+		function retry() {
+			if (retried) return;
+			retried = true;
+			var source = img.parentElement && img.parentElement.querySelector('source');
+			if (source) source.remove();
+			var src = img.getAttribute('src');
+			img.src = src + (src.indexOf('?') === -1 ? '?retry=1' : '&retry=1');
+		}
+
+		img.addEventListener('error', retry);
+		// The image is loaded eagerly, so a dropped request may have already
+		// errored before this script ran.
+		if (img.complete && img.naturalWidth === 0) {
+			retry();
+		}
+	}
+
+	/*========================================
 		Initialize All Functions
 	==========================================*/
 	function init() {
@@ -252,6 +281,7 @@
 		initRipples();
 		initColorTheme();
 		initMaterialInputs();
+		initHeroImageRecovery();
 	}
 
 	// Initialize on DOM ready
