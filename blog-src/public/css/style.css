@@ -40,8 +40,9 @@
    iOS Safari), the default 8px body margin plus content-box sizing shifts
    the whole page and lets it pan horizontally — the "gap around the mobile
    header" failure. These few rules keep the layout structurally sound on
-   style.css alone; overflow-x:clip (not hidden — hidden creates a scroll
-   container) blocks horizontal panning outright. */
+   style.css alone. Do NOT add overflow-x:clip/hidden to html or body as
+   extra protection: Safari incorrectly lets the page scroll far past the
+   footer when the root is clipped (clip bleeds into the Y axis there). */
 *,
 *::before,
 *::after{
@@ -50,7 +51,6 @@
 html,
 body{
 	margin:0;
-	overflow-x:clip;
 }
 *{
 	font-family:inherit;
