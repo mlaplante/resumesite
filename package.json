@@ -32,12 +32,12 @@
     "@anthropic-ai/sdk": "^0.111.0"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.18.0",
+    "@cloudflare/vitest-pool-workers": "^0.18.4",
     "@eslint/js": "^10.0.1",
-    "eslint": "^10.6.0",
+    "eslint": "^10.7.0",
     "eslint-plugin-astro": "^1.7.0",
     "globals": "^17.7.0",
-    "typescript-eslint": "^8.62.1",
-    "vitest": "^4.1.9"
+    "typescript-eslint": "^8.63.0",
+    "vitest": "^4.1.10"
   }
 }
