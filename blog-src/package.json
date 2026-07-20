@@ -30,6 +30,6 @@
     "@types/pdfkit": "^0.17.6",
     "bootstrap": "^5.3.8",
     "purgecss": "^8.0.0",
-    "typescript": "^6.0.3"
+    "typescript": "^7.0.2"
   }
 }
