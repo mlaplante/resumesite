@@ -29,15 +29,15 @@
     "personal-website"
   ],
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.111.0"
+    "@anthropic-ai/sdk": "^0.112.3"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.18.4",
+    "@cloudflare/vitest-pool-workers": "^0.18.6",
     "@eslint/js": "^10.0.1",
     "eslint": "^10.7.0",
-    "eslint-plugin-astro": "^3.0.0",
+    "eslint-plugin-astro": "^3.0.1",
     "globals": "^17.7.0",
-    "typescript-eslint": "^8.63.0",
+    "typescript-eslint": "^8.64.0",
     "vitest": "^4.1.10"
   }
 }
