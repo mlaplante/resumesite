@@ -20,13 +20,13 @@
     "@astrojs/rss": "^4.0.19",
     "@astrojs/sitemap": "^3.7.3",
     "@resvg/resvg-js": "^2.6.2",
-    "astro": "^7.0.7",
+    "astro": "^7.1.6",
     "pdfkit": "^0.19.1",
-    "satori": "^0.26.0",
+    "satori": "^0.29.0",
     "wawoff2": "^2.0.1"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.9",
+    "@astrojs/check": "^0.9.10",
     "@types/pdfkit": "^0.17.6",
     "bootstrap": "^5.3.8",
     "purgecss": "^8.0.0",
