@@ -69,7 +69,7 @@ You want migrations to happen **before** the green app starts handling traffic, 
 
 ### Option 1: Init Containers
 
-Use an [init container](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) to run migrations before your app starts.
+Use an [init container](https://github.com/kubernetes/website/blob/main/content/en/docs/concepts/workloads/pods/init-containers.md) to run migrations before your app starts.
 
 **Deployment YAML snippet:**
 ```yaml
