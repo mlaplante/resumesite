@@ -12,6 +12,7 @@ extend-exclude = [
 aks = "aks"                  # Azure Kubernetes Service
 cose = "cose"                # COSE (CBOR Object Signing and Encryption)
 counterfit = "counterfit"    # Microsoft Counterfit (AI security tool)
+fpr = "fpr"                  # false positive rate acronym
 hashi = "hashi"              # HashiCorp
 hav = "hav"                  # hardware-assisted virtualization
 shure = "shure"              # Shure SM7B microphone
