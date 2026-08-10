@@ -31,7 +31,7 @@ Establishing an ethical firewall for AI in threat intelligence requires a multi-
 The quality and representativeness of your training data are paramount.
 
 *   **Bias Detection and Mitigation:** Before training, analyze your data sets for potential biases.
-    *   **Technique:** Use statistical methods to compare feature distributions across different demographic or geographic categories. For example, if your threat actor profiles disproportionately represent specific regions, investigate why. Tools like Google's [What-If Tool](https://pair.withgoogle.com/what-if-tool/) or open-source libraries like `fairlearn` (for Python) can help visualize and quantify these biases.
+    *   **Technique:** Use statistical methods to compare feature distributions across different demographic or geographic categories. For example, if your threat actor profiles disproportionately represent specific regions, investigate why. Tools like Google's [What-If Tool](https://github.com/pair-code/what-if-tool) or open-source libraries like `fairlearn` (for Python) can help visualize and quantify these biases.
     *   **Actionable Takeaway:** Actively seek diverse data sources. If you identify underrepresented threat vectors or actors, prioritize gathering intelligence on them to balance your dataset. Don't just remove biased data; try to augment it with unbiased alternatives.
 *   **Data Provenance and Lineage:** Understand where every piece of data comes from.
     *   **Actionable Takeaway:** Implement robust data cataloging and metadata management. For instance, log the source, collection method, and any transformations applied to threat indicators (IPs, hashes, domains) and associated contextual data. This allows for auditing and identifying potential upstream biases.

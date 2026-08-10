@@ -35,7 +35,7 @@ Here's how we can build a practical governance framework to address these challe
 Before any AI model touches your data, establish rigorous data governance.
 
 *   **Data Lineage and Provenance:** Document where every piece of data originates, how it's transformed, and its quality. For instance, if your AI model for anomaly detection is trained on NetFlow data, ensure you know the exact routers/switches providing it, the sampling rate, and any pre-processing steps.
-*   **Bias Detection and Mitigation:** Actively look for biases in your training data. Are certain types of events underrepresented? Are logs from specific geopolitical regions or network segments disproportionately weighted? Tools like Google's [What-If Tool](https://pair.withgoogle.com/tools/what-if-tool/) or open-source libraries like [Aequitas](https://www.aequitas.ai/) can help analyze fairness metrics.
+*   **Bias Detection and Mitigation:** Actively look for biases in your training data. Are certain types of events underrepresented? Are logs from specific geopolitical regions or network segments disproportionately weighted? Tools like Google's [What-If Tool](https://github.com/pair-code/what-if-tool) or open-source libraries like [Aequitas](https://github.com/dssg/aequitas) can help analyze fairness metrics.
 *   **Data Anonymization and Privacy:** Ensure sensitive data used for training is appropriately anonymized or pseudonymized, especially for identity-related logs, to comply with privacy regulations.
 
 ### 2. Model Governance: Transparency and Performance
