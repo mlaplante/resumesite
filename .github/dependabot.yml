@@ -50,6 +50,18 @@ updates:
           - "*"
         update-types:
           - major
+    ignore:
+      # `@astrojs/check` (0.9.10, the latest release) peer-requires
+      # `typescript@^5.0.0 || ^6.0.0`, so a TypeScript 7 bump makes `npm ci`
+      # fail ERESOLVE in every CI job and in Cloudflare Workers Builds. Even
+      # forced through with --legacy-peer-deps, `npm run typecheck` crashes:
+      # TypeScript 7's native port dropped the compiler-host APIs Volar uses,
+      # so `@astrojs/language-server` throws
+      # "Cannot read properties of undefined (reading 'fileExists')".
+      # Remove this ignore once `@astrojs/check` peer-accepts `typescript@^7`.
+      - dependency-name: "typescript"
+        update-types:
+          - "version-update:semver-major"
 
   # Workflow actions (pinned to commit SHAs).
   - package-ecosystem: github-actions
