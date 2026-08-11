@@ -1,6 +1,7 @@
 # Michael LaPlante - Personal Portfolio & Resume Website
 
 [![Deploy Status](https://github.com/mlaplante/resumesite/actions/workflows/purge-cloudflare-cache.yml/badge.svg?branch=master)](https://github.com/mlaplante/resumesite/actions/workflows/purge-cloudflare-cache.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/mlaplante/resumesite/badge)](https://scorecard.dev/viewer/?uri=github.com/mlaplante/resumesite)
 
 A modern, fully Astro-powered personal portfolio and security consulting website for Michael LaPlante. The entire site (portfolio + blog) is built as a single Astro 6 project, served from Cloudflare Workers with a D1-backed contact form, Turnstile bot challenge, and ForwardEmail delivery. Blog drafts are AI-assisted via Anthropic Claude / Google Gemini / GitHub Models, gated behind human review.
 
@@ -282,6 +283,7 @@ The site deploys to **Cloudflare** as a Worker plus static assets:
 | `link-check.yml`               | Weekly / manual      | Dead-link sweep of blog content; files an issue with the report |
 | `lint-workflows.yml`           | Workflow changes     | actionlint + zizmor security audit of workflow YAML |
 | `purge-cloudflare-cache.yml`   | Post-push to master  | Verify the live site + Worker respond (drives the deploy-status badge); also purges the CDN cache when the Cloudflare secrets are set |
+| `sbom.yml`                     | Push to master / manual | CycloneDX SBOMs for both npm roots with signed build-provenance attestations |
 | `typos.yml`                    | PRs / push to master | Spell check; exceptions live in `_typos.toml` |
 
 `dependabot-auto-merge.yml` only *flags* a PR — GitHub completes the merge once every required check passes. Enable **Allow auto-merge** in the repository settings and add branch protection on `master` requiring the CI checks, or the merge will happen without waiting for them.
