@@ -4,4 +4,5 @@
 Contact: https://michaellaplante.com/#contact
 Expires: 2027-06-06T00:00:00.000Z
 Preferred-Languages: en
+Policy: https://michaellaplante.com/security/
 Canonical: https://michaellaplante.com/.well-known/security.txt

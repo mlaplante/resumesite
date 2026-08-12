@@ -1,0 +1,271 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+
+const lastUpdated = 'August 11, 2026';
+---
+
+<SiteLayout
+  title="Security &amp; Vulnerability Disclosure | Michael LaPlante"
+  description="Vulnerability disclosure policy for michaellaplante.com — scope, how to report a security issue, good-faith safe harbor, and how this site is secured."
+>
+  <Fragment slot="head">
+    <meta name="author" content="Michael LaPlante">
+    <link rel="preload" href="/fonts/poppins/poppins-400.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/poppins/poppins-700.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" type="text/css" href="/css/fonts.css">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/css/style.css">
+  </Fragment>
+
+  <!-- Skip to Content Link for Accessibility -->
+  <a href="#main-content" class="skip-to-content">Skip to main content</a>
+
+  <!--========================================
+    Menu
+  =========================================-->
+  <nav class="top-nav" aria-label="Main navigation">
+    <div class="container">
+
+      <button type="button" class="menu-btn" aria-label="Toggle menu" aria-expanded="false" aria-controls="site-menu">
+        <span class="lines">
+          <span class="l1"></span>
+          <span class="l2"></span>
+          <span class="l3"></span>
+        </span>
+      </button>
+
+      <button class="dark-mode-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+        <span class="sun-icon">☀️</span>
+        <span class="moon-icon">🌙</span>
+      </button>
+
+      <div class="menu" id="site-menu">
+        <ul>
+          <li><a href="/">Home</a></li>
+          <li><a href="/services/">Services</a></li>
+          <li><a href="/blog/">Blog</a></li>
+          <li><a href="/uses/">Uses</a></li>
+          <li><a href="/resume/">Resume</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!--========================================
+    Main Content
+  =========================================-->
+  <main id="main-content">
+
+  <section class="section" id="security-header" style="padding-top: 120px;">
+    <div class="container">
+      <div class="section-header" data-aos="fade-up">
+        <h1 style='font-size: 18px; font-weight: 700; font-family: "Roboto Mono", monospace; text-transform: lowercase; letter-spacing: 2px; position: relative; display: inline-block;'>security</h1>
+      </div>
+      <p data-aos="fade-up" class="updated">Last updated: {lastUpdated}</p>
+    </div>
+  </section>
+
+  <section class="section" id="security-body">
+    <div class="container">
+      <div class="legal" data-aos="fade-up">
+
+        <p>
+          This page is the vulnerability disclosure policy for
+          <strong>michaellaplante.com</strong>, the personal portfolio and blog
+          of Michael LaPlante. Security work is my day job, and I welcome
+          good-faith reports about this site. To set expectations up front:
+          this is a solo-run personal website, and this is
+          <strong>not a paid bug bounty program</strong> — there are no
+          monetary rewards, but I will gladly credit you (with your
+          permission) for a valid finding.
+        </p>
+
+        <h2>Scope</h2>
+        <ul>
+          <li><strong>michaellaplante.com</strong> — the site itself, including the contact form API.</li>
+          <li><strong><a href="https://github.com/mlaplante/resumesite" target="_blank" rel="noopener">github.com/mlaplante/resumesite</a></strong> — the public source repository for this site, including its build and deployment workflows.</li>
+        </ul>
+
+        <h2>How to report</h2>
+        <p>
+          Please report security issues through the
+          <a href="/#contact">contact form</a> — it's the primary channel and
+          reaches me directly. This policy is also referenced from the site's
+          <a href="/.well-known/security.txt">security.txt</a>. For
+          non-sensitive issues in the source code, a GitHub issue on the
+          repository works too.
+        </p>
+
+        <h2>What to include</h2>
+        <ul>
+          <li>A description of the issue and where you found it (URL, endpoint, or file/commit in the repository).</li>
+          <li>Steps to reproduce, or a proof of concept.</li>
+          <li>The impact as you understand it — what could an attacker actually do?</li>
+          <li>Any relevant environment details (browser, tooling), and how you'd like to be credited, if at all.</li>
+        </ul>
+
+        <h2>What to expect</h2>
+        <p>
+          I'll acknowledge your report within a few business days, keep you
+          posted on what I find, and let you know when the issue is fixed.
+          This site is run by one person in his spare time, so complex issues
+          may take longer to resolve — but I take reports seriously and won't
+          leave you hanging.
+        </p>
+
+        <h2>Safe harbor</h2>
+        <p>
+          I authorize good-faith security research against the scope above,
+          and I consider it authorized under this policy. If you make a
+          good-faith effort to follow this policy:
+        </p>
+        <ul>
+          <li>I will not pursue or support legal action against you for your research, including accidental, good-faith violations of this policy.</li>
+          <li>If you encounter personal data (for example, someone else's contact-form submission), stop, don't save or share it, and report what you found — that's a normal part of good-faith research, not a violation.</li>
+          <li>If you're ever unsure whether something is in scope or allowed, ask first via the <a href="/#contact">contact form</a>.</li>
+        </ul>
+
+        <h2>Out of scope</h2>
+        <ul>
+          <li>Denial of service, volumetric, or load testing of any kind.</li>
+          <li>Spam, phishing, or social engineering of me or anyone else.</li>
+          <li>Physical attacks against people, property, or infrastructure.</li>
+          <li>Automated scanner output without a demonstrated, exploitable impact (e.g., version banners, or missing-header reports on pages where the header isn't applicable).</li>
+          <li>Third-party services this site relies on but doesn't control: Cal.com (scheduling), Cloudflare Turnstile, ForwardEmail, and the Netlify-hosted Umami analytics instance. Report issues in those platforms to their own security programs.</li>
+        </ul>
+
+        <h2>How this site is secured</h2>
+        <p>
+          In the spirit of transparency — and because the
+          <a href="https://github.com/mlaplante/resumesite" target="_blank" rel="noopener">source is public</a>
+          anyway — here's a summary of the current security posture:
+        </p>
+        <ul>
+          <li>
+            <strong>Strict security headers.</strong> Every page ships a
+            Content-Security-Policy whose <code>script-src</code> allows no
+            <code>'unsafe-inline'</code> — scripts load only from this origin
+            and a short allowlist of named services. HSTS is set for one year
+            with <code>includeSubDomains</code> and <code>preload</code>, and
+            framing is blocked entirely (<code>frame-ancestors 'none'</code>
+            plus <code>X-Frame-Options: DENY</code>).
+          </li>
+          <li>
+            <strong>Hardened contact form.</strong> The contact API enforces
+            same-origin requests, verifies a Cloudflare Turnstile challenge
+            that fails closed if verification can't complete, rate-limits
+            attempts per IP, caps payload sizes, strips control characters to
+            prevent email-header injection, and purges stored submissions
+            after 90 days.
+          </li>
+          <li>
+            <strong>Supply-chain controls in CI.</strong> All GitHub Actions
+            are pinned to full commit SHAs, CodeQL and gitleaks scans run on
+            the repository, workflow files are linted with zizmor, and
+            Dependabot checks dependencies weekly.
+          </li>
+        </ul>
+        <p>
+          None of this makes the site invulnerable — that's what this policy
+          is for. If you spot a gap, I'd like to hear about it.
+        </p>
+
+        <h2>Contact</h2>
+        <p>
+          Questions about this policy? Reach out through the
+          <a href="/#contact">contact form</a>.
+        </p>
+
+      </div>
+    </div>
+  </section>
+
+  </main>
+
+  <!--========================================
+    Footer
+  =========================================-->
+  <footer>
+    <div class="container">
+      <p class="copyright" data-aos="fade-up">
+        Copyright &copy; LaPlante Web Development 2006-<span id="copyright-year"></span>.
+        <a href="/privacy/">Privacy</a>
+        <a href="/security/">Security</a>
+      </p>
+    </div>
+  </footer>
+
+  <!--========================================
+    JavaScript Files
+  =========================================-->
+  <script is:inline defer src="/js/script.js"></script>
+</SiteLayout>
+
+<style>
+  .updated {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 13px;
+    color: #6b7280;
+    letter-spacing: 0.5px;
+  }
+
+  .legal {
+    max-width: 760px;
+  }
+
+  .legal p,
+  .legal li {
+    font-family: 'Poppins', sans-serif;
+    font-size: 16px;
+    line-height: 1.8;
+    color: #374151;
+  }
+
+  .legal p {
+    margin-bottom: 18px;
+  }
+
+  .legal h2 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #111827;
+    margin: 36px 0 12px;
+  }
+
+  .legal ul {
+    margin: 0 0 18px;
+    padding-left: 22px;
+  }
+
+  .legal li {
+    margin-bottom: 10px;
+  }
+
+  .legal a {
+    color: #2980b9;
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .legal a:hover {
+    opacity: 0.7;
+  }
+
+  .legal code {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 14px;
+  }
+
+  :global([data-theme='dark']) .updated { color: #94a3b8; }
+  :global([data-theme='dark']) .legal p,
+  :global([data-theme='dark']) .legal li { color: #cbd5e1; }
+  :global([data-theme='dark']) .legal h2 { color: #f1f5f9; }
+  :global([data-theme='dark']) .legal a { color: #60a5fa; }
+
+  :global(body.dark-mode) .updated { color: #94a3b8; }
+  :global(body.dark-mode) .legal p,
+  :global(body.dark-mode) .legal li { color: #cbd5e1; }
+  :global(body.dark-mode) .legal h2 { color: #f1f5f9; }
+  :global(body.dark-mode) .legal a { color: #60a5fa; }
+</style>

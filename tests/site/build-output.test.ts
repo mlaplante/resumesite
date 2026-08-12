@@ -35,6 +35,24 @@ describe.skipIf(!hasDist)('production build output', () => {
     expect(existsSync(join(DIST, rel)), `dist/${rel} is missing`).toBe(true);
   });
 
+  it('ships the security headers in the global _headers block', () => {
+    const lines = readFileSync(join(DIST, '_headers'), 'utf8').split('\n');
+    const start = lines.indexOf('/*');
+    expect(start, '_headers has no global /* block').toBeGreaterThanOrEqual(0);
+    let end = lines.findIndex((l, i) => i > start && l !== '' && !/^\s/.test(l));
+    if (end === -1) end = lines.length;
+    const globalBlock = lines.slice(start + 1, end).join('\n');
+    for (const header of [
+      'X-Frame-Options: DENY',
+      'X-Content-Type-Options: nosniff',
+      'Referrer-Policy: strict-origin-when-cross-origin',
+      'Cross-Origin-Opener-Policy: same-origin',
+      'X-Permitted-Cross-Domain-Policies: none',
+    ]) {
+      expect(globalBlock).toContain(header);
+    }
+  });
+
   it('renders a non-trivial home page', () => {
     const html = readFileSync(join(DIST, 'index.html'), 'utf8');
     expect(html).toContain('<title');
