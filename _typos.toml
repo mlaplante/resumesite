@@ -15,6 +15,7 @@ counterfit = "counterfit"    # Microsoft Counterfit (AI security tool)
 fpr = "fpr"                  # false positive rate acronym
 hashi = "hashi"              # HashiCorp
 hav = "hav"                  # hardware-assisted virtualization
+parm = "parm"                # libbpf PT_REGS_PARM1..N macros (bpf_tracing.h)
 shure = "shure"              # Shure SM7B microphone
 sie = "sie"                  # SIEM/SIEMs tokenizes as SIE + Ms
 unparseable = "unparseable"  # valid variant of "unparsable"
