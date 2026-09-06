@@ -112,7 +112,10 @@ jobs:
 
       # Lighthouse audit of key pages in the built dist/ (see lighthouserc.json).
       # Accessibility, best-practices and SEO below 100 fail the job; performance below 0.95 warns.
+      # Pinned to an exact version: this step blocks merges, so a new @lhci/cli
+      # (and the Lighthouse it bundles) must not land on CI unreviewed. Bump
+      # deliberately, the same way the SHA-pinned actions above are bumped.
       - name: Lighthouse audit
         run: |
-          npx --yes @lhci/cli@0.15.x collect
-          npx --yes @lhci/cli@0.15.x assert
+          npx --yes @lhci/cli@0.15.1 collect
+          npx --yes @lhci/cli@0.15.1 assert

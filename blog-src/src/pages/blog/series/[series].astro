@@ -2,6 +2,7 @@
 import type { GetStaticPaths } from 'astro';
 import { getCollection } from 'astro:content';
 import BlogLayout from '../../../layouts/BlogLayout.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
 import { SITE_URL } from '../../../config';
 import { getReadTime } from '../../../utils/readTime';
 import { formatDateShort } from '../../../utils/format';
@@ -50,13 +51,7 @@ const breadcrumbSchema = safeJsonLd(breadcrumbList([
     <script type="application/ld+json" set:html={breadcrumbSchema} />
   </Fragment>
   <div class="listing-wrapper">
-    <nav class="breadcrumbs" aria-label="Breadcrumb">
-      <a href="/">Home</a>
-      <span class="breadcrumb-sep">/</span>
-      <a href="/blog/">Blog</a>
-      <span class="breadcrumb-sep">/</span>
-      <span class="breadcrumb-current">{seriesName}</span>
-    </nav>
+    <Breadcrumbs crumbs={[{ name: 'Home', href: '/' }, { name: 'Blog', href: '/blog/' }, { name: seriesName }]} />
 
     <p class="series-eyebrow">Series</p>
     <h1>{seriesName}</h1>
@@ -101,22 +96,6 @@ const breadcrumbSchema = safeJsonLd(breadcrumbList([
   @media (min-width: 768px) {
     .listing-wrapper { max-width: 900px; }
   }
-
-  .breadcrumbs {
-    font-family: 'Poppins', 'Poppins Fallback', sans-serif;
-    font-size: 13px;
-    color: #5f6b7a;
-    margin-bottom: 24px;
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .breadcrumbs a { color: #5f6b7a; text-decoration: none; transition: color 0.2s; }
-  .breadcrumbs a:hover { color: #1f6fa5; }
-  .breadcrumb-sep { color: #d1d5db; }
-  .breadcrumb-current { color: #374151; font-weight: 500; }
 
   .series-eyebrow {
     font-family: 'Poppins', 'Poppins Fallback', sans-serif;
@@ -207,8 +186,6 @@ const breadcrumbSchema = safeJsonLd(breadcrumbList([
     margin: 4px 0 8px;
   }
 
-  .dot-sep { color: #d1d5db; }
-
   .series-item-excerpt {
     display: block;
     font-family: 'Poppins', 'Poppins Fallback', sans-serif;
@@ -235,16 +212,11 @@ const breadcrumbSchema = safeJsonLd(breadcrumbList([
   :global([data-theme='dark']) h1 { color: #f1f5f9; }
   :global([data-theme='dark']) .series-eyebrow { color: #60a5fa; }
   :global([data-theme='dark']) .taxonomy-count { color: #94a3b8; }
-  :global([data-theme='dark']) .breadcrumbs a { color: #94a3b8; }
-  :global([data-theme='dark']) .breadcrumbs a:hover { color: #60a5fa; }
-  :global([data-theme='dark']) .breadcrumb-sep { color: #475569; }
-  :global([data-theme='dark']) .breadcrumb-current { color: #e2e8f0; }
   :global([data-theme='dark']) .series-item { background: #1e293b; border-color: #334155; }
   :global([data-theme='dark']) .series-item:hover { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); border-color: #475569; }
   :global([data-theme='dark']) .series-item-num { color: #60a5fa; background: rgba(96, 165, 250, 0.12); }
   :global([data-theme='dark']) .series-item-title { color: #f1f5f9; }
   :global([data-theme='dark']) .series-item-meta { color: #94a3b8; }
-  :global([data-theme='dark']) .dot-sep { color: #475569; }
   :global([data-theme='dark']) .series-item-excerpt { color: #94a3b8; }
   :global([data-theme='dark']) .back-link { border-top-color: #334155; }
   :global([data-theme='dark']) .back-link a { color: #60a5fa; }

@@ -2,9 +2,9 @@
 import type { GetStaticPaths } from 'astro';
 import { getCollection } from 'astro:content';
 import BlogLayout from '../../../layouts/BlogLayout.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import PostCard from '../../../components/PostCard.astro';
 import { SITE_URL } from '../../../config';
-import { getReadTime } from '../../../utils/readTime';
-import { formatDateShort } from '../../../utils/format';
 import { byDateDesc } from '../../../utils/posts';
 import { safeJsonLd, breadcrumbList } from '../../../utils/schema';
 
@@ -44,39 +44,13 @@ const breadcrumbSchema = safeJsonLd(breadcrumbList([
     <script type="application/ld+json" set:html={breadcrumbSchema} />
   </Fragment>
   <div class="listing-wrapper">
-    <nav class="breadcrumbs" aria-label="Breadcrumb">
-      <a href="/">Home</a>
-      <span class="breadcrumb-sep">/</span>
-      <a href="/blog/">Blog</a>
-      <span class="breadcrumb-sep">/</span>
-      <span class="breadcrumb-current">{tag}</span>
-    </nav>
+    <Breadcrumbs crumbs={[{ name: 'Home', href: '/' }, { name: 'Blog', href: '/blog/' }, { name: tag }]} />
 
     <h1>Tag: <span class="taxonomy-name">{tag}</span></h1>
     <p class="taxonomy-count">{posts.length} post{posts.length === 1 ? '' : 's'}</p>
 
     <div class="post-grid">
-      {posts.map((post) => {
-        const readTime = getReadTime(post.body);
-        return (
-          <a href={`/blog/${post.id}/`} class="post-card" data-category={post.data.category}>
-            <div class="post-card-meta">
-              <time datetime={post.data.date.toISOString()}>
-                {formatDateShort(post.data.date)}
-              </time>
-              <span class="dot-sep">&middot;</span>
-              <span>{readTime} min read</span>
-            </div>
-            <h2>{post.data.title}</h2>
-            <p>{post.data.excerpt}</p>
-            <div class="post-card-tags">
-              {post.data.tags.map((t) => (
-                <span class="tag-badge">{t}</span>
-              ))}
-            </div>
-          </a>
-        );
-      })}
+      {posts.map((post) => <PostCard post={post} badge="tags" />)}
     </div>
 
     <div class="back-link">
@@ -93,31 +67,6 @@ const breadcrumbSchema = safeJsonLd(breadcrumbList([
 
   @media (min-width: 768px) {
     .listing-wrapper { max-width: 900px; }
-  }
-
-  .breadcrumbs {
-    font-family: 'Poppins', 'Poppins Fallback', sans-serif;
-    font-size: 13px;
-    color: #5f6b7a;
-    margin-bottom: 24px;
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .breadcrumbs a {
-    color: #5f6b7a;
-    text-decoration: none;
-    transition: color 0.2s;
-  }
-
-  .breadcrumbs a:hover { color: #1f6fa5; }
-  .breadcrumb-sep { color: #d1d5db; }
-
-  .breadcrumb-current {
-    color: #374151;
-    font-weight: 500;
   }
 
   h1 {
@@ -147,73 +96,6 @@ const breadcrumbSchema = safeJsonLd(breadcrumbList([
     .post-grid { grid-template-columns: 1fr 1fr; }
   }
 
-  .post-card {
-    display: flex;
-    flex-direction: column;
-    padding: 24px;
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    text-decoration: none;
-    transition: all 0.2s;
-  }
-
-  .post-card:hover {
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-    border-color: #d1d5db;
-    transform: translateY(-2px);
-  }
-
-  .post-card h2 {
-    font-family: 'Poppins', 'Poppins Fallback', sans-serif;
-    font-size: 18px;
-    font-weight: 700;
-    color: #111827;
-    margin: 8px 0;
-    line-height: 1.35;
-    letter-spacing: -0.2px;
-  }
-
-  .post-card p {
-    font-family: 'Poppins', 'Poppins Fallback', sans-serif;
-    font-size: 14px;
-    color: #5f6b7a;
-    margin: 0;
-    line-height: 1.6;
-    flex: 1;
-  }
-
-  .post-card-meta {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-family: 'Poppins', 'Poppins Fallback', sans-serif;
-    font-size: 13px;
-    color: #5f6b7a;
-    font-weight: 400;
-  }
-
-  .dot-sep { color: #d1d5db; }
-
-  .post-card-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 14px;
-  }
-
-  .tag-badge {
-    font-family: 'Poppins', 'Poppins Fallback', sans-serif;
-    font-size: 11px;
-    font-weight: 500;
-    color: #1f6fa5;
-    background: rgba(41, 128, 185, 0.08);
-    padding: 3px 8px;
-    border-radius: 100px;
-    text-decoration: none;
-    transition: all 0.2s;
-  }
-
   .back-link {
     margin-top: 40px;
     padding-top: 16px;
@@ -230,22 +112,11 @@ const breadcrumbSchema = safeJsonLd(breadcrumbList([
 
   .back-link a:hover { opacity: 0.7; }
 
-  @media (prefers-color-scheme: dark) {
-    h1 { color: #f1f5f9; }
-    .taxonomy-name { color: #60a5fa; }
-    .taxonomy-count { color: #94a3b8; }
-    .breadcrumbs a { color: #94a3b8; }
-    .breadcrumbs a:hover { color: #60a5fa; }
-    .breadcrumb-sep { color: #475569; }
-    .breadcrumb-current { color: #e2e8f0; }
-    .post-card { background: #1e293b; border-color: #334155; }
-    .post-card:hover { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); border-color: #475569; }
-    .post-card h2 { color: #f1f5f9; }
-    .post-card p { color: #94a3b8; }
-    .post-card-meta { color: #94a3b8; }
-    .dot-sep { color: #475569; }
-    .tag-badge { color: #60a5fa; background: rgba(96, 165, 250, 0.1); }
-    .back-link { border-top-color: #334155; }
-    .back-link a { color: #60a5fa; }
-  }
+  /* Dark mode keys off the manual toggle's data-theme attribute (see
+     public/js/theme.js), never prefers-color-scheme alone. */
+  :global([data-theme='dark']) h1 { color: #f1f5f9; }
+  :global([data-theme='dark']) .taxonomy-name { color: #60a5fa; }
+  :global([data-theme='dark']) .taxonomy-count { color: #94a3b8; }
+  :global([data-theme='dark']) .back-link { border-top-color: #334155; }
+  :global([data-theme='dark']) .back-link a { color: #60a5fa; }
 </style>

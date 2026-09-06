@@ -1,0 +1,75 @@
+---
+// Home / Blog / … trail shown above listing and post pages. The last crumb is
+// the current page (no href). The matching BreadcrumbList JSON-LD is built by
+// utils/schema.ts breadcrumbList() — pass the same names to both.
+interface Crumb {
+  name: string;
+  href?: string;
+}
+
+interface Props {
+  crumbs: Crumb[];
+  // Category slugs are lowercase-hyphenated; display them Title Case.
+  capitalize?: boolean;
+}
+
+const { crumbs, capitalize = false } = Astro.props;
+---
+
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+  {crumbs.map((crumb, i) => (
+    <>
+      {i > 0 && <span class="breadcrumb-sep">/</span>}
+      {crumb.href ? (
+        <a href={crumb.href}>{crumb.name}</a>
+      ) : (
+        <span class:list={['breadcrumb-current', { capitalize }]}>{crumb.name}</span>
+      )}
+    </>
+  ))}
+</nav>
+
+<style>
+  .breadcrumbs {
+    font-family: 'Poppins', 'Poppins Fallback', sans-serif;
+    font-size: 13px;
+    color: #5f6b7a;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .breadcrumbs a {
+    color: #5f6b7a;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .breadcrumbs a:hover {
+    color: #1f6fa5;
+  }
+
+  .breadcrumb-sep {
+    color: #d1d5db;
+  }
+
+  .breadcrumb-current {
+    color: #374151;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 400px;
+  }
+
+  .breadcrumb-current.capitalize {
+    text-transform: capitalize;
+  }
+
+  :global([data-theme='dark']) .breadcrumbs a { color: #94a3b8; }
+  :global([data-theme='dark']) .breadcrumbs a:hover { color: #60a5fa; }
+  :global([data-theme='dark']) .breadcrumb-sep { color: #475569; }
+  :global([data-theme='dark']) .breadcrumb-current { color: #e2e8f0; }
+</style>

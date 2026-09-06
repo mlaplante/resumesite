@@ -2,8 +2,7 @@
 import type { GetStaticPaths } from 'astro';
 import BlogLayout from '../../layouts/BlogLayout.astro';
 import NewsletterSignup from '../../components/NewsletterSignup.astro';
-import { getReadTime } from '../../utils/readTime';
-import { formatDateShort } from '../../utils/format';
+import PostCard from '../../components/PostCard.astro';
 import { getSortedPosts } from '../../utils/posts';
 
 export const getStaticPaths = (async ({ paginate }) => {
@@ -50,18 +49,7 @@ const categories = ['all', ...new Set(allPosts.map((p) => p.data.category))];
 
     {posts.length === 0 && <p class="no-posts">No posts yet. Check back soon.</p>}
 
-    {isFirstPage && newestPost && (
-      <a href={`/blog/${newestPost.id}/`} class="post-card post-card-featured" data-category={newestPost.data.category}>
-        <div class="post-card-meta">
-          <time datetime={newestPost.data.date.toISOString()}>{formatDateShort(newestPost.data.date)}</time>
-          <span class="dot-sep">&middot;</span>
-          <span>{getReadTime(newestPost.body)} min read</span>
-        </div>
-        <h2>{newestPost.data.title}</h2>
-        <p>{newestPost.data.excerpt}</p>
-        <span class="category-badge">{newestPost.data.category.replace(/-/g, ' ')}</span>
-      </a>
-    )}
+    {isFirstPage && newestPost && <PostCard post={newestPost} featured />}
 
     <!-- Sponsored/Featured Content Slot -->
     <div class="featured-banner">
@@ -78,23 +66,7 @@ const categories = ['all', ...new Set(allPosts.map((p) => p.data.category))];
     <div class="post-grid" id="search-results" hidden></div>
 
     <div class="post-grid" id="page-grid">
-      {(isFirstPage ? remainingPosts : posts).map((post) => {
-        const readTime = getReadTime(post.body);
-        return (
-          <a href={`/blog/${post.id}/`} class="post-card" data-category={post.data.category}>
-            <div class="post-card-meta">
-              <time datetime={post.data.date.toISOString()}>
-                {formatDateShort(post.data.date)}
-              </time>
-              <span class="dot-sep">&middot;</span>
-              <span>{readTime} min read</span>
-            </div>
-            <h2>{post.data.title}</h2>
-            <p>{post.data.excerpt}</p>
-            <span class="category-badge">{post.data.category.replace(/-/g, ' ')}</span>
-          </a>
-        );
-      })}
+      {(isFirstPage ? remainingPosts : posts).map((post) => <PostCard post={post} />)}
     </div>
 
     {page.lastPage > 1 && (
@@ -220,85 +192,8 @@ const categories = ['all', ...new Set(allPosts.map((p) => p.data.category))];
     }
   }
 
-  .post-card {
-    display: flex;
-    flex-direction: column;
-    padding: 18px;
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    text-decoration: none;
-    transition: all 0.2s;
-  }
-
-  @media (min-width: 768px) {
-    .post-card {
-      padding: 24px;
-    }
-  }
-
-  .post-card:hover {
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-    border-color: #d1d5db;
-    transform: translateY(-2px);
-  }
-
-  .post-card h2 {
-    font-family: 'Poppins', 'Poppins Fallback', sans-serif;
-    font-size: 18px;
-    font-weight: 700;
-    color: #111827;
-    margin: 8px 0;
-    line-height: 1.35;
-    letter-spacing: -0.2px;
-  }
-
-  .post-card p {
-    font-family: 'Poppins', 'Poppins Fallback', sans-serif;
-    font-size: 14px;
-    color: #5f6b7a;
-    margin: 0;
-    line-height: 1.6;
-    flex: 1;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  @media (min-width: 768px) {
-    .post-card p {
-      -webkit-line-clamp: 4;
-    }
-  }
-
-  .post-card-meta {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-family: 'Poppins', 'Poppins Fallback', sans-serif;
-    font-size: 13px;
-    color: #5f6b7a;
-    font-weight: 400;
-  }
-
-  .dot-sep {
-    color: #d1d5db;
-  }
-
-  .category-badge {
-    display: inline-block;
-    margin-top: 14px;
-    font-family: 'Poppins', 'Poppins Fallback', sans-serif;
-    font-size: 12px;
-    font-weight: 500;
-    color: #1f6fa5;
-    background: rgba(41, 128, 185, 0.08);
-    padding: 4px 10px;
-    border-radius: 100px;
-    text-transform: capitalize;
-    width: fit-content;
-  }
+  /* Card styles: see "Post cards" in styles/blog.css (global, shared with the
+     runtime-injected search results). */
 
   .no-posts {
     font-family: 'Poppins', 'Poppins Fallback', sans-serif;
@@ -416,13 +311,6 @@ const categories = ['all', ...new Set(allPosts.map((p) => p.data.category))];
   :global([data-theme='dark']) .filter-btn { border-color: #334155; color: #94a3b8; }
   :global([data-theme='dark']) .filter-btn:hover { border-color: #1a5276; color: #60a5fa; }
   :global([data-theme='dark']) .filter-btn.active { background: #1a5276; border-color: #1a5276; color: #fff; }
-  :global([data-theme='dark']) .post-card { background: #1e293b; border-color: #334155; }
-  :global([data-theme='dark']) .post-card:hover { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); border-color: #475569; }
-  :global([data-theme='dark']) .post-card h2 { color: #f1f5f9; }
-  :global([data-theme='dark']) .post-card p { color: #94a3b8; }
-  :global([data-theme='dark']) .post-card-meta { color: #94a3b8; }
-  :global([data-theme='dark']) .dot-sep { color: #475569; }
-  :global([data-theme='dark']) .category-badge { color: #60a5fa; background: rgba(96, 165, 250, 0.1); }
   :global([data-theme='dark']) .no-posts { color: #94a3b8; }
   :global([data-theme='dark']) .featured-banner { background: linear-gradient(135deg, rgba(26, 82, 118, 0.15) 0%, rgba(26, 82, 118, 0.05) 100%); border-color: rgba(96, 165, 250, 0.15); }
   :global([data-theme='dark']) .featured-label { color: #60a5fa; background: rgba(96, 165, 250, 0.1); }
@@ -436,68 +324,16 @@ const categories = ['all', ...new Set(allPosts.map((p) => p.data.category))];
 
   /* Executive-security visual identity overrides. */
   .listing-wrapper h1,
-  .post-card h2,
   .featured-banner h3 {
     font-family: var(--display-font);
     letter-spacing: -0.02em;
   }
   .blog-subtitle { color: var(--slate); }
-  .post-card {
-    position: relative;
-    overflow: hidden;
-    border: 0;
-    border-radius: 8px;
-    background: var(--surface);
-    box-shadow: var(--shadow);
-    transition: transform .2s ease, box-shadow .2s ease;
-  }
-  .post-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    left: 0;
-    height: 2px;
-    background: transparent;
-    transition: background-color .2s ease;
-  }
-  @media (hover: hover) {
-    .post-card:hover { transform: translateY(-2px); border-color: transparent; box-shadow: 0 18px 42px rgba(10, 21, 40, .14); }
-    .post-card:hover::before { background: var(--signal); }
-  }
-  .post-card h2 { color: var(--ink); }
-  .post-card-meta { font-family: var(--mono-font); font-size: 11px; letter-spacing: .04em; color: var(--slate); }
-  .post-card p { color: var(--slate); }
-  .category-badge {
-    font-family: var(--mono-font);
-    font-size: 10px;
-    letter-spacing: .06em;
-    color: var(--signal-deep);
-    background: rgba(226, 163, 60, .12);
-    text-transform: uppercase;
-  }
-  .post-card-featured {
-    display: flex;
-    min-height: 300px;
-    margin-bottom: 24px;
-    padding: 30px;
-    background: var(--ink);
-    box-shadow: none;
-  }
-  .post-card-featured::before { background: var(--signal); }
-  .post-card-featured h2 { max-width: 760px; font-size: clamp(1.75rem, 4vw, 2.8rem); color: var(--paper); }
-  .post-card-featured p { max-width: 700px; color: #B9C5D5; }
-  .post-card-featured .post-card-meta { color: #B9C5D5; }
-  .post-card-featured .category-badge { color: var(--ink); background: var(--signal); }
   .featured-banner { background: var(--ink-2); border: 0; border-radius: 8px; }
   .featured-label { font-family: var(--mono-font); font-size: 10px; letter-spacing: .08em; color: var(--ink); background: var(--signal); }
   .featured-banner h3 { color: var(--paper); }
   .featured-banner p { color: #B9C5D5; }
   .featured-cta { color: var(--signal); }
-  :global([data-theme='dark']) .post-card:not(.post-card-featured) { background: var(--ink-2); box-shadow: var(--shadow); }
-  :global([data-theme='dark']) .post-card h2 { color: var(--paper); }
-  :global([data-theme='dark']) .post-card p,
-  :global([data-theme='dark']) .post-card-meta { color: var(--text-muted); }
   :global([data-theme='dark']) .featured-banner { background: var(--ink-2); }
 </style>
 
@@ -511,9 +347,9 @@ const categories = ['all', ...new Set(allPosts.map((p) => p.data.category))];
   const featuredBanner = document.querySelector('.featured-banner') as HTMLElement | null;
   const pagination = document.querySelector('.pagination') as HTMLElement | null;
 
-  // The listing's card styles are scoped (`.post-card[data-astro-cid-*]`), so
-  // injected cards must carry the same attribute or they render unstyled.
-  // Read it off the results grid, which is part of the static template.
+  // Card styles are global (styles/blog.css), so injected cards render styled
+  // on their own. The page's scoped attribute is still forwarded so the cards
+  // also pick up any page-level scoped rules (e.g. .post-grid gap tweaks).
   const scopeAttr =
     resultsGrid?.getAttributeNames().find((n) => n.startsWith('data-astro-cid-')) ?? '';
 

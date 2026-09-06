@@ -28,7 +28,6 @@ const TEST_SCHEMA_STATEMENTS = [
     ts INTEGER NOT NULL
   )`,
   `CREATE INDEX IF NOT EXISTS idx_submissions_ts ON submissions (ts DESC)`,
-  `CREATE INDEX IF NOT EXISTS idx_submissions_ip_ts ON submissions (ip, ts DESC)`,
   `CREATE TABLE IF NOT EXISTS contact_attempts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ip TEXT NOT NULL,

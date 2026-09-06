@@ -3,26 +3,28 @@ import { getCollection, render } from 'astro:content';
 import BlogLayout from '../../layouts/BlogLayout.astro';
 import NewsletterSignup from '../../components/NewsletterSignup.astro';
 import AuthorBio from '../../components/AuthorBio.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import { SITE_URL, AUTHOR_NAME } from '../../config';
-import { getReadTime, getWordCount } from '../../utils/readTime';
+import { getWordCount, readTimeFromWordCount } from '../../utils/readTime';
 import { formatDateLong, formatDateShort } from '../../utils/format';
 import { slugify } from '../../utils/slug';
 import { safeJsonLd, breadcrumbList } from '../../utils/schema';
 
 export async function getStaticPaths() {
   const posts = await getCollection('posts');
+  // Every post page needs the whole collection (series siblings, related
+  // posts); hand it over once from here rather than re-querying per page.
   return posts.map((post) => ({
     params: { slug: post.id },
-    props: { post },
+    props: { post, allPosts: posts },
   }));
 }
 
-const { post } = Astro.props;
+const { post, allPosts } = Astro.props;
 const { Content } = await render(post);
 
-const allPosts = await getCollection('posts');
 const wordCount = getWordCount(post.body);
-const readTime = getReadTime(post.body);
+const readTime = readTimeFromWordCount(wordCount);
 const siteUrl = SITE_URL;
 const postUrl = `${siteUrl}/blog/${post.id}/`;
 // Social-card image: prefer the post's explicit `image:` frontmatter, otherwise
@@ -104,13 +106,9 @@ const breadcrumbSchema = safeJsonLd(breadcrumbList([
   </Fragment>
   <div class="article-layout">
     <div class="article-main">
-      <nav class="breadcrumbs" aria-label="Breadcrumb">
-        <a href="/">Home</a>
-        <span class="breadcrumb-sep">/</span>
-        <a href="/blog/">Blog</a>
-        <span class="breadcrumb-sep">/</span>
-        <span class="breadcrumb-current">{post.data.title}</span>
-      </nav>
+      <Breadcrumbs
+        crumbs={[{ name: 'Home', href: '/' }, { name: 'Blog', href: '/blog/' }, { name: post.data.title }]}
+      />
       <article>
         <h1>{post.data.title}</h1>
         <div class="blog-meta">
@@ -381,40 +379,6 @@ const breadcrumbSchema = safeJsonLd(breadcrumbList([
     color: #d1d5db;
   }
 
-  /* Breadcrumbs */
-  .breadcrumbs {
-    font-family: 'Poppins', 'Poppins Fallback', sans-serif;
-    font-size: 13px;
-    color: #5f6b7a;
-    margin-bottom: 24px;
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .breadcrumbs a {
-    color: #5f6b7a;
-    text-decoration: none;
-    transition: color 0.2s;
-  }
-
-  .breadcrumbs a:hover {
-    color: #1f6fa5;
-  }
-
-  .breadcrumb-sep {
-    color: #d1d5db;
-  }
-
-  .breadcrumb-current {
-    color: #374151;
-    font-weight: 500;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 400px;
-  }
 
   /* Services CTA */
   .services-cta {
@@ -568,10 +532,6 @@ const breadcrumbSchema = safeJsonLd(breadcrumbList([
   :global([data-theme='dark']) .series-box-list a { color: #60a5fa; }
   :global([data-theme='dark']) .series-box-list .series-current { color: #e2e8f0; }
   :global([data-theme='dark']) .blog-meta .dot-sep { color: #475569; }
-  :global([data-theme='dark']) .breadcrumbs a { color: #94a3b8; }
-  :global([data-theme='dark']) .breadcrumbs a:hover { color: #60a5fa; }
-  :global([data-theme='dark']) .breadcrumb-sep { color: #475569; }
-  :global([data-theme='dark']) .breadcrumb-current { color: #e2e8f0; }
   :global([data-theme='dark']) .services-cta { background: #1e293b; border-color: #334155; }
   :global([data-theme='dark']) .services-cta h3 { color: #f1f5f9; }
   :global([data-theme='dark']) .services-cta p { color: #94a3b8; }

@@ -1,0 +1,42 @@
+---
+// One blog post as a listing card. Used by the paginated index (featured +
+// grid), category pages, and tag pages. The styles live in styles/blog.css
+// (global, not scoped) on purpose: the listing's search UI injects this same
+// markup at runtime via utils/search.ts renderPostCard(), so keep the two in
+// sync and never rely on a scoped attribute here.
+import type { Post } from '../utils/posts';
+import { getReadTime } from '../utils/readTime';
+import { formatDateShort } from '../utils/format';
+
+interface Props {
+  post: Post;
+  // Large dark hero treatment for the newest post on page 1.
+  featured?: boolean;
+  // Which taxonomy the footer badge shows.
+  badge?: 'category' | 'tags';
+}
+
+const { post, featured = false, badge = 'category' } = Astro.props;
+const readTime = getReadTime(post.body);
+---
+
+<a
+  href={`/blog/${post.id}/`}
+  class:list={['post-card', { 'post-card-featured': featured }]}
+  data-category={post.data.category}
+>
+  <div class="post-card-meta">
+    <time datetime={post.data.date.toISOString()}>{formatDateShort(post.data.date)}</time>
+    <span class="dot-sep">&middot;</span>
+    <span>{readTime} min read</span>
+  </div>
+  <h2>{post.data.title}</h2>
+  <p>{post.data.excerpt}</p>
+  {badge === 'tags' ? (
+    <div class="post-card-tags">
+      {post.data.tags.map((t) => <span class="tag-badge">{t}</span>)}
+    </div>
+  ) : (
+    <span class="category-badge">{post.data.category.replace(/-/g, ' ')}</span>
+  )}
+</a>

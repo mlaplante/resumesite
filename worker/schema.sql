@@ -7,11 +7,9 @@ CREATE TABLE IF NOT EXISTS submissions (
   ts INTEGER NOT NULL
 );
 
--- Used by retention purge.
+-- Used by the retention purge (DELETE ... WHERE ts < ?). Nothing reads
+-- submissions by ip: the per-IP rate limit is counted in contact_attempts.
 CREATE INDEX IF NOT EXISTS idx_submissions_ts ON submissions (ts DESC);
-
--- Used by per-IP rate limit lookup; covers the (ip, ts > ?) predicate.
-CREATE INDEX IF NOT EXISTS idx_submissions_ip_ts ON submissions (ip, ts DESC);
 
 -- Every POST that reaches the Turnstile check, accepted or not. The rate
 -- limit counts these (rather than accepted submissions) so failed-challenge

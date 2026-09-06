@@ -430,16 +430,150 @@ body {
 }
 
 /* Shared card geometry is deliberately subtle: it works for lists, taxonomy
-   pages, related posts, and the homepage without competing with the writing. */
-.blog-content :is(.post-card, .series-item, .related-post-card, .post-preview) {
+   pages, related posts, and the homepage without competing with the writing.
+   .post-card is not in this list — it has its own complete rules below. */
+.blog-content :is(.series-item, .related-post-card, .post-preview) {
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02);
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.blog-content :is(.post-card, .series-item, .related-post-card, .post-preview):hover {
+.blog-content :is(.series-item, .related-post-card, .post-preview):hover {
   transform: translateY(-3px);
   box-shadow: 0 12px 28px rgba(20, 44, 78, 0.09);
 }
+
+/* ===== Post cards (components/PostCard.astro) =====
+   Global rather than page-scoped on purpose: the listing's search UI injects
+   the same markup at runtime (utils/search.ts renderPostCard), and the
+   category/tag pages render the same card, so one stylesheet must cover all
+   of them. Keep the selectors matching that component's class names. */
+.post-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 18px;
+  background: var(--surface);
+  border: 0;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  text-decoration: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+@media (min-width: 768px) {
+  .post-card { padding: 24px; }
+}
+
+.post-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 2px;
+  background: transparent;
+  transition: background-color 0.2s ease;
+}
+
+@media (hover: hover) {
+  .post-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 18px 42px rgba(10, 21, 40, 0.14);
+  }
+  .post-card:hover::before { background: var(--signal); }
+}
+
+.post-card h2 {
+  font-family: var(--display-font);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 8px 0;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+}
+
+.post-card p {
+  font-family: 'Poppins', 'Poppins Fallback', sans-serif;
+  font-size: 14px;
+  color: var(--slate);
+  margin: 0;
+  line-height: 1.6;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .post-card p { -webkit-line-clamp: 4; }
+}
+
+.post-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono-font);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--slate);
+  font-weight: 400;
+}
+
+.dot-sep { color: #d1d5db; }
+
+.category-badge,
+.tag-badge {
+  font-family: var(--mono-font);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--signal-deep);
+  background: rgba(226, 163, 60, 0.12);
+  border-radius: 100px;
+}
+
+.category-badge {
+  display: inline-block;
+  width: fit-content;
+  margin-top: 14px;
+  padding: 4px 10px;
+}
+
+.post-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.tag-badge { padding: 3px 8px; }
+
+.post-card-featured {
+  min-height: 300px;
+  margin-bottom: 24px;
+  padding: 30px;
+  background: var(--ink);
+  box-shadow: none;
+}
+.post-card-featured::before { background: var(--signal); }
+.post-card-featured h2 { max-width: 760px; font-size: clamp(1.75rem, 4vw, 2.8rem); color: var(--paper); }
+.post-card-featured p { max-width: 700px; color: #B9C5D5; }
+.post-card-featured .post-card-meta { color: #B9C5D5; }
+.post-card-featured .category-badge { color: var(--ink); background: var(--signal); }
+
+[data-theme='dark'] .post-card:not(.post-card-featured) { background: var(--ink-2); box-shadow: var(--shadow); }
+[data-theme='dark'] .post-card:hover { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); }
+[data-theme='dark'] .post-card h2 { color: var(--paper); }
+[data-theme='dark'] .post-card p,
+[data-theme='dark'] .post-card-meta { color: var(--text-muted); }
+[data-theme='dark'] .dot-sep { color: #475569; }
+[data-theme='dark'] .category-badge,
+[data-theme='dark'] .tag-badge { color: #60a5fa; background: rgba(96, 165, 250, 0.1); }
+[data-theme='dark'] .post-card-featured .category-badge { color: var(--ink); background: var(--signal); }
 
 .blog-site-footer {
   border-top: 1px solid var(--blog-line);

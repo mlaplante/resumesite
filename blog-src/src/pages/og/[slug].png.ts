@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import satori from 'satori';
 import { Resvg } from '@resvg/resvg-js';
+import sharp from 'sharp';
 import { decompress } from 'wawoff2';
 import { formatDateLong } from '../../utils/format';
 
@@ -139,9 +140,17 @@ export async function GET({ props }: APIContext) {
     fonts,
   });
 
-  const png = new Resvg(svg, {
+  const rgba = new Resvg(svg, {
     fitTo: { mode: 'width', value: 1200 },
   }).render().asPng();
+
+  // resvg emits 8-bit RGBA (~170KB per card). The card is flat text on a
+  // two-stop gradient, so a 256-colour palette PNG is visually identical at
+  // roughly a sixth of the bytes — measured 166KB → 29KB. Crawlers are the
+  // only consumers, so this is build/dist weight, not page weight.
+  const png = await sharp(rgba)
+    .png({ palette: true, colors: 256, compressionLevel: 9 })
+    .toBuffer();
 
   // Use a fresh ArrayBuffer-backed Uint8Array so Response can accept it as a
   // BodyInit without TS complaints.

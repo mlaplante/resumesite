@@ -19,10 +19,13 @@ blog-src/.astro/
 
 # Local cache of LLM embeddings used by the auto-blog-draft dedupe pipeline.
 scripts/.embeddings-cache.json
-blog/**/CLAUDE.md
-blog/CLAUDE/
 blog-src/**/CLAUDE.md
 docs/**/CLAUDE.md
+
+# Per-machine agent/tool state (the shared .claude/skills tree stays tracked).
+.claude/settings.json
+.entire/
+.playwright-mcp/
 
 # Screenshot PNGs (design reference only, not served)
 blog-*.png
