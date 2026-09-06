@@ -3,13 +3,13 @@
 [![Deploy Status](https://github.com/mlaplante/resumesite/actions/workflows/purge-cloudflare-cache.yml/badge.svg?branch=master)](https://github.com/mlaplante/resumesite/actions/workflows/purge-cloudflare-cache.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/mlaplante/resumesite/badge)](https://scorecard.dev/viewer/?uri=github.com/mlaplante/resumesite)
 
-A modern, fully Astro-powered personal portfolio and security consulting website for Michael LaPlante. The entire site (portfolio + blog) is built as a single Astro 6 project, served from Cloudflare Workers with a D1-backed contact form, Turnstile bot challenge, and ForwardEmail delivery. Blog drafts are AI-assisted via Anthropic Claude / Google Gemini / GitHub Models, gated behind human review.
+A modern, fully Astro-powered personal portfolio and security consulting website for Michael LaPlante. The entire site (portfolio + blog) is built as a single Astro 7 project, served from Cloudflare Workers with a D1-backed contact form, Turnstile bot challenge, and ForwardEmail delivery. Blog drafts are AI-assisted via Anthropic Claude / Google Gemini / GitHub Models, gated behind human review.
 
 **Live Site:** [michaellaplante.com](https://michaellaplante.com)
 
 ## Features
 
-- **Unified Astro Build**: Entire site (portfolio + blog) built as a single Astro 6 project
+- **Unified Astro Build**: Entire site (portfolio + blog) built as a single Astro 7 project
 - **Cloudflare Workers Runtime**: Static assets + a Worker that handles `/api/contact` (D1 storage, Turnstile, ForwardEmail)
 - **Responsive Design**: Works seamlessly across desktop, tablet, and mobile
 - **Blog with Taxonomy**: Category, tag, and multi-part **series** pages, RSS + JSON feeds, related posts, per-post author bio, desktop + mobile tables of contents, in-page reading progress
@@ -30,7 +30,7 @@ A modern, fully Astro-powered personal portfolio and security consulting website
 
 | Layer        | Technologies |
 |--------------|--------------|
-| **Framework**| Astro 6, HTML5, CSS3, TypeScript |
+| **Framework**| Astro 7, HTML5, CSS3, TypeScript |
 | **Content**  | Markdown content collections with Zod-validated schemas |
 | **Styling**  | Scoped Astro styles, Bootstrap (self-hosted, PurgeCSS-trimmed), Linea & Ionicons |
 | **Runtime**  | Cloudflare Workers + D1 (`/api/contact` form backend) |
@@ -115,7 +115,7 @@ resumesite/
 
 ### Prerequisites
 
-- **Node.js 22+** (required for Astro 6)
+- **Node.js 22+** (required for Astro 7)
 - Git
 - A Cloudflare account with `wrangler` configured (for Worker development / deployment)
 
@@ -173,9 +173,9 @@ The blog lives at [michaellaplante.com/blog](https://michaellaplante.com/blog).
 | Command                         | Description |
 |---------------------------------|-------------|
 | `npm run dev`                   | Start Astro dev server with hot reload |
-| `npm run build`                 | Build entire site to `dist/` (includes PurgeCSS + per-post OG images) |
+| `npm run build`                 | Build entire site to `dist/` (includes PurgeCSS, CSS/JS minification, asset fingerprinting, per-post OG images) |
 | `npm run preview`               | Preview the built site locally |
-| `npm run typecheck`             | Run `astro check` for TS / content-schema validation |
+| `npm run typecheck`             | Run `astro check` (site) and `tsc` over `worker/` (Cloudflare Workers types) |
 | `npm run lint`                  | ESLint over worker, scripts, tests, and Astro sources |
 | `npm test`                      | Run Worker integration tests + shared-lib unit tests |
 | `npm run test:watch`            | Run the test suite in watch mode |

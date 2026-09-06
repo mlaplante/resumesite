@@ -8,7 +8,9 @@
     "dev": "cd blog-src && npm run dev",
     "build": "find blog-src/src -name 'CLAUDE.md' -delete && cd blog-src && npm run build",
     "preview": "cd blog-src && npm run preview",
-    "typecheck": "cd blog-src && npx astro check",
+    "typecheck": "npm run typecheck:site && npm run typecheck:worker",
+    "typecheck:site": "cd blog-src && npx astro check",
+    "typecheck:worker": "tsc -p worker/tsconfig.json",
     "worker:dev": "npx wrangler dev",
     "worker:deploy": "npx wrangler deploy",
     "test": "vitest run",
@@ -33,10 +35,12 @@
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.22.0",
+    "@cloudflare/workers-types": "^5.20260905.1",
     "@eslint/js": "^10.0.1",
     "eslint": "^10.9.0",
     "eslint-plugin-astro": "^3.1.0",
     "globals": "^17.11.0",
+    "typescript": "^6.0.3",
     "typescript-eslint": "^8.67.0",
     "vitest": "^4.1.11"
   }

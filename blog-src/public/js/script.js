@@ -110,7 +110,7 @@
 		
 		if (!mainSection || !menuBtn) return;
 		
-		var c_height = mainSection.offsetHeight - 40;
+		var c_height = Infinity;
 
 		function adjustColor() {
 			if (window.pageYOffset >= c_height) {
@@ -120,13 +120,26 @@
 			}
 		}
 
-		adjustColor();
-
-		window.addEventListener('resize', function() {
+		// Reading offsetHeight synchronously here forces layout in the middle
+		// of the DOM-ready init work (Lighthouse flagged ~33ms of forced
+		// reflow). Defer the read to the next frame, after the other init
+		// functions have finished their writes, and let ResizeObserver
+		// (which fires after layout) keep it current instead of re-measuring
+		// eagerly on every resize event.
+		function measure() {
 			c_height = mainSection.offsetHeight - 40;
-		});
+			adjustColor();
+		}
 
-		window.addEventListener('scroll', adjustColor);
+		window.requestAnimationFrame(measure);
+
+		if ('ResizeObserver' in window) {
+			new ResizeObserver(measure).observe(mainSection);
+		} else {
+			window.addEventListener('resize', measure, { passive: true });
+		}
+
+		window.addEventListener('scroll', adjustColor, { passive: true });
 	}
 
 	/*========================================

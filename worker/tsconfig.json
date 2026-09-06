@@ -1,0 +1,20 @@
+{
+  // Type-checks the Cloudflare Worker in isolation (`npm run typecheck:worker`).
+  // No DOM lib: the Worker runtime globals (Request, Response, D1Database,
+  // Fetcher, ExecutionContext, ...) come from @cloudflare/workers-types so a
+  // browser-only API can't slip in unnoticed. Nothing is emitted — wrangler
+  // bundles worker/index.ts itself at deploy time.
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "es2022",
+    "moduleResolution": "bundler",
+    "lib": ["es2022"],
+    "types": ["@cloudflare/workers-types"],
+    "strict": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["./**/*.ts"]
+}

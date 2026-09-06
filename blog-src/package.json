@@ -29,6 +29,7 @@
     "@astrojs/check": "^0.9.10",
     "@types/pdfkit": "^0.17.6",
     "bootstrap": "^5.3.8",
+    "esbuild": "^0.28.2",
     "purgecss": "^8.0.0",
     "typescript": "^6.0.3"
   }

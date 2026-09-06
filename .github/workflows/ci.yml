@@ -82,24 +82,28 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: blog-src/package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            blog-src/package-lock.json
 
       - name: Install site dependencies
         run: npm ci
         working-directory: blog-src
 
+      # Root tooling: tsc + @cloudflare/workers-types for the Worker typecheck,
+      # vitest for the build-output smoke tests below.
+      - name: Install root dependencies
+        run: npm ci
+
+      # `astro check` over blog-src plus `tsc` over worker/.
       - name: Typecheck
         run: npm run typecheck
 
       # Full production build: validates content-collection frontmatter for
       # every post/draft (including AI-generated drafts), renders OG images,
-      # and runs the PurgeCSS pass.
+      # and runs the PurgeCSS + minify + fingerprint passes.
       - name: Build site
         run: npm run build
-
-      # Root tooling (vitest) for the build-output smoke tests below.
-      - name: Install root dependencies
-        run: npm ci
 
       # Smoke-test the freshly built dist/: required routes/endpoints exist,
       # OG cards and the PDF résumé rendered, search index is populated.

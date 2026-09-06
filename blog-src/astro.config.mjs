@@ -26,8 +26,9 @@ export default defineConfig({
   },
   integrations: [
     sitemap(),
-    // Finalize dist as part of `astro build` itself — PurgeCSS, asset
-    // fingerprinting + HTML ref rewriting, and the /_astro fallback manifest.
+    // Finalize dist as part of `astro build` itself — PurgeCSS, CSS/JS
+    // minification, asset fingerprinting + HTML ref rewriting, and the /_astro
+    // fallback manifest.
     // This used to live only in the repo-root `npm run build` chain, but
     // anything that runs a bare `astro build` and deploys (automation, CI)
     // then shipped unfingerprinted HTML, which browsers resolved against
@@ -38,6 +39,7 @@ export default defineConfig({
       hooks: {
         'astro:build:done': async () => {
           await import('./scripts/purge-css.mjs');
+          await import('./scripts/minify-assets.mjs');
           await import('./scripts/fingerprint-assets.mjs');
           await import('./scripts/astro-manifest.mjs');
         },
