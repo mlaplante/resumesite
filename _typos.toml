@@ -5,12 +5,16 @@
 extend-exclude = [
   "package-lock.json",
   "blog-src/package-lock.json",
+  # Generated @font-face subsets: the unicode-range hex codes (U+00B8-00BA)
+  # tokenize as words.
+  "blog-src/public/css/fonts.css",
 ]
 
 [default.extend-words]
 # Brand names, acronyms, and accepted variants the default dictionary flags.
 aks = "aks"                  # Azure Kubernetes Service
 cose = "cose"                # COSE (CBOR Object Signing and Encryption)
+controllen = "controllen"    # struct msghdr.msg_controllen (sendmsg/recvmsg)
 counterfit = "counterfit"    # Microsoft Counterfit (AI security tool)
 fpr = "fpr"                  # false positive rate acronym
 hashi = "hashi"              # HashiCorp
