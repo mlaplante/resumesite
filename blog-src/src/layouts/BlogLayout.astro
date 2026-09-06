@@ -33,8 +33,6 @@ const currentPath = Astro.url.pathname;
       ogType={ogType}
       noindex={noindex}
     />
-    <link rel="preload" href="/fonts/poppins/poppins-400.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="/fonts/poppins/poppins-700.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" type="text/css" href="/css/fonts.css" />
     <link rel="stylesheet" href="/css/bootstrap-reboot.min.css" />
     <link rel="stylesheet" href="/css/bootstrap-grid.min.css" />
@@ -102,7 +100,7 @@ const currentPath = Astro.url.pathname;
     color: #fff;
     padding: 8px 16px;
     text-decoration: none;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Poppins', 'Poppins Fallback', sans-serif;
     font-size: 14px;
     border-radius: 0 0 6px 0;
   }

@@ -111,7 +111,7 @@ jobs:
         run: npx vitest run --project site
 
       # Lighthouse audit of key pages in the built dist/ (see lighthouserc.json).
-      # Accessibility < 0.9 fails the job; perf/best-practices/SEO regressions warn.
+      # Accessibility, best-practices and SEO below 100 fail the job; performance below 0.95 warns.
       - name: Lighthouse audit
         run: |
           npx --yes @lhci/cli@0.15.x collect

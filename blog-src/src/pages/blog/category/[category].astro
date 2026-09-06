@@ -87,9 +87,9 @@ const breadcrumbSchema = safeJsonLd(breadcrumbList([
   }
 
   .breadcrumbs {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Poppins', 'Poppins Fallback', sans-serif;
     font-size: 13px;
-    color: #9ca3af;
+    color: #5f6b7a;
     margin-bottom: 24px;
     display: flex;
     align-items: center;
@@ -98,12 +98,12 @@ const breadcrumbSchema = safeJsonLd(breadcrumbList([
   }
 
   .breadcrumbs a {
-    color: #6b7280;
+    color: #5f6b7a;
     text-decoration: none;
     transition: color 0.2s;
   }
 
-  .breadcrumbs a:hover { color: #2980b9; }
+  .breadcrumbs a:hover { color: #1f6fa5; }
 
   .breadcrumb-sep { color: #d1d5db; }
 
@@ -114,7 +114,7 @@ const breadcrumbSchema = safeJsonLd(breadcrumbList([
   }
 
   h1 {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Poppins', 'Poppins Fallback', sans-serif;
     font-size: 28px;
     font-weight: 700;
     color: #111827;
@@ -124,9 +124,9 @@ const breadcrumbSchema = safeJsonLd(breadcrumbList([
   .taxonomy-name { text-transform: capitalize; }
 
   .taxonomy-count {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Poppins', 'Poppins Fallback', sans-serif;
     font-size: 15px;
-    color: #6b7280;
+    color: #5f6b7a;
     margin-bottom: 32px;
   }
 
@@ -158,7 +158,7 @@ const breadcrumbSchema = safeJsonLd(breadcrumbList([
   }
 
   .post-card h2 {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Poppins', 'Poppins Fallback', sans-serif;
     font-size: 18px;
     font-weight: 700;
     color: #111827;
@@ -168,9 +168,9 @@ const breadcrumbSchema = safeJsonLd(breadcrumbList([
   }
 
   .post-card p {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Poppins', 'Poppins Fallback', sans-serif;
     font-size: 14px;
-    color: #6b7280;
+    color: #5f6b7a;
     margin: 0;
     line-height: 1.6;
     flex: 1;
@@ -180,9 +180,9 @@ const breadcrumbSchema = safeJsonLd(breadcrumbList([
     display: flex;
     align-items: center;
     gap: 6px;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Poppins', 'Poppins Fallback', sans-serif;
     font-size: 13px;
-    color: #9ca3af;
+    color: #5f6b7a;
     font-weight: 400;
   }
 
@@ -191,10 +191,10 @@ const breadcrumbSchema = safeJsonLd(breadcrumbList([
   .category-badge {
     display: inline-block;
     margin-top: 14px;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Poppins', 'Poppins Fallback', sans-serif;
     font-size: 12px;
     font-weight: 500;
-    color: #2980b9;
+    color: #1f6fa5;
     background: rgba(41, 128, 185, 0.08);
     padding: 4px 10px;
     border-radius: 100px;
@@ -209,10 +209,10 @@ const breadcrumbSchema = safeJsonLd(breadcrumbList([
   }
 
   .back-link a {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Poppins', 'Poppins Fallback', sans-serif;
     font-size: 14px;
     font-weight: 500;
-    color: #2980b9;
+    color: #1f6fa5;
     text-decoration: none;
   }
 
@@ -228,7 +228,7 @@ const breadcrumbSchema = safeJsonLd(breadcrumbList([
   :global([data-theme='dark']) .post-card:hover { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); border-color: #475569; }
   :global([data-theme='dark']) .post-card h2 { color: #f1f5f9; }
   :global([data-theme='dark']) .post-card p { color: #94a3b8; }
-  :global([data-theme='dark']) .post-card-meta { color: #64748b; }
+  :global([data-theme='dark']) .post-card-meta { color: #94a3b8; }
   :global([data-theme='dark']) .dot-sep { color: #475569; }
   :global([data-theme='dark']) .category-badge { color: #60a5fa; background: rgba(96, 165, 250, 0.1); }
   :global([data-theme='dark']) .back-link { border-top-color: #334155; }

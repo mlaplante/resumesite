@@ -2,9 +2,8 @@
 import SiteLayout from '../layouts/SiteLayout.astro';
 ---
 
-<SiteLayout title="404 - Page Not Found" description="The page you're looking for doesn't exist." noindex>
+<SiteLayout title="404 - Page Not Found" description="The page you're looking for doesn't exist.">
   <Fragment slot="head">
-    <link rel="preload" href="/css/fonts.css" as="style" />
     <link rel="stylesheet" type="text/css" href="/css/fonts.css" />
     <link rel="stylesheet" type="text/css" href="/css/style.css" />
   </Fragment>
@@ -32,16 +31,16 @@ import SiteLayout from '../layouts/SiteLayout.astro';
   }
 
   .not-found h1 {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Poppins', 'Poppins Fallback', sans-serif;
     font-size: 96px;
     font-weight: 700;
-    color: #d1d5db;
+    color: #7c8594;
     margin: 0;
     line-height: 1;
   }
 
   .not-found-message {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Poppins', 'Poppins Fallback', sans-serif;
     font-size: 24px;
     font-weight: 600;
     color: #374151;
@@ -49,9 +48,9 @@ import SiteLayout from '../layouts/SiteLayout.astro';
   }
 
   .not-found-description {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Poppins', 'Poppins Fallback', sans-serif;
     font-size: 16px;
-    color: #6b7280;
+    color: #5f6b7a;
     margin: 0 0 40px;
   }
 
@@ -61,23 +60,23 @@ import SiteLayout from '../layouts/SiteLayout.astro';
   }
 
   .not-found-links a {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Poppins', 'Poppins Fallback', sans-serif;
     font-size: 14px;
     font-weight: 600;
-    color: #2980b9;
+    color: #1f6fa5;
     text-decoration: none;
     padding: 10px 24px;
-    border: 2px solid #2980b9;
+    border: 2px solid #1f6fa5;
     border-radius: 8px;
     transition: all 0.2s;
   }
 
   .not-found-links a:hover {
-    background: #2980b9;
+    background: #1f6fa5;
     color: #fff;
   }
 
-  :global([data-theme='dark']) .not-found h1 { color: #334155; }
+  :global([data-theme='dark']) .not-found h1 { color: #64748b; }
   :global([data-theme='dark']) .not-found-message { color: #e2e8f0; }
   :global([data-theme='dark']) .not-found-description { color: #94a3b8; }
   :global([data-theme='dark']) .not-found-links a { color: #60a5fa; border-color: #60a5fa; }

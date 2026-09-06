@@ -10,8 +10,6 @@ const lastUpdated = 'August 11, 2026';
 >
   <Fragment slot="head">
     <meta name="author" content="Michael LaPlante">
-    <link rel="preload" href="/fonts/poppins/poppins-400.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="/fonts/poppins/poppins-700.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" type="text/css" href="/css/fonts.css">
     <link rel="stylesheet" href="/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="/css/style.css">
@@ -59,7 +57,7 @@ const lastUpdated = 'August 11, 2026';
   <section class="section" id="security-header" style="padding-top: 120px;">
     <div class="container">
       <div class="section-header" data-aos="fade-up">
-        <h1 style='font-size: 18px; font-weight: 700; font-family: "Roboto Mono", monospace; text-transform: lowercase; letter-spacing: 2px; position: relative; display: inline-block;'>security</h1>
+        <h1 style='font-size: 18px; font-weight: 700; font-family: "Roboto Mono", "Roboto Mono Fallback", monospace; text-transform: lowercase; letter-spacing: 2px; position: relative; display: inline-block;'>security</h1>
       </div>
       <p data-aos="fade-up" class="updated">Last updated: {lastUpdated}</p>
     </div>
@@ -203,9 +201,9 @@ const lastUpdated = 'August 11, 2026';
 
 <style>
   .updated {
-    font-family: 'Roboto Mono', monospace;
+    font-family: 'Roboto Mono', 'Roboto Mono Fallback', monospace;
     font-size: 13px;
-    color: #6b7280;
+    color: #5f6b7a;
     letter-spacing: 0.5px;
   }
 
@@ -215,7 +213,7 @@ const lastUpdated = 'August 11, 2026';
 
   .legal p,
   .legal li {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Poppins', 'Poppins Fallback', sans-serif;
     font-size: 16px;
     line-height: 1.8;
     color: #374151;
@@ -226,7 +224,7 @@ const lastUpdated = 'August 11, 2026';
   }
 
   .legal h2 {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Poppins', 'Poppins Fallback', sans-serif;
     font-size: 20px;
     font-weight: 700;
     color: #111827;
@@ -243,7 +241,7 @@ const lastUpdated = 'August 11, 2026';
   }
 
   .legal a {
-    color: #2980b9;
+    color: #1f6fa5;
     text-decoration: none;
     font-weight: 500;
   }
@@ -253,9 +251,11 @@ const lastUpdated = 'August 11, 2026';
   }
 
   .legal code {
-    font-family: 'Roboto Mono', monospace;
+    font-family: 'Roboto Mono', 'Roboto Mono Fallback', monospace;
     font-size: 14px;
+    color: #b0296f;
   }
+  :global([data-theme='dark']) .legal code { color: #f472b6; }
 
   :global([data-theme='dark']) .updated { color: #94a3b8; }
   :global([data-theme='dark']) .legal p,

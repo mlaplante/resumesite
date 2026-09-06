@@ -50,7 +50,8 @@ resumesite/
 │   ├── astro.config.mjs            # Astro configuration
 │   ├── package.json                # Site dependencies
 │   ├── scripts/
-│   │   └── purge-css.mjs           # Post-build PurgeCSS pass on Bootstrap
+│   │   ├── purge-css.mjs           # Post-build PurgeCSS pass on Bootstrap
+│   │   └── inline-critical.mjs     # Inlines /css/* + theme.js into each page (CSP hash)
 │   ├── public/
 │   │   ├── _headers                # Cloudflare response headers (CSP/HSTS/cache)
 │   │   ├── css/                    # Portfolio stylesheets
@@ -173,7 +174,7 @@ The blog lives at [michaellaplante.com/blog](https://michaellaplante.com/blog).
 | Command                         | Description |
 |---------------------------------|-------------|
 | `npm run dev`                   | Start Astro dev server with hot reload |
-| `npm run build`                 | Build entire site to `dist/` (includes PurgeCSS, CSS/JS minification, asset fingerprinting, per-post OG images) |
+| `npm run build`                 | Build entire site to `dist/` (includes PurgeCSS, CSS/JS minification, critical CSS + theme-script inlining, asset fingerprinting, per-post OG images) |
 | `npm run preview`               | Preview the built site locally |
 | `npm run typecheck`             | Run `astro check` (site) and `tsc` over `worker/` (Cloudflare Workers types) |
 | `npm run lint`                  | ESLint over worker, scripts, tests, and Astro sources |

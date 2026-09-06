@@ -71,6 +71,11 @@ these as requiring extra scrutiny in review, and route any actual change through
   - Add `'unsafe-inline'` to `script-src` to "fix" a CSP violation instead of tracing it back to
     `assetsInlineLimit` → you've weakened the CSP for the whole site to paper over a build
     config regression.
+- **One sanctioned exception (added 2026-09-06):** `blog-src/scripts/inline-critical.mjs` embeds
+  `public/js/theme.js` inline in every page at build time (so first paint never waits on a
+  script request) and appends the sha256 of those exact bytes to `script-src` in `dist/_headers`.
+  `public/_headers` itself still carries no hash and no `'unsafe-inline'`; the pairing above is
+  unchanged. If `theme.js` changes, the hash regenerates on the next build — nothing to hand-edit.
 - **Correct fix for a CSP script violation:** confirm `assetsInlineLimit: 0` is still set before
   touching `_headers`. If the CSP needs a genuinely new script origin (e.g. a new third-party
   widget), add that specific origin to `script-src` deliberately and note why, in a PR under

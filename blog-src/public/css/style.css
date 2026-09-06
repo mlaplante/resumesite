@@ -6,11 +6,11 @@
 	--surface:#FFFFFF;
 	--slate:#46566E;
 	--signal:#E2A33C;
-	--signal-deep:#B57A1E;
+	--signal-deep:#8F5E12;
 	--grid-line:rgba(122, 152, 205, 0.10);
-	--display-font:'Space Grotesk', 'Poppins', system-ui, sans-serif;
-	--body-font:'Poppins', sans-serif;
-	--mono-font:'Roboto Mono', monospace;
+	--display-font:'Space Grotesk', 'Space Grotesk Fallback', 'Poppins', system-ui, sans-serif;
+	--body-font:'Poppins', 'Poppins Fallback', sans-serif;
+	--mono-font:'Roboto Mono', 'Roboto Mono Fallback', monospace;
 	--shadow:0 14px 36px rgba(10, 21, 40, 0.10);
 	--page-bg:var(--paper);
 	--card-bg:var(--surface);
@@ -28,6 +28,7 @@
 	--page-bg:var(--ink);
 	--card-bg:var(--ink-2);
 	--text:var(--paper);
+	--signal-deep:#B57A1E;
 	--text-muted:#B9C5D5;
 	--shadow:0 14px 36px rgba(0, 0, 0, 0.28);
 }
@@ -66,7 +67,7 @@ body{
 .alert, footer .copyright,
 .project-content > p,
 .section-header > h2{
-	font-family:'Roboto Mono', monospace;
+	font-family:'Roboto Mono', 'Roboto Mono Fallback', monospace;
 }
 img{
 	max-width:100%;
@@ -2016,4 +2017,15 @@ body.dark-mode a.btn-custom.btn-ghost:hover{ background:var(--paper); border-col
 	.stat-readout-item{ padding:15px 12px; }
 	.stat-readout-item span{ font-size:9px; letter-spacing:.04em; }
 	.service{ padding:22px; }
+}
+
+/*==================================================
+	Hero entrance. Pure CSS so the above-the-fold text (the LCP element) never
+	waits on script.js the way [data-aos] content does; starts from the same
+	fade-up pose the scroll reveal uses.
+==================================================*/
+.hero-reveal{ animation:hero-reveal .6s ease both; }
+@keyframes hero-reveal{ from{ opacity:.5; transform:translateY(30px); } to{ opacity:1; transform:none; } }
+@media (prefers-reduced-motion: reduce){
+	.hero-reveal{ animation:none; }
 }

@@ -54,14 +54,6 @@ const posts = (await getSortedPosts()).slice(0, 4);
     }
     </script>
 
-    <!-- Preload critical resources for the portfolio page only -->
-    <link rel="preload" href="/fonts/poppins/poppins-400.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="/fonts/poppins/poppins-700.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="/css/style.css" as="style">
-    <link rel="preload" as="image" type="image/webp" fetchpriority="high"
-      href="/images/mike-laplante-400.webp"
-      imagesrcset="/images/mike-laplante-200.webp 200w, /images/mike-laplante-400.webp 400w"
-      imagesizes="(max-width: 390px) 108px, (max-width: 620px) 122px, 168px">
 
     <!-- CSS bundles for the portfolio page -->
     <link rel="stylesheet" type="text/css" href="/css/fonts.css">
@@ -134,10 +126,10 @@ const posts = (await getSortedPosts()).slice(0, 4);
   <section class="main-section" id="home" aria-label="Introduction">
     <div class="container">
 
-      <p class="briefing-label" data-aos="fade-up">SVP of Information Security and Operations</p>
+      <p class="briefing-label hero-reveal">SVP of Information Security and Operations</p>
 
       <!-- Your Name -->
-      <h1 class="intro-name" data-aos="fade-up">I am <strong>Michael <br>La Plante</strong></h1>
+      <h1 class="intro-name hero-reveal">I am <strong>Michael <br>La Plante</strong></h1>
 
       <!-- Person Image: no data-aos — the photo must never depend on the
            reveal script; on flaky mobile connections a failed/late script.js
@@ -146,14 +138,14 @@ const posts = (await getSortedPosts()).slice(0, 4);
         <picture>
           <!-- Rendered at 168px (122px / 108px on small screens, see .person-img
                in style.css), so 1x screens get the 200px variant and only
-               2x+ screens need the 400px one. Keep the preload above in sync. -->
+               2x+ screens need the 400px one. -->
           <source srcset="/images/mike-laplante-200.webp 200w, /images/mike-laplante-400.webp 400w" sizes="(max-width: 390px) 108px, (max-width: 620px) 122px, 168px" type="image/webp">
           <img src="/images/mike-laplante-400.jpg" srcset="/images/mike-laplante-200.jpg 200w, /images/mike-laplante-400.jpg 400w" sizes="(max-width: 390px) 108px, (max-width: 620px) 122px, 168px" alt="Michael LaPlante" width="400" height="400" loading="eager" fetchpriority="high">
         </picture>
       </div>
 
       <!-- CTA -->
-      <div class="intro-actions" data-aos="fade-up">
+      <div class="intro-actions hero-reveal">
         <a href="#contact" data-scroll class="btn btn-custom">Schedule a Consultation</a>
         <a href="/resume/" class="btn btn-custom btn-ghost">View Résumé</a>
       </div>
@@ -445,7 +437,7 @@ const posts = (await getSortedPosts()).slice(0, 4);
     font-size: 15px;
   }
   .contact-booking-note a {
-    color: #2980b9;
+    color: #1f6fa5;
     font-weight: 600;
     text-decoration: none;
   }

@@ -6,11 +6,11 @@
 	--surface:#FFFFFF;
 	--slate:#46566E;
 	--signal:#E2A33C;
-	--signal-deep:#B57A1E;
+	--signal-deep:#8F5E12;
 	--grid-line:rgba(122, 152, 205, 0.10);
-	--display-font:'Space Grotesk', 'Poppins', system-ui, sans-serif;
-	--body-font:'Poppins', sans-serif;
-	--mono-font:'Roboto Mono', monospace;
+	--display-font:'Space Grotesk', 'Space Grotesk Fallback', 'Poppins', system-ui, sans-serif;
+	--body-font:'Poppins', 'Poppins Fallback', sans-serif;
+	--mono-font:'Roboto Mono', 'Roboto Mono Fallback', monospace;
 	--shadow:0 14px 36px rgba(10, 21, 40, 0.10);
 	--page-bg:var(--paper);
 	--card-bg:var(--surface);
@@ -28,6 +28,7 @@
 	--page-bg:var(--ink);
 	--card-bg:var(--ink-2);
 	--text:var(--paper);
+	--signal-deep:#B57A1E;
 	--text-muted:#B9C5D5;
 	--shadow:0 14px 36px rgba(0, 0, 0, 0.28);
 }
@@ -96,7 +97,7 @@ body {
 .blog-nav a {
   color: #fff;
   text-decoration: none;
-  font-family: 'Roboto Mono', monospace;
+  font-family: 'Roboto Mono', 'Roboto Mono Fallback', monospace;
   font-size: 14px;
   letter-spacing: 1px;
   text-transform: lowercase;
@@ -275,7 +276,7 @@ body {
 }
 
 .blog-content h1 {
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Poppins', 'Poppins Fallback', sans-serif;
   font-size: 36px;
   font-weight: 700;
   color: var(--blog-ink);
@@ -286,9 +287,9 @@ body {
 
 /* ===== Post Meta ===== */
 .blog-meta {
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Poppins', 'Poppins Fallback', sans-serif;
   font-size: 14px;
-  color: #6b7280;
+  color: #5f6b7a;
   margin-bottom: 32px;
   display: flex;
   gap: 8px;
@@ -298,7 +299,7 @@ body {
 
 .blog-meta .category {
   background: rgba(41, 128, 185, 0.08);
-  color: #2980b9;
+  color: #1f6fa5;
   padding: 3px 10px;
   border-radius: 100px;
   font-size: 12px;
@@ -308,7 +309,7 @@ body {
 
 /* ===== Article Content ===== */
 .blog-content article {
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Poppins', 'Poppins Fallback', sans-serif;
   font-size: 17px;
   line-height: 1.8;
   color: #344054;
@@ -361,19 +362,19 @@ body {
   padding: 2px 7px;
   border-radius: 4px;
   font-size: 14px;
-  font-family: 'Roboto Mono', monospace;
+  font-family: 'Roboto Mono', 'Roboto Mono Fallback', monospace;
   color: #c7254e;
 }
 
 .blog-content article a {
-  color: #2980b9;
+  color: #1f6fa5;
   text-decoration: none;
   border-bottom: 1px solid rgba(41, 128, 185, 0.3);
   transition: border-color 0.2s;
 }
 
 .blog-content article a:hover {
-  border-bottom-color: #2980b9;
+  border-bottom-color: #1f6fa5;
 }
 
 .blog-content article a:focus-visible {
@@ -381,7 +382,7 @@ body {
 }
 
 .blog-content article blockquote {
-  border-left: 4px solid #2980b9;
+  border-left: 4px solid #1f6fa5;
   padding: 12px 20px;
   margin: 24px 0;
   color: #4b5563;
@@ -416,9 +417,9 @@ body {
 }
 
 .blog-footer a {
-  font-family: 'Roboto Mono', monospace;
+  font-family: 'Roboto Mono', 'Roboto Mono Fallback', monospace;
   font-size: 13px;
-  color: #2980b9;
+  color: #1f6fa5;
   text-decoration: none;
   letter-spacing: 1px;
   transition: opacity 0.2s;
@@ -453,7 +454,7 @@ body {
 .blog-site-footer p {
   margin: 0;
   color: var(--blog-muted);
-  font-family: 'Roboto Mono', monospace;
+  font-family: 'Roboto Mono', 'Roboto Mono Fallback', monospace;
   font-size: 12px;
   letter-spacing: 0.04em;
 }

@@ -15,6 +15,10 @@ export default defineConfig({
     // suffix if URL rotation is ever needed again; keep ASTRO_ASSET in
     // worker/index.ts and scripts/astro-manifest.mjs in sync.
     assets: '_astro2',
+    // Emit page CSS as <style> in the HTML instead of render-blocking <link>s.
+    // scripts/inline-critical.mjs does the same for the hand-written /css/*
+    // files, so no page has a stylesheet request on its critical path.
+    inlineStylesheets: 'always',
   },
   prefetch: {
     defaultStrategy: 'viewport',
@@ -40,6 +44,7 @@ export default defineConfig({
         'astro:build:done': async () => {
           await import('./scripts/purge-css.mjs');
           await import('./scripts/minify-assets.mjs');
+          await import('./scripts/inline-critical.mjs');
           await import('./scripts/fingerprint-assets.mjs');
           await import('./scripts/astro-manifest.mjs');
         },
@@ -51,7 +56,9 @@ export default defineConfig({
       // Never inline bundled <script> blocks into the HTML. Required for the
       // strict CSP in public/_headers (script-src without 'unsafe-inline'):
       // with the default 4KB limit, small page scripts get embedded as inline
-      // <script type="module"> and would be blocked.
+      // <script type="module"> and would be blocked. The one inline script the
+      // site does ship (theme.js, embedded by scripts/inline-critical.mjs) is
+      // allowlisted by sha256 hash, not by relaxing the policy.
       assetsInlineLimit: 0,
     },
   },
@@ -59,7 +66,7 @@ export default defineConfig({
     shikiConfig: {
       themes: {
         light: 'github-light',
-        dark: 'github-dark',
+        dark: 'github-dark-default',
       },
       wrap: true,
     },

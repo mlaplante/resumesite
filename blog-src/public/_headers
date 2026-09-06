@@ -1,3 +1,6 @@
+# script-src deliberately has no 'unsafe-inline'. The build (blog-src/scripts/
+# inline-critical.mjs) appends one 'sha256-…' for the inlined theme bootstrap
+# script to the copy of this file in dist/; every other inline script stays blocked.
 /*
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff

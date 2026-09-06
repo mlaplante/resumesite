@@ -107,8 +107,6 @@ const professionalServiceSchema = JSON.stringify({
     <meta name="author" content="Michael LaPlante">
     <script type="application/ld+json" set:html={professionalServiceSchema} />
     {bookingUrl && <link rel="preconnect" href="https://app.cal.com">}
-    <link rel="preload" href="/fonts/poppins/poppins-400.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="/fonts/poppins/poppins-700.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" type="text/css" href="/css/fonts.css">
     <link rel="stylesheet" href="/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="/css/style.css">
@@ -184,7 +182,7 @@ const professionalServiceSchema = JSON.stringify({
           <div class="col-sm-6">
             <div class="service" data-aos="fade-up">
               <Icon name={service.icon} />
-              <h4>{service.title}</h4>
+              <h3>{service.title}</h3>
               <p>{service.description}</p>
             </div>
           </div>
@@ -204,7 +202,7 @@ const professionalServiceSchema = JSON.stringify({
           <div class="col-sm-6 col-md-3">
             <div class="service" data-aos="fade-up">
               <span class="process-step">{phase.step}</span>
-              <h4>{phase.title}</h4>
+              <h3>{phase.title}</h3>
               <p>{phase.description}</p>
             </div>
           </div>
@@ -306,10 +304,10 @@ const professionalServiceSchema = JSON.stringify({
 
   .process-step {
     display: inline-block;
-    font-family: 'Roboto Mono', monospace;
+    font-family: 'Roboto Mono', 'Roboto Mono Fallback', monospace;
     font-size: 22px;
     font-weight: 700;
-    color: #2980b9;
+    color: #1f6fa5;
     margin-bottom: 8px;
   }
 
