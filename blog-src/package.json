@@ -20,9 +20,9 @@
     "@astrojs/rss": "^4.0.19",
     "@astrojs/sitemap": "^3.7.3",
     "@resvg/resvg-js": "^2.6.2",
-    "astro": "^7.2.4",
-    "pdfkit": "^0.20.1",
-    "satori": "^0.33.3",
+    "astro": "^7.2.9",
+    "pdfkit": "^0.20.2",
+    "satori": "^0.33.4",
     "sharp": "^0.35.4",
     "wawoff2": "^2.0.1"
   },
