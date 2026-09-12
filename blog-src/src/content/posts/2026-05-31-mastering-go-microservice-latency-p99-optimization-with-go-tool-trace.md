@@ -6,8 +6,6 @@ tags: []
 excerpt: "In the world of high-performance microservices, average latency often tells only half the story. While your P50 might look fantastic, it's the P99 (th..."
 ---
 
-# Mastering Go Microservice Latency: P99 Optimization with `go tool trace`
-
 In the world of high-performance microservices, average latency often tells only half the story. While your P50 might look fantastic, it's the P99 (the 99th percentile) that truly reveals the experience of your most impacted users and often highlights systemic bottlenecks. Optimizing P99 latency in Go services requires a deep dive into runtime behavior, and for that, `go tool trace` is an indispensable ally.
 
 As an SVP leading Information Security and Operations, I've seen firsthand how a seemingly minor P99 spike can cascade into customer dissatisfaction and operational incidents. This post will walk through a practical approach to identifying and mitigating P99 issues using `go tool trace` and some custom profiling techniques.

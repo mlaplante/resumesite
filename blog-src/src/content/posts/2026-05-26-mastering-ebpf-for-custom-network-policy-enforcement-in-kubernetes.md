@@ -6,8 +6,6 @@ tags: []
 excerpt: "Kubernetes network policies are powerful, but sometimes you hit their limits. You might need granular control that goes beyond CIDR blocks, port range..."
 ---
 
-# Mastering eBPF for Custom Network Policy Enforcement in Kubernetes
-
 Kubernetes network policies are powerful, but sometimes you hit their limits. You might need granular control that goes beyond CIDR blocks, port ranges, and label selectors. Perhaps you need to enforce policies based on application-layer protocols, specific HTTP headers, or even the identity of the process initiating a connection within a pod. This is where eBPF shines, offering a flexible, high-performance mechanism to extend Kubernetes networking capabilities far beyond its native constructs.
 
 As an SVP of Information Security and Operations, I've seen firsthand the need for bespoke policy enforcement. While standard network policies cover 90% of use cases, the remaining 10% often involve critical security requirements that demand a deeper integration into the kernel's networking stack. eBPF provides that surgical precision.

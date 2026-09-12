@@ -8,8 +8,6 @@ tags: []
 excerpt: "Artificial intelligence (AI) and machine learning (ML) are rapidly transforming how we manage identity and access. From automated provisioning to..."
 ---
 
-# Governing AI in IAM: Balancing Automation and Accountability for Secure Access
-
 Artificial intelligence (AI) and machine learning (ML) are rapidly transforming how we manage identity and access. From automated provisioning to intelligent anomaly detection, AI promises to enhance efficiency and security in Identity and Access Management (IAM). However, this power comes with a critical caveat: without robust governance, AI in IAM can introduce new risks, erode accountability, and even exacerbate security vulnerabilities. The key is to strike a delicate balance between leveraging AI's automation capabilities and maintaining human oversight and accountability.
 
 ## The Promise and Peril of AI in IAM

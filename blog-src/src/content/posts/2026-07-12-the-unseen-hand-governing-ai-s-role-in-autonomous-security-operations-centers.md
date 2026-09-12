@@ -8,8 +8,6 @@ tags: ["ai-governance", "autonomous-security", "soc-automation", "risk-managemen
 excerpt: "The promise of autonomous Security Operations Centers (SOCs) is alluring: a world where AI-driven systems detect, analyze, and even remediate threats..."
 ---
 
-# The Unseen Hand: Governing AI's Role in Autonomous Security Operations Centers
-
 The promise of autonomous Security Operations Centers (SOCs) is alluring: a world where AI-driven systems detect, analyze, and even remediate threats with minimal human intervention. While the dream of a fully self-driving SOC is still a ways off, AI is increasingly becoming the "unseen hand" guiding many security operations. But with this power comes significant responsibility, and the critical need for robust AI governance.
 
 My 15+ years in information security have taught me that technology is only as effective as the policies and processes that govern its use. This holds especially true for AI in the SOC. Without proper governance, the unseen hand can become a rogue agent, introducing new risks faster than it solves old ones.

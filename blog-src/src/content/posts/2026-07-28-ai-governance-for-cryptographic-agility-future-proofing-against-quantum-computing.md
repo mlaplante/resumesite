@@ -8,8 +8,6 @@ tags: ["ai-governance", "quantum-computing", "cryptographic-agility", "risk-mana
 excerpt: "The horizon of cybersecurity is constantly shifting, and few shifts are as profound as the advent of quantum computing. While fully functional,..."
 ---
 
-# AI Governance for Cryptographic Agility: Future-Proofing Against Quantum Computing
-
 The horizon of cybersecurity is constantly shifting, and few shifts are as profound as the advent of quantum computing. While fully functional, large-scale quantum computers capable of breaking current asymmetric cryptography are still some years away, the "Q-Day" — the day when they become a reality — demands our attention *now*. The sheer volume of encrypted data with long shelf lives, coupled with the time it takes to transition to new cryptographic standards, necessitates a proactive approach. This isn't just a technical challenge; it's a governance challenge, and AI governance, specifically, plays a critical role in achieving cryptographic agility.
 
 ## Why AI Governance for Cryptographic Agility?

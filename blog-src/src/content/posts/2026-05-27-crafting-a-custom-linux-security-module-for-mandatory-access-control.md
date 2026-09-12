@@ -6,8 +6,6 @@ tags: []
 excerpt: "The Linux kernel's Security Module (LSM) framework is a powerful, yet often underutilized, mechanism for extending the kernel's security capabilities...."
 ---
 
-# Crafting a Custom Linux Security Module for Mandatory Access Control
-
 The Linux kernel's Security Module (LSM) framework is a powerful, yet often underutilized, mechanism for extending the kernel's security capabilities. While SELinux and AppArmor are the most well-known implementations, the LSM framework is designed to allow multiple security modules to coexist and provide fine-grained control over system resources. For organizations with unique security requirements, building a custom LSM can offer unparalleled flexibility and enforcement capabilities.
 
 This post will delve into the practicalities of developing a basic custom LSM, focusing on how to hook into the kernel's internal operations to enforce mandatory access control (MAC) policies. We'll walk through the essential components, demonstrate how to register your module, and provide concrete examples of enforcing a simple policy.

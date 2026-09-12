@@ -36,3 +36,6 @@ progress-bar-*.png
 reading-progress-bar*.png
 savvycal-*.png
 .lighthouseci/
+
+# Build-time OG card cache (see blog-src/src/pages/og/[slug].png.ts).
+blog-src/.cache/

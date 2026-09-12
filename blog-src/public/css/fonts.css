@@ -10,8 +10,9 @@
 	                 a page contains one of those characters
 	Regenerate with fontTools:
 	  pyftsubset <src>.woff2 --unicodes="<range>" --flavor=woff2 --layout-features='*'
-	The unsplit originals stay alongside as build inputs for the OG images and
-	the PDF résumé; browsers never request them.
+	The unsplit Poppins 400/600/700 originals stay alongside as build inputs
+	for the OG images and the PDF résumé; browsers never request them. Every
+	other family/weight ships only as the split core/ext pair.
 ==================================================*/
 
 /* Poppins */

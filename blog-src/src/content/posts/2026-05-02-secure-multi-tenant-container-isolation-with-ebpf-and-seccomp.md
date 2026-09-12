@@ -6,8 +6,6 @@ tags: []
 excerpt: "In the world of cloud-native applications, containerization has become the de facto standard. For many organizations, especially SaaS providers, multi..."
 ---
 
-# Secure Multi-Tenant Container Isolation with eBPF and Seccomp
-
 In the world of cloud-native applications, containerization has become the de facto standard. For many organizations, especially SaaS providers, multi-tenancy is a critical requirement. It allows multiple customers (tenants) to share the same underlying infrastructure, optimizing resource utilization and reducing costs. However, multi-tenancy also introduces significant security challenges, primarily around ensuring robust isolation between tenants. A breach in one tenant's environment must not impact another.
 
 Traditional container isolation relies heavily on Linux namespaces and cgroups. While powerful, these mechanisms primarily isolate resources and process trees. They don't inherently prevent a malicious or compromised container from attempting to interact with the underlying host kernel in unexpected ways, or from leveraging kernel vulnerabilities to break out. This is where advanced security mechanisms like eBPF and Seccomp come into play, offering a powerful combination for fine-grained, dynamic syscall filtering.

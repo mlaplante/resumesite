@@ -6,8 +6,6 @@ tags: []
 excerpt: "In the fast-paced world of cloud operations, every second counts during an incident. Manual responses, while sometimes necessary, introduce delays and..."
 ---
 
-# Automating Cloud Incident Response with Serverless Functions and Event-Driven Architectures
-
 In the fast-paced world of cloud operations, every second counts during an incident. Manual responses, while sometimes necessary, introduce delays and human error. As organizations increasingly rely on dynamic cloud environments, the ability to automate incident response becomes not just a luxury, but a critical component of a robust security posture.
 
 This post will explore how we can leverage serverless functions and event-driven architectures to build automated incident response playbooks in the cloud. We'll focus on practical, hands-on examples that you can adapt for your own environment.

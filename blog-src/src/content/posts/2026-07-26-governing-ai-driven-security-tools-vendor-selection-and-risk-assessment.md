@@ -8,8 +8,6 @@ tags: ["ai-governance", "vendor-risk", "ai-security", "risk-assessment", "compli
 excerpt: "The cybersecurity landscape is rapidly evolving, with Artificial Intelligence (AI) emerging as a powerful ally in our fight against sophisticated..."
 ---
 
-# Governing AI-Driven Security Tools: Vendor Selection and Risk Assessment
-
 The cybersecurity landscape is rapidly evolving, with Artificial Intelligence (AI) emerging as a powerful ally in our fight against sophisticated threats. From AI-powered threat detection to automated incident response, these tools promise increased efficiency and more proactive defense. However, integrating AI-driven security solutions also introduces new layers of complexity and risk. As an SVP of Information Security and Operations, I've seen firsthand that the real challenge isn't just adopting AI, but *governing* it effectively.
 
 This post will delve into best practices for vendor selection and risk assessment when acquiring AI-driven security tools, ensuring you harness their power responsibly and securely.

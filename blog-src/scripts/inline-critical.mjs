@@ -100,14 +100,32 @@ let droppedPreloads = 0;
 let bytes = 0;
 let deprioritized = 0;
 
-async function walk(dir) {
+// Pages are independent, so process them a few at a time: PurgeCSS parses the
+// page and the shared CSS per <link>, and running ~1,300 of those purges back
+// to back was the slowest step of the finalize chain. The counters above are
+// only ever bumped between awaits on the main thread, so they stay exact.
+const CONCURRENCY = 8;
+
+async function collectHtml(dir, out = []) {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
     const path = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      await walk(path);
-      continue;
-    }
-    if (!entry.name.endsWith('.html')) continue;
+    if (entry.isDirectory()) await collectHtml(path, out);
+    else if (entry.name.endsWith('.html')) out.push(path);
+  }
+  return out;
+}
+
+async function walk(dir) {
+  const paths = await collectHtml(dir);
+  let next = 0;
+  const worker = async () => {
+    while (next < paths.length) await processPage(paths[next++]);
+  };
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, paths.length) }, worker));
+}
+
+async function processPage(path) {
+  {
     const html = await readFile(path, 'utf8');
     let out = html;
 

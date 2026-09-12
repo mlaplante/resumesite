@@ -6,8 +6,6 @@ tags: []
 excerpt: "Generative AI is changing the game for businesses—accelerating innovation, automating content creation, and driving smarter decisions. But as organiza..."
 ---
 
-# Securing Generative AI Workflows in the Cloud: Practical Strategies for DevSecOps Teams
-
 Generative AI is changing the game for businesses—accelerating innovation, automating content creation, and driving smarter decisions. But as organizations move these powerful AI workflows to the cloud, they also introduce new risks. Sensitive data, complex pipelines, and evolving threat landscapes mean DevSecOps teams need to rethink their security strategies.
 
 Having worked with cloud-based AI projects over the past few years, I’ve seen firsthand how easy it is for security gaps to appear in generative AI workflows. Here’s a practical guide to help your DevSecOps team keep these workflows secure, without slowing down innovation.

@@ -8,8 +8,6 @@ tags: ["ebpf", "linux", "security", "system-calls", "kernel", "runtime-security"
 excerpt: "In the realm of Linux security, understanding and controlling system calls is paramount. System calls are the interface between user-space..."
 ---
 
-# Deep Dive: Crafting Custom System Call Interceptors with eBPF for Runtime Security
-
 In the realm of Linux security, understanding and controlling system calls is paramount. System calls are the interface between user-space applications and the kernel, enabling operations like file I/O, process creation, and network communication. Malicious activity often involves abusing or subverting these calls. While traditional methods like `ptrace` or kernel modules exist for interception, they come with significant overhead or stability concerns.
 
 Enter eBPF (extended Berkeley Packet Filter). eBPF has revolutionized how we interact with the Linux kernel, providing a safe, programmable, and performant way to extend kernel functionality without modifying kernel source code or loading insecure modules. For runtime security, eBPF offers an unparalleled ability to observe, filter, and even *intercept* system calls with minimal impact.

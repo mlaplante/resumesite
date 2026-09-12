@@ -18,9 +18,15 @@ const [newestPost, ...remainingPosts] = posts;
 // otherwise the button row varies between pages and can omit categories.
 const allPosts = await getSortedPosts();
 const categories = ['all', ...new Set(allPosts.map((p) => p.data.category))];
+// Every archive page is indexable with its own canonical, so give each one a
+// distinct <title>/description instead of 18 pages sharing "Blog".
+const pageTitle = isFirstPage ? 'Blog' : `Blog – Page ${page.currentPage} of ${page.lastPage}`;
+const pageDescription = isFirstPage
+  ? 'Thoughts on security, engineering, and building things.'
+  : `Older posts on security, engineering, and building things — page ${page.currentPage} of ${page.lastPage}.`;
 ---
 
-<BlogLayout title="Blog" description="Thoughts on security, engineering, and building things.">
+<BlogLayout title={pageTitle} description={pageDescription}>
   <div class="listing-wrapper">
     <h1>Blog</h1>
     <p class="blog-subtitle">Thoughts on security, engineering, and building things.</p>

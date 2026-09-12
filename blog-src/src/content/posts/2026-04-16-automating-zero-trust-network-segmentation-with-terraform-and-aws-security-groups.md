@@ -6,8 +6,6 @@ tags: []
 excerpt: "Zero Trust isn’t just a buzzword—it's a practical security model that demands concrete implementation. One of the most effective ways to enforce Zero..."
 ---
 
-# Automating Zero Trust Network Segmentation with Terraform and AWS Security Groups
-
 Zero Trust isn’t just a buzzword—it's a practical security model that demands concrete implementation. One of the most effective ways to enforce Zero Trust in cloud environments is through network segmentation. In AWS, security groups act as virtual firewalls, controlling inbound and outbound traffic at the instance level. But manually managing these rules gets unwieldy fast. That's where automation with Terraform comes in.
 
 In this post, I'll walk you through how to automate Zero Trust network segmentation using Terraform and AWS security groups, with practical examples and actionable takeaways.

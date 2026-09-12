@@ -6,8 +6,6 @@ tags: []
 excerpt: "Zero Trust is more than a buzzword: it's a fundamental shift in how we think about network security. Traditional perimeter defenses fail in the face o..."
 ---
 
-# Implementing Zero Trust Network Segmentation with eBPF: Hands-On Code and Architecture Patterns
-
 Zero Trust is more than a buzzword: it's a fundamental shift in how we think about network security. Traditional perimeter defenses fail in the face of lateral movement and insider threats. Network segmentation is crucial, but legacy VLANs and ACLs can't keep pace with modern, dynamic environments. Enter eBPF—a powerful, programmable Linux kernel technology that can implement granular, dynamic Zero Trust segmentation.
 
 In this post, we'll dive into practical strategies for Zero Trust network segmentation using eBPF. We'll walk through code examples, architectural patterns, and actionable advice for engineers looking to bolster their security posture with modern, scalable tools.

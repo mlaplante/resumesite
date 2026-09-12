@@ -1,0 +1,175 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { getCollection } from 'astro:content';
+import BlogLayout from '../../../../layouts/BlogLayout.astro';
+import Breadcrumbs from '../../../../components/Breadcrumbs.astro';
+import PostCard from '../../../../components/PostCard.astro';
+import { SITE_URL } from '../../../../config';
+import { byDateDesc } from '../../../../utils/posts';
+import { safeJsonLd, breadcrumbList } from '../../../../utils/schema';
+
+// Paginated like /blog/: one category holds ~95% of the archive, and rendering
+// it on a single URL produced a 140KB page that duplicated the whole blog
+// index. Page 1 keeps the historical /blog/category/<name>/ URL.
+// (getStaticPaths is hoisted by Astro, so the page size lives inside it.)
+export const getStaticPaths = (async ({ paginate }) => {
+  const PAGE_SIZE = 12;
+  const posts = await getCollection('posts');
+  const categories = [...new Set(posts.map((p) => p.data.category))];
+  return categories.flatMap((category) =>
+    paginate(
+      posts.filter((p) => p.data.category === category).sort(byDateDesc),
+      { params: { category }, props: { category }, pageSize: PAGE_SIZE },
+    ),
+  );
+}) satisfies GetStaticPaths;
+
+const { category, page } = Astro.props;
+const posts = page.data;
+const total = page.total;
+const displayName = category.replace(/-/g, ' ');
+const siteUrl = SITE_URL;
+const isFirstPage = page.currentPage === 1;
+const pageSuffix = isFirstPage ? '' : ` – Page ${page.currentPage} of ${page.lastPage}`;
+
+const breadcrumbSchema = safeJsonLd(breadcrumbList([
+  { name: 'Home', item: siteUrl },
+  { name: 'Blog', item: `${siteUrl}/blog/` },
+  { name: displayName, item: `${siteUrl}/blog/category/${category}/` },
+]));
+---
+
+<BlogLayout
+  title={`Category: ${displayName}${pageSuffix}`}
+  description={`${total} post${total === 1 ? '' : 's'} in ${displayName}${isFirstPage ? '' : ` (page ${page.currentPage} of ${page.lastPage})`}.`}
+>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={breadcrumbSchema} />
+  </Fragment>
+  <div class="listing-wrapper">
+    <Breadcrumbs
+      crumbs={[{ name: 'Home', href: '/' }, { name: 'Blog', href: '/blog/' }, { name: displayName }]}
+      capitalize
+    />
+
+    <h1>Category: <span class="taxonomy-name">{displayName}</span></h1>
+    <p class="taxonomy-count">{total} post{total === 1 ? '' : 's'}{page.lastPage > 1 && ` · page ${page.currentPage} of ${page.lastPage}`}</p>
+
+    <div class="post-grid">
+      {posts.map((post) => <PostCard post={post} />)}
+    </div>
+
+    {page.lastPage > 1 && (
+      <nav class="pagination" aria-label={`${displayName} pages`}>
+        {page.url.prev ? (
+          <a href={page.url.prev} class="pagination-link pagination-prev">&larr; Newer posts</a>
+        ) : (
+          <span class="pagination-link pagination-prev disabled">&larr; Newer posts</span>
+        )}
+        <span class="pagination-info">Page {page.currentPage} of {page.lastPage}</span>
+        {page.url.next ? (
+          <a href={page.url.next} class="pagination-link pagination-next">Older posts &rarr;</a>
+        ) : (
+          <span class="pagination-link pagination-next disabled">Older posts &rarr;</span>
+        )}
+      </nav>
+    )}
+
+    <div class="back-link">
+      <a href="/blog/">&larr; All posts</a>
+    </div>
+  </div>
+</BlogLayout>
+
+<style>
+  .listing-wrapper {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  @media (min-width: 768px) {
+    .listing-wrapper { max-width: 900px; }
+  }
+
+  h1 {
+    font-family: 'Poppins', 'Poppins Fallback', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 4px;
+  }
+
+  .taxonomy-name { text-transform: capitalize; }
+
+  .taxonomy-count {
+    font-family: 'Poppins', 'Poppins Fallback', sans-serif;
+    font-size: 15px;
+    color: #5f6b7a;
+    margin-bottom: 32px;
+  }
+
+  .post-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  @media (min-width: 768px) {
+    .post-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 40px;
+    padding: 16px 0;
+    border-top: 1px solid #e5e7eb;
+    font-family: 'Poppins', 'Poppins Fallback', sans-serif;
+    font-size: 14px;
+  }
+
+  .pagination-link {
+    font-weight: 500;
+    color: #1f6fa5;
+    text-decoration: none;
+    transition: opacity 0.2s;
+  }
+
+  .pagination-link:hover { opacity: 0.7; }
+
+  .pagination-link.disabled {
+    color: #5f6b7a;
+    pointer-events: none;
+  }
+
+  .pagination-info {
+    color: #5f6b7a;
+    font-size: 13px;
+  }
+
+  .back-link {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  .back-link a {
+    font-family: 'Poppins', 'Poppins Fallback', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1f6fa5;
+    text-decoration: none;
+  }
+
+  .back-link a:hover { opacity: 0.7; }
+
+  :global([data-theme='dark']) h1 { color: #f1f5f9; }
+  :global([data-theme='dark']) .taxonomy-count { color: #94a3b8; }
+  :global([data-theme='dark']) .pagination { border-top-color: #334155; }
+  :global([data-theme='dark']) .pagination-link { color: #60a5fa; }
+  :global([data-theme='dark']) .pagination-link.disabled { color: #8494a8; }
+  :global([data-theme='dark']) .pagination-info { color: #94a3b8; }
+  :global([data-theme='dark']) .back-link { border-top-color: #334155; }
+  :global([data-theme='dark']) .back-link a { color: #60a5fa; }
+</style>

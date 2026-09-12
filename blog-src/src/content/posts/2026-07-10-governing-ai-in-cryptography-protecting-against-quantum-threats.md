@@ -8,8 +8,6 @@ tags: ["ai-governance", "cryptography", "quantum-computing", "threat-modeling", 
 excerpt: "The advent of quantum computing presents a profound, albeit distant, threat to modern cryptography. While the full realization of fault-tolerant..."
 ---
 
-# Governing AI in Cryptography: Protecting Against Quantum Threats
- 
 The advent of quantum computing presents a profound, albeit distant, threat to modern cryptography. While the full realization of fault-tolerant quantum computers capable of breaking current public-key encryption algorithms is still years away, the time to prepare is now. This isn't just a technical challenge; it's a governance one, and Artificial Intelligence (AI) plays a crucial, dual role in this evolving landscape.
  
 ## The Quantum Threat to Cryptography

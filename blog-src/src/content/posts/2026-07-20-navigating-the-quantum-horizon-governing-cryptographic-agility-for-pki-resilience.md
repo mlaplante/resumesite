@@ -8,8 +8,6 @@ tags: ["post-quantum-cryptography", "pki", "cryptographic-agility", "quantum-thr
 excerpt: "The current bedrock of secure digital communication, Public Key Infrastructure (PKI), relies heavily on cryptographic algorithms that, while robust..."
 ---
 
-# Navigating the Quantum Horizon: Governing Cryptographic Agility for PKI Resilience
-
 The current bedrock of secure digital communication, Public Key Infrastructure (PKI), relies heavily on cryptographic algorithms that, while robust today, face an existential threat from the advent of large-scale quantum computers. While the exact timeline remains uncertain, the "Q-Day" – the point at which quantum computers can effectively break current asymmetric encryption – is a future we must proactively prepare for. As an SVP of Information Security, my focus isn't on predicting the quantum future, but on governing our present security posture to ensure a smooth, secure transition. This means prioritizing *cryptographic agility* and establishing a robust *post-quantum migration strategy*.
 
 ## The Quantum Threat to PKI: A Primer

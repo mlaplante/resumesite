@@ -6,8 +6,6 @@ tags: []
 excerpt: "The promise of multi-cloud is compelling: resilience, vendor diversification, and leveraging best-of-breed services. However, the reality often involv..."
 ---
 
-# Automating Secure Multi-Cloud Network Connectivity with IaC and eBPF
-
 The promise of multi-cloud is compelling: resilience, vendor diversification, and leveraging best-of-breed services. However, the reality often involves a labyrinth of network configurations, security policies, and operational overhead. Manually configuring VPNs, peering connections, and firewall rules across multiple cloud providers is not only error-prone but also a significant bottleneck for agile development.
 
 In this post, we'll explore a modern approach to automating secure multi-cloud network connectivity, combining the power of Infrastructure as Code (IaC) for declarative provisioning and eBPF for dynamic, policy-driven traffic management and security enforcement.

@@ -8,8 +8,6 @@ tags: ["linux", "kernel", "security", "hardening", "compilation", "systems-engin
 excerpt: "As an SVP of Information Security and Operations, I've seen countless hardening guides for Linux systems. Most focus on user-space configurations,..."
 ---
 
-# From Zero to Secure: Crafting a Custom Linux Kernel with `kconfig` and `make`
-
 As an SVP of Information Security and Operations, I've seen countless hardening guides for Linux systems. Most focus on user-space configurations, firewall rules, and application-level security. While these are crucial, true defense-in-depth often requires looking deeper—right down to the kernel itself. Why run a generic distribution kernel when you can tailor one precisely to your needs, stripping away unnecessary attack surface and enabling specific security features?
 
 Compiling a custom Linux kernel might sound like a daunting task, a relic from the early days of Linux. However, with tools like `kconfig` and `make`, it's a powerful way to significantly enhance your system's security posture and performance. In this post, we'll walk through the process of building a custom kernel, focusing on security hardening from the ground up.

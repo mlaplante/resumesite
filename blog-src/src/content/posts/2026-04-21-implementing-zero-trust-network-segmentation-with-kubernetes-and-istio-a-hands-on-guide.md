@@ -6,8 +6,6 @@ tags: []
 excerpt: "Zero Trust is more than just a buzzword—it's a practical philosophy for securing modern, cloud-native environments. But translating that philosophy in..."
 ---
 
-# Implementing Zero Trust Network Segmentation with Kubernetes and Istio: A Hands-On Guide
-
 Zero Trust is more than just a buzzword—it's a practical philosophy for securing modern, cloud-native environments. But translating that philosophy into actionable controls can be daunting, especially in complex platforms like Kubernetes. In this post, I'll walk you through implementing Zero Trust network segmentation using Kubernetes and Istio, focusing on hands-on configuration and real-world engineering detail.
 
 ## Why Zero Trust in Kubernetes?

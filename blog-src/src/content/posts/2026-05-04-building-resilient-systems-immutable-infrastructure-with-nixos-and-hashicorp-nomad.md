@@ -6,8 +6,6 @@ tags: []
 excerpt: "In the world of modern infrastructure, the pursuit of reliability, predictability, and efficiency is constant. One paradigm that has gained..."
 ---
 
-# Building Resilient Systems: Immutable Infrastructure with NixOS and HashiCorp Nomad
-
 In the world of modern infrastructure, the pursuit of reliability, predictability, and efficiency is constant. One paradigm that has gained significant traction in achieving these goals is **immutable infrastructure**. The core idea is simple: once a server or component is deployed, it is never modified. If a change is needed, a new, updated component is built and deployed, replacing the old one. This approach drastically reduces configuration drift, simplifies rollbacks, and enhances the consistency of your environments.
 
 Today, I want to dive into a powerful combination for implementing immutable infrastructure: **NixOS** and **HashiCorp Nomad**. NixOS provides a unique, declarative, and reproducible way to define your entire operating system, while Nomad offers a flexible and efficient orchestrator for deploying and managing applications across a cluster.

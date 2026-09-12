@@ -6,8 +6,6 @@ tags: []
 excerpt: "As an SVP of Information Security and Operations, I've seen countless systems buckle under the weight of an unoptimized database. PostgreSQL, while ro..."
 ---
 
-# Unlocking PostgreSQL Performance with Custom eBPF Probes
-
 As an SVP of Information Security and Operations, I've seen countless systems buckle under the weight of an unoptimized database. PostgreSQL, while robust and feature-rich, is no exception. While we have an arsenal of tools like `pg_stat_statements`, `EXPLAIN ANALYZE`, and system-level metrics, sometimes we need to peer even deeper into the kernel to understand truly elusive performance bottlenecks. This is where eBPF shines, offering an unprecedented level of observability without altering application code or increasing the overhead of traditional tracing.
 
 Today, I want to walk through how we can leverage custom eBPF probes to gain insights into specific PostgreSQL internal functions, focusing on a common bottleneck: buffer cache contention.

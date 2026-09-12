@@ -6,8 +6,6 @@ tags: []
 excerpt: "Zero-downtime database migrations are the holy grail for modern application deployments. If you’ve ever tried to migrate a production database in a bu..."
 ---
 
-# Automating Zero-Downtime Database Migrations with HashiCorp Nomad and Consul: A Hands-On Guide
-
 **Zero-downtime database migrations** are the holy grail for modern application deployments. If you’ve ever tried to migrate a production database in a busy environment, you know the pain: delayed deploys, maintenance windows, and anxious stakeholders. But with the right infrastructure tooling, you can automate safe, low-latency migrations—even in complex environments.
 
 Today, I’ll show you how to leverage **HashiCorp Nomad** for orchestrating database migration jobs, and **Consul** for service discovery and coordination. We'll walk through a practical, step-by-step implementation, including Nomad job specs, migration scripts, and Consul integration. Let’s dive in.

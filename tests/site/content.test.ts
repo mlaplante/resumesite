@@ -96,6 +96,18 @@ describe('blog content frontmatter', () => {
     expect(dupes, `duplicate posts: ${dupes.join(', ')}`).toEqual([]);
   });
 
+  // blog/[slug].astro renders <h1>{title}</h1>; a body that opens with its own
+  // H1 ships two identical H1s. The draft generator strips it
+  // (scripts/lib/blog-post.js stripLeadingHeading) — this guards hand edits.
+  it('no post body opens with a level-1 heading', () => {
+    const offenders = postFiles().filter((f) => {
+      const raw = readFileSync(join(POSTS_DIR, f), 'utf8');
+      const body = raw.replace(/^---\n[\s\S]*?\n---\n?/, '').replace(/^\s+/, '');
+      return /^#\s/.test(body) || /^[^\n]+\n=+\s*$/m.test(body.split('\n').slice(0, 2).join('\n'));
+    });
+    expect(offenders).toEqual([]);
+  });
+
   it('has unique titles', () => {
     const titles = files.map(
       (f) => frontmatter(readFileSync(join(POSTS_DIR, f), 'utf8')).title?.toLowerCase() ?? '',

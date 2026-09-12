@@ -8,8 +8,6 @@ tags: ["ai-governance", "supply-chain-security", "model-provenance", "sbom", "ml
 excerpt: "The digital supply chain has always been a complex beast, fraught with vulnerabilities from open-source dependencies to third-party integrations. Now,..."
 ---
 
-# Governing AI-Powered Supply Chain Security: Beyond SBOMs to Model Provenance
-
 The digital supply chain has always been a complex beast, fraught with vulnerabilities from open-source dependencies to third-party integrations. Now, as AI models permeate every layer of our applications and infrastructure, the supply chain security challenge has grown exponentially. We're no longer just dealing with software components; we're dealing with AI models whose behavior, biases, and vulnerabilities are often opaque.
 
 While Software Bill of Materials (SBOMs) have become a cornerstone for understanding traditional software dependencies, they fall short when it comes to the intricate world of AI. We need to move beyond SBOMs to a concept of **Model Provenance** – a comprehensive, auditable record of an AI model's entire lifecycle, from data ingestion to deployment and beyond.

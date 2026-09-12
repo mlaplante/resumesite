@@ -12,6 +12,7 @@ import {
   extractTags,
   findExactDuplicate,
   stripTitleDirective,
+  stripLeadingHeading,
   makeExcerpt,
   buildFrontmatter,
   findMostSimilar,
@@ -108,6 +109,22 @@ describe('stripTitleDirective', () => {
   });
   it('leaves content unchanged when no TITLE: directive is present', () => {
     expect(stripTitleDirective('# Heading\n\nBody')).toBe('# Heading\n\nBody');
+  });
+});
+
+describe('stripLeadingHeading', () => {
+  it('removes an opening ATX H1 and the blank lines after it', () => {
+    expect(stripLeadingHeading('# A Good Title\n\nBody\n\n## Section')).toBe('Body\n\n## Section');
+  });
+  it('removes an opening setext H1', () => {
+    expect(stripLeadingHeading('A Good Title\n==========\n\nBody')).toBe('Body');
+  });
+  it('leaves a body that starts with prose or an H2 alone', () => {
+    expect(stripLeadingHeading('Body first\n\n# Later H1')).toBe('Body first\n\n# Later H1');
+    expect(stripLeadingHeading('## Section\n\nBody')).toBe('## Section\n\nBody');
+  });
+  it('returns an empty string for non-string input', () => {
+    expect(stripLeadingHeading(null)).toBe('');
   });
 });
 

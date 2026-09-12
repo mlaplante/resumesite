@@ -6,8 +6,6 @@ tags: []
 excerpt: "As an SVP of Information Security and Operations, I've seen firsthand how critical network performance is to the success of modern applications. Wheth..."
 ---
 
-# Boosting Network Performance with `io_uring` and eBPF in Linux
-
 As an SVP of Information Security and Operations, I've seen firsthand how critical network performance is to the success of modern applications. Whether it's a high-frequency trading platform, a massively scalable content delivery network, or a distributed database, the ability to move data efficiently across the network often dictates the overall system throughput and latency. For years, the Linux kernel has offered various mechanisms for network I/O, but recent advancements with `io_uring` and eBPF have truly revolutionized how we can achieve extreme performance.
 
 This post will dive into how these two powerful technologies can be leveraged together to optimize high-throughput network I/O, providing concrete examples and actionable takeaways for engineers looking to push the boundaries of their systems.

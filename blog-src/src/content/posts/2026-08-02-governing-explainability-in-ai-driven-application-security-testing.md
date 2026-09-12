@@ -8,8 +8,6 @@ tags: ["ai", "security-testing", "explainable-ai", "governance", "application-se
 excerpt: "The rise of AI in application security testing (AST) tools promises unprecedented efficiency and accuracy in identifying vulnerabilities. From static..."
 ---
 
-# Governing Explainability in AI-Driven Application Security Testing
-
 The rise of AI in application security testing (AST) tools promises unprecedented efficiency and accuracy in identifying vulnerabilities. From static application security testing (SAST) to dynamic application security testing (DAST) and interactive application security testing (IAST), AI can sift through vast codebases and runtime behaviors to pinpoint weaknesses that human eyes might miss. However, with this power comes a critical challenge: explainability. If an AI flags a vulnerability, but we can't understand *why*, how can we trust the finding, prioritize remediation, or defend against false positives?
 
 Governing explainability in AI-driven AST isn't just a "nice-to-have"; it's fundamental to leveraging these tools effectively and responsibly. Without it, we risk a "black box" scenario where security teams become reliant on opaque recommendations, potentially misallocating resources or overlooking genuine threats due to a lack of context.

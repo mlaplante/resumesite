@@ -8,8 +8,6 @@ tags: []
 excerpt: "In the world of cloud-native infrastructure, the allure of bare metal remains strong for those seeking ultimate control, performance, and cost efficie..."
 ---
 
-# PXE, Ansible, and BGP: Crafting a Bare-Metal Kubernetes Cluster
-
 In the world of cloud-native infrastructure, the allure of bare metal remains strong for those seeking ultimate control, performance, and cost efficiency. While managed Kubernetes services abstract away much of the underlying complexity, building your own bare-metal Kubernetes cluster offers invaluable insights into the stack and provides a foundation for highly optimized workloads. This post will walk you through the practical engineering steps of automating the deployment of a bare-metal Kubernetes cluster using a powerful trio: PXE for network booting, Ansible for configuration management, and BGP for robust network routing.
 
 ## Why Bare Metal?

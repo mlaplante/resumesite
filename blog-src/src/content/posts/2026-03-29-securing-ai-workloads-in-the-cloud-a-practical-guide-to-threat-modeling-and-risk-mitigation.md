@@ -6,8 +6,6 @@ tags: []
 excerpt: "AI workloads are booming in the cloud, unlocking transformative value across industries. But as organizations rush to deploy machine learning models a..."
 ---
 
-# Securing AI Workloads in the Cloud: A Practical Guide to Threat Modeling and Risk Mitigation
-
 AI workloads are booming in the cloud, unlocking transformative value across industries. But as organizations rush to deploy machine learning models and generative AI in production, security leaders face a new set of risks. The combination of cloud-scale data, complex supply chains, and the unique properties of AI workloads creates a perfect storm for attackers and accidental exposure.
 
 So how can you secure your AI workloads in the cloud—without slowing innovation? The answer starts with a rigorous, practical approach to threat modeling and risk mitigation.

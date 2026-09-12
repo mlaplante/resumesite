@@ -8,8 +8,6 @@ tags: ["ai-security", "adversarial-attacks", "mlsec", "model-integrity", "produc
 excerpt: "As AI models move from research labs to critical production systems, the focus of security shifts dramatically. No longer is it just about securing..."
 ---
 
-# Architecting for AI Resilience: Securing AI Models Against Adversarial Attacks in Production
-
 As AI models move from research labs to critical production systems, the focus of security shifts dramatically. No longer is it just about securing the infrastructure hosting the model; it's about securing the model itself against sophisticated adversarial attacks. These attacks can manipulate model inputs to induce incorrect outputs, compromise data integrity, or even extract sensitive training data. For organizations like ours, where AI underpins decision-making and operational efficiency, building AI resilience into our architecture is paramount.
 
 This post will delve into practical strategies for securing AI models against adversarial attacks in production environments, moving beyond theoretical concepts to actionable implementation.

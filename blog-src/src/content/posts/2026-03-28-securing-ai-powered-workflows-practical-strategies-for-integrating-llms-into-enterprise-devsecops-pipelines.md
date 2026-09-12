@@ -6,8 +6,6 @@ tags: []
 excerpt: "It’s no secret that AI-driven tools like Large Language Models (LLMs) are reshaping enterprise workflows. From automated code reviews to advanced..."
 ---
 
-# Securing AI-Powered Workflows: Practical Strategies for Integrating LLMs into Enterprise DevSecOps Pipelines
-
 It’s no secret that AI-driven tools like Large Language Models (LLMs) are reshaping enterprise workflows. From automated code reviews to advanced threat detection, LLMs are turbocharging productivity and innovation. But with great power comes great responsibility: integrating these models into DevSecOps pipelines introduces new attack surfaces, compliance risks, and operational challenges.
 
 In this post, I’ll break down practical strategies for securing LLM-powered workflows—grounded in real-world experience. We'll cover actionable steps you can take today to ensure your enterprise stays agile **and** secure.

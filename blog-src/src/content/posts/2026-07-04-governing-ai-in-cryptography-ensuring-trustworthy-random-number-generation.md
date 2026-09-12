@@ -8,8 +8,6 @@ tags: ["ai-governance", "cryptography", "random-number-generation", "ai-security
 excerpt: "The integration of Artificial Intelligence (AI) into various technological domains promises efficiency and innovation. However, when AI touches the..."
 ---
 
-# Governing AI in Cryptography: Ensuring Trustworthy Random Number Generation
-
 The integration of Artificial Intelligence (AI) into various technological domains promises efficiency and innovation. However, when AI touches the bedrock of cybersecurity – cryptography – we must proceed with extreme caution and robust governance. A particularly sensitive area is the use of AI in Random Number Generation (RNG), which is fundamental to the security of everything from encryption keys to secure communication protocols. If AI introduces subtle biases or vulnerabilities into RNG, the integrity of our cryptographic systems could crumble.
 
 This post will explore the critical role of AI governance in ensuring trustworthy RNG, focusing on practical considerations and actionable takeaways.

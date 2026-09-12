@@ -8,8 +8,6 @@ tags: ["ai-governance", "access-control", "rbac", "adaptive-security", "zero-tru
 excerpt: "The static nature of Role-Based Access Control (RBAC) is increasingly strained by the dynamic demands of modern enterprise environments. As..."
 ---
 
-# Beyond RBAC: Governing AI for Adaptive Access Control in Modern Security
-
 The static nature of Role-Based Access Control (RBAC) is increasingly strained by the dynamic demands of modern enterprise environments. As organizations embrace cloud services, remote work, and complex microservice architectures, the "one size fits all" approach of assigning permissions based solely on a user's role becomes a significant security bottleneck and operational overhead. Enter Adaptive Access Control (AAC), a sophisticated approach that leverages real-time context and, increasingly, Artificial Intelligence (AI) to make granular access decisions. However, integrating AI into such a critical security function demands robust governance.
 
 ## The Limitations of Traditional RBAC

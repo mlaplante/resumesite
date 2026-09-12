@@ -6,8 +6,6 @@ tags: []
 excerpt: "As organizations increasingly adopt Kubernetes, the need for robust runtime security and granular network observability becomes paramount. Traditional..."
 ---
 
-# eBPF for Kubernetes: Deep Dive into Runtime Security and Network Observability
-
 As organizations increasingly adopt Kubernetes, the need for robust runtime security and granular network observability becomes paramount. Traditional approaches often struggle to keep pace with the ephemeral nature and dynamic scaling of containerized applications. This is where eBPF (extended Berkeley Packet Filter) emerges as a game-changer, offering an unparalleled ability to instrument the Linux kernel without modifying source code or loading kernel modules.
 
 In this post, we'll dive into how eBPF can be leveraged within a Kubernetes environment to enhance runtime application security and provide deep network observability. We'll explore practical examples and discuss the underlying engineering principles.

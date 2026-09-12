@@ -6,8 +6,6 @@ tags: []
 excerpt: "As security and operations leaders, we've all wrestled with the challenges of mutable infrastructure. The \"snowflake\" servers, the undocumented change..."
 ---
 
-# Building Immutable Infrastructure with Nix and AWS CDK
-
 As security and operations leaders, we've all wrestled with the challenges of mutable infrastructure. The "snowflake" servers, the undocumented changes, the dreaded "it works on my machine" syndrome – these are not just annoyances; they're significant security risks and operational liabilities. Immutable infrastructure offers a powerful antidote, providing consistency, reproducibility, and a clear path to rollback.
 
 Today, I want to dive into a practical approach for achieving immutable infrastructure, combining the declarative power of Nix with the infrastructure-as-code capabilities of AWS CDK. This pairing allows us to define our entire environment, from the operating system to application dependencies, and provision it reliably on AWS.

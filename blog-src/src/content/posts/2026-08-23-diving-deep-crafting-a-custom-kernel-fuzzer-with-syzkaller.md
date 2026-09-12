@@ -8,8 +8,6 @@ tags: ["linux", "kernel", "security", "fuzzing", "vulnerability-discovery", "syz
 excerpt: "As an SVP of Information Security and Operations, I've seen firsthand how critical kernel security is. The kernel is the bedrock of our systems, and..."
 ---
 
-# Diving Deep: Crafting a Custom Kernel Fuzzer with Syzkaller
-
 As an SVP of Information Security and Operations, I've seen firsthand how critical kernel security is. The kernel is the bedrock of our systems, and vulnerabilities here can have devastating consequences. While static analysis and manual code reviews are essential, they often fall short in uncovering subtle, complex bugs that only manifest under specific, unexpected execution paths. This is where fuzzing shines, and when it comes to Linux kernel fuzzing, Syzkaller is the undisputed champion.
 
 Syzkaller is a powerful, intelligent, and autonomous fuzzer for OS kernels. It generates system call sequences, executes them, and monitors for crashes, hangs, or other anomalous behavior. While Syzkaller is incredibly effective out-of-the-box, there are scenarios where you might need to extend its capabilities – perhaps to target a custom kernel module, a specific driver, or a new system call you've implemented. This post will walk you through the process of implementing a custom Syzkaller fuzzer to target your specific kernel components.

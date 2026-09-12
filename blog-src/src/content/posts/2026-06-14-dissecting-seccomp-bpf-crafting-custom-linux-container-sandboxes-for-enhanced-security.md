@@ -8,8 +8,6 @@ tags: []
 excerpt: "Linux containers have revolutionized how we deploy applications, offering consistency and portability. However, the default isolation provided by..."
 ---
 
-# Dissecting `seccomp-bpf`: Crafting Custom Linux Container Sandboxes for Enhanced Security
-
 Linux containers have revolutionized how we deploy applications, offering consistency and portability. However, the default isolation provided by namespaces and cgroups, while robust, isn't always sufficient for high-security workloads. This is where `seccomp-bpf` (secure computing with Berkeley Packet Filter) steps in, allowing us to define precisely which system calls a process can make, effectively creating a granular sandbox.
 
 While tools like Docker and Kubernetes offer default `seccomp` profiles, understanding how to craft your own custom profiles empowers you to tailor security to your application's exact needs, minimizing the attack surface significantly.

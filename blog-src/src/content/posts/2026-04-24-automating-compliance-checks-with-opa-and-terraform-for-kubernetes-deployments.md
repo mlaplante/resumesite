@@ -6,8 +6,6 @@ tags: []
 excerpt: "As organizations scale their Kubernetes footprint, ensuring every deployment adheres to internal security policies and external regulatory compliance..."
 ---
 
-# Automating Compliance Checks with OPA and Terraform for Kubernetes Deployments
-
 As organizations scale their Kubernetes footprint, ensuring every deployment adheres to internal security policies and external regulatory compliance becomes a herculean task. Manual reviews are slow, error-prone, and don't scale. This is where automation becomes not just a luxury, but a necessity.
 
 In this post, we'll explore a powerful combination: using Open Policy Agent (OPA) for defining granular policies and integrating it with Terraform to automate compliance checks *before* your Kubernetes resources are even provisioned. This "shift-left" approach catches non-compliant configurations early, preventing potential security incidents and costly remediation down the line.

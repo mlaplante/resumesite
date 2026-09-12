@@ -8,8 +8,6 @@ tags: ["linux-kernel", "kernel-module", "ipc", "encryption", "cryptography", "sy
 excerpt: "In the realm of high-security applications, standard Inter-Process Communication (IPC) mechanisms often fall short when robust confidentiality and..."
 ---
 
-# Crafting a Custom Linux Kernel Module for Encrypted Inter-Process Communication
-
 In the realm of high-security applications, standard Inter-Process Communication (IPC) mechanisms often fall short when robust confidentiality and integrity are paramount. While user-space libraries can provide encryption, moving the encryption/decryption operations into the kernel offers several advantages: reduced context switching overhead, enhanced control over cryptographic primitives, and the ability to operate on data before it ever reaches user-space memory, potentially mitigating certain classes of side-channel attacks.
 
 Today, we're going to dive into building a custom Linux kernel module that facilitates encrypted IPC. Our module will expose a character device through which user-space processes can exchange encrypted messages. We'll use a simplified symmetric encryption scheme for demonstration, focusing on the kernel module mechanics rather than production-grade cryptography.

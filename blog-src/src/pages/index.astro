@@ -12,7 +12,6 @@ const posts = (await getSortedPosts()).slice(0, 4);
 
 <SiteLayout title="Michael LaPlante - SVP of Information Security and Operations | Technology Leader | Security Executive | Software Engineer" description="Michael LaPlante - Technology executive with 15+ years of experience in information security, operations, and software engineering. SVP of Information Security and Operations.">
   <Fragment slot="head">
-    <meta name="keywords" content="Michael LaPlante, Information Security, Technology Leader, Software Engineer, SVP, Chief Security Officer, Web Development">
     <meta name="author" content="Michael LaPlante">
 
     <!-- Structured Data - Person -->
@@ -39,7 +38,7 @@ const posts = (await getSortedPosts()).slice(0, 4);
     }
     </script>
 
-    <!-- Structured Data - WebSite (enables sitelinks search in Google) -->
+    <!-- Structured Data - WebSite (site identity; no SearchAction because there is no server-side search results URL) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",

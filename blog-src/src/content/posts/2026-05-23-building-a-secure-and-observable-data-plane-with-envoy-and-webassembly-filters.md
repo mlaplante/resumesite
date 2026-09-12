@@ -6,8 +6,6 @@ tags: []
 excerpt: "In today's distributed architectures, the data plane is the beating heart of your application, handling all network traffic between services. Ensuring..."
 ---
 
-# Building a Secure and Observable Data Plane with Envoy and WebAssembly Filters
-
 In today's distributed architectures, the data plane is the beating heart of your application, handling all network traffic between services. Ensuring this layer is both secure and observable is paramount for reliability and threat detection. While service meshes like Istio or Linkerd offer comprehensive solutions, understanding the underlying components and how to leverage them directly can provide immense flexibility and control, especially for specialized use cases or when a full mesh is overkill.
 
 This post will dive into building a robust, secure, and observable data plane using Envoy Proxy and custom WebAssembly (Wasm) filters. We'll explore how Envoy acts as a universal data plane, and how Wasm filters empower you to inject custom logic, security policies, and rich telemetry directly into the traffic flow without recompiling Envoy itself.

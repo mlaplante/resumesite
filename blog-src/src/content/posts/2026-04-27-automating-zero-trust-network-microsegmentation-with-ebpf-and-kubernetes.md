@@ -6,8 +6,6 @@ tags: []
 excerpt: "In today's complex, distributed environments, the traditional perimeter-based security model is no longer sufficient. Applications are broken into mic..."
 ---
 
-# Automating Zero-Trust Network Microsegmentation with eBPF and Kubernetes
-
 In today's complex, distributed environments, the traditional perimeter-based security model is no longer sufficient. Applications are broken into microservices, running across dynamic infrastructure, often in the cloud. This shift necessitates a move towards Zero-Trust principles, where every request is authenticated and authorized, regardless of its origin. A cornerstone of Zero-Trust is network microsegmentation – the ability to create granular, application-specific network policies that restrict traffic flow between individual workloads.
 
 While the concept of microsegmentation isn't new, implementing it effectively and at scale, especially within Kubernetes, has historically presented challenges. Traditional methods often rely on IPtables, which can become unwieldy, difficult to manage, and suffer performance degradation with a large number of rules. This is where eBPF (extended Berkeley Packet Filter) emerges as a game-changer.

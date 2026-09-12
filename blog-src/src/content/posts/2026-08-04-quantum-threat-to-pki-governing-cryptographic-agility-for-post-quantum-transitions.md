@@ -8,8 +8,6 @@ tags: ["quantum-cryptography", "pki", "cryptographic-agility", "post-quantum-cry
 excerpt: "The whispers about quantum computing's potential to break modern cryptography are growing louder, and for good reason. Shor's algorithm, if realized..."
 ---
 
-# Quantum Threat to PKI: Governing Cryptographic Agility for Post-Quantum Transitions
-
 The whispers about quantum computing's potential to break modern cryptography are growing louder, and for good reason. Shor's algorithm, if realized on a sufficiently powerful quantum computer, poses a direct and existential threat to the asymmetric cryptographic algorithms underpinning our entire digital security infrastructure, specifically Public Key Infrastructure (PKI). This isn't a distant science fiction scenario; it's a looming challenge that demands strategic planning and, critically, robust governance around cryptographic agility.
 
 As an SVP of Information Security and Operations, I'm not just thinking about current threats; I'm strategizing for the threats of tomorrow. The transition to post-quantum cryptography (PQC) is perhaps the most significant cryptographic undertaking since the widespread adoption of public-key cryptography itself. It requires more than just technical implementation; it demands a governance framework that ensures a smooth, secure, and auditable shift.

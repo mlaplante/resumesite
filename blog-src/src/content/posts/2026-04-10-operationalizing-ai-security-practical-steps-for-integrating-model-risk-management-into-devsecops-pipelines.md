@@ -6,8 +6,6 @@ tags: []
 excerpt: "Artificial Intelligence is transforming how organizations operate, but its adoption brings new security challenges. As models become integral to busin..."
 ---
 
-# Operationalizing AI Security: Practical Steps for Integrating Model Risk Management into DevSecOps Pipelines
-
 Artificial Intelligence is transforming how organizations operate, but its adoption brings new security challenges. As models become integral to business processes, ensuring their security and managing operational risks is no longer optional—it's mission-critical. So how do we bring AI model risk management into the heart of our DevSecOps pipelines?
 
 Let’s break down practical steps for operationalizing AI security, drawing from real-world experience.

@@ -6,8 +6,6 @@ tags: []
 excerpt: "As security professionals and system engineers, we often interact with debuggers like GDB. While incredibly powerful, their inner workings can seem li..."
 ---
 
-# Demystifying `ptrace`: Building a Custom Debugger for Linux Binaries
-
 As security professionals and system engineers, we often interact with debuggers like GDB. While incredibly powerful, their inner workings can seem like black magic. Understanding how a debugger attaches to a process, inspects its memory, and manipulates its execution flow is not just an academic exercise; it's fundamental to reverse engineering, exploit development, and even advanced system troubleshooting. At the heart of this magic on Linux lies the `ptrace` system call.
 
 `ptrace` (process trace) is a powerful, yet often misunderstood, system call that allows one process (the "tracer") to observe and control the execution of another process (the "tracee"). It enables the tracer to examine and change the tracee's memory and registers, and to intercept system calls and signals. This is precisely what makes debuggers, system call tracers (like `strace`), and even some sandboxing mechanisms possible.

@@ -8,8 +8,6 @@ tags: ["io-uring", "rust", "networking", "performance", "systems-programming", "
 excerpt: "In the world of high-performance computing, every microsecond counts. When building network services that need to handle millions of connections or..."
 ---
 
-# Demystifying io_uring: Building High-Performance, Secure Network Services in Rust
-
 In the world of high-performance computing, every microsecond counts. When building network services that need to handle millions of connections or process vast amounts of data with minimal latency, traditional I/O models often hit a wall. While epoll and kqueue have served us well, a newer, more potent challenger has emerged in the Linux kernel: `io_uring`.
 
 `io_uring` is a asynchronous I/O interface that fundamentally changes how applications interact with the kernel for I/O operations. Unlike its predecessors, which often require multiple system calls per operation (e.g., `read()` then `sendmsg()`), `io_uring` allows applications to batch multiple I/O requests and responses into shared queues, drastically reducing system call overhead and context switches. This can lead to significant performance improvements, especially under heavy load.

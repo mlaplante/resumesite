@@ -8,8 +8,6 @@ tags: ["syzkaller", "kernel-fuzzing", "linux-security", "vulnerability-research"
 excerpt: "As an SVP of Information Security and Operations, I've seen firsthand how critical robust security testing is for the foundational components of our..."
 ---
 
-# Building a Custom Linux Kernel Fuzzer with Syzkaller: From Setup to Finding Bugs
-
 As an SVP of Information Security and Operations, I've seen firsthand how critical robust security testing is for the foundational components of our infrastructure. The Linux kernel, being at the heart of nearly everything we do, is a prime target for attackers. While manual code review and static analysis are invaluable, they often fall short in uncovering subtle, complex bugs that only manifest under specific, unexpected execution paths. This is where fuzzing shines, and specifically, where tools like Syzkaller become indispensable.
 
 Syzkaller is a powerful, open-source kernel fuzzer developed by Google. It's designed to find bugs in operating system kernels by generating sequences of system calls, executing them, and monitoring for crashes, hangs, or other anomalous behavior. While Syzkaller comes with excellent support for common Linux distributions, there are times when you need to target a very specific, perhaps custom-built, kernel or a particular subsystem that isn't covered by its default syzkaller descriptions. This post will walk you through setting up a custom Syzkaller environment to fuzz a specific Linux kernel, from compilation to finding your first bug.

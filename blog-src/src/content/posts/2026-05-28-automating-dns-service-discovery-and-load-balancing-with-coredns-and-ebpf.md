@@ -6,8 +6,6 @@ tags: []
 excerpt: "In the dynamic world of modern infrastructure, services are constantly being spun up, scaled, and terminated. Manually updating DNS records or load..."
 ---
 
-# Automating DNS Service Discovery and Load Balancing With CoreDNS and eBPF
-
 In the dynamic world of modern infrastructure, services are constantly being spun up, scaled, and terminated. Manually updating DNS records or load balancer configurations to reflect these changes is not only tedious but also prone to error. This is where automation becomes critical. Today, we're going to dive into a powerful combination of technologies that can automate DNS-based service discovery and load balancing: CoreDNS and eBPF.
 
 ## The Challenge of Dynamic Service Discovery

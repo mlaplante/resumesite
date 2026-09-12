@@ -8,8 +8,6 @@ tags: ["ebpf", "tls", "network-security", "deep-packet-inspection", "proxy", "ne
 excerpt: "In the realm of network security and observability, the ability to inspect encrypted traffic is a critical, yet often challenging, requirement. While..."
 ---
 
-# Crafting a Custom TLS Interception Proxy with eBPF for Deep Packet Inspection
-
 In the realm of network security and observability, the ability to inspect encrypted traffic is a critical, yet often challenging, requirement. While traditional proxies can perform TLS interception, they often involve user-space solutions that introduce latency and complexity, or require explicit trust configuration on clients. What if we could achieve deeper, more granular visibility into TLS handshakes and even application-layer data *without* a traditional proxy architecture, leveraging the power of eBPF?
 
 This post explores the fascinating possibility of crafting a custom TLS interception proxy primarily driven by eBPF. Our goal isn't to build a production-ready MITM proxy (that's a whole other beast of trust and legal implications), but rather to demonstrate how eBPF can provide unprecedented visibility into the TLS stack, enabling sophisticated packet inspection and even selective interception capabilities.

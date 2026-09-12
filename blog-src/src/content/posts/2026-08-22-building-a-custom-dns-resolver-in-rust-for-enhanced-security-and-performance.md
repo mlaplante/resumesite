@@ -8,8 +8,6 @@ tags: ["rust", "dns", "network-security", "performance", "systems-programming"]
 excerpt: "In the world of information security and high-performance systems, we're constantly looking for ways to gain more control, improve visibility, and..."
 ---
 
-# Building a Custom DNS Resolver in Rust for Enhanced Security and Performance
-
 In the world of information security and high-performance systems, we're constantly looking for ways to gain more control, improve visibility, and shave off critical milliseconds. While the default DNS resolvers provided by operating systems or ISPs are convenient, they often lack the granular control and security features that enterprise environments demand. This is where building a custom DNS resolver, particularly in a language like Rust, becomes a compelling proposition.
 
 Rust, with its focus on memory safety, concurrency, and performance, is an excellent choice for network-level services. In this post, we'll explore the architectural considerations and key Rust components involved in building a basic yet robust custom DNS resolver, highlighting how it can enhance both security and performance.

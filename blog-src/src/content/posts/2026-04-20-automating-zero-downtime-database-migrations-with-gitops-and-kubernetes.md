@@ -6,8 +6,6 @@ tags: []
 excerpt: "Database migrations are a critical—but often nerve-wracking—part of deploying modern applications. Nothing kills momentum like a botched migration..."
 ---
 
-# Automating Zero-Downtime Database Migrations with GitOps and Kubernetes
-
 Database migrations are a critical—but often nerve-wracking—part of deploying modern applications. Nothing kills momentum like a botched migration that takes your app offline or corrupts your data. As infrastructure teams shift toward Kubernetes and GitOps, there’s a real opportunity to make migrations safer and fully automated. In this post, I’ll walk through how to implement zero-downtime database migrations using GitOps, Kubernetes, and a few practical engineering patterns.
 
 ## Why Zero-Downtime Migrations Matter

@@ -8,8 +8,6 @@ tags: ["linux", "security", "selinux", "apparmor", "mac", "hardening"]
 excerpt: "In the realm of Linux security, the principle of least privilege is paramount. While Discretionary Access Control (DAC) — the traditional Unix..."
 ---
 
-# Hardening Linux with Mandatory Access Control: A Deep Dive into SELinux and AppArmor
-
 In the realm of Linux security, the principle of least privilege is paramount. While Discretionary Access Control (DAC) — the traditional Unix permissions model (`rwx`) — offers a foundational layer, it often falls short in preventing sophisticated attacks. This is where Mandatory Access Control (MAC) systems like SELinux and AppArmor come into play, offering a much more granular and robust approach to system hardening.
 
 As an SVP in Information Security and Operations, I've seen firsthand how a well-implemented MAC strategy can make the difference between a minor incident and a catastrophic breach. DAC relies on the owner's discretion, meaning a compromised root user or a misconfigured application can bypass many controls. MAC, on the other hand, enforces policies system-wide, regardless of user discretion.

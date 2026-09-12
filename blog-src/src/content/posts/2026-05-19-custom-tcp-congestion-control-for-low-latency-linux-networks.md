@@ -6,8 +6,6 @@ tags: []
 excerpt: "Network latency is a critical factor in the performance of modern applications, from high-frequency trading platforms to real-time communication..."
 ---
 
-# Optimizing Network Latency with Custom TCP Congestion Control Algorithms in Linux
-
 Network latency is a critical factor in the performance of modern applications, from high-frequency trading platforms to real-time communication systems. While hardware and basic network configuration play a significant role, the underlying TCP congestion control algorithm in the Linux kernel often dictates the ultimate latency profile and throughput characteristics of a connection. For specialized use cases, the default algorithms might not be optimal, and understanding how to leverage or even implement custom congestion control can unlock substantial performance gains.
 
 ## The Role of TCP Congestion Control

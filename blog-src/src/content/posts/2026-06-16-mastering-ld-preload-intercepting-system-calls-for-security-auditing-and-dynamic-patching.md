@@ -8,8 +8,6 @@ tags: []
 excerpt: "In the realm of Linux systems, understanding how to manipulate program execution at a low level can unlock powerful capabilities for security..."
 ---
 
-# Mastering LD_PRELOAD: Intercepting System Calls for Security Auditing and Dynamic Patching
-
 In the realm of Linux systems, understanding how to manipulate program execution at a low level can unlock powerful capabilities for security professionals, system administrators, and developers alike. One such powerful, often overlooked, mechanism is `LD_PRELOAD`. This environment variable provides a way to load a user-specified shared library *before* any other shared libraries, including the C standard library (`libc`). This seemingly simple feature allows us to intercept function calls, effectively patching or monitoring program behavior without recompiling the original application.
 
 ## What is `LD_PRELOAD` and How Does it Work?

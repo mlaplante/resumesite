@@ -209,6 +209,13 @@ and renders against the brand gradient. To override with a hand-made image,
 set `image: /path/to/hero.png` in the post's frontmatter — that takes
 precedence over the auto-generated card.
 
+Rendered cards are cached in `blog-src/.cache/og/` (gitignored), keyed by the
+card template version, the post's title/category/date and the font bytes, so a
+rebuild only re-renders posts that changed (cold build ≈17s, warm ≈3s). CI
+restores that directory with `actions/cache`. If you change the card layout
+in `og/[slug].png.ts`, bump `CARD_VERSION` there so every card re-renders;
+`rm -rf blog-src/.cache` also forces a full re-render locally.
+
 ### AI draft dedupe
 
 The `auto` mode of `generate-post-gemini.js` and `generate-post-gh-models.js`

@@ -8,8 +8,6 @@ tags: ["linux", "security", "sandboxing", "system-administration", "legacy-syste
 excerpt: "In the world of information security and operations, we often encounter the challenge of managing legacy applications. These applications, while..."
 ---
 
-# Demystifying chroot and pivot_root: Building Secure Sandboxes for Legacy Applications
-
 In the world of information security and operations, we often encounter the challenge of managing legacy applications. These applications, while critical to business operations, frequently present significant security risks due to outdated dependencies, unpatched vulnerabilities, or simply a lack of modern security considerations in their original design. Containerization technologies like Docker and Kubernetes have become the de facto standard for isolating modern applications, but what about those stubborn applications that refuse to run in a container, or where the overhead of a full container runtime is overkill?
 
 This is where understanding Linux primitives like `chroot` and `pivot_root` becomes incredibly valuable. While not a complete security panacea, they offer powerful, lightweight mechanisms for creating isolated environments, effectively sandboxing legacy applications to mitigate their potential impact on the host system. Let's peel back the layers and understand how these tools work and how we can leverage them.

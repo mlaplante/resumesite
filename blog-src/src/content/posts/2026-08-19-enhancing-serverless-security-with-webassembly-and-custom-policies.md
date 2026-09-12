@@ -8,8 +8,6 @@ tags: ["serverless", "webassembly", "security", "sandboxing", "policy-engine", "
 excerpt: "Serverless functions offer incredible agility and scalability, but they also introduce unique security challenges. While cloud providers handle much..."
 ---
 
-# Enhancing Serverless Security with WebAssembly and Custom Policies
-
 Serverless functions offer incredible agility and scalability, but they also introduce unique security challenges. While cloud providers handle much of the underlying infrastructure security, the responsibility for securing the function's runtime environment, data, and access policies largely falls to us. Traditional container-based isolation is robust, but for fine-grained control and mitigating supply chain risks within the function itself, we need to look deeper.
 
 This post will explore how WebAssembly (Wasm) sandboxing, combined with custom policy engines, can significantly enhance the security posture of your serverless functions. We'll dive into the "why" and "how," including practical considerations and a conceptual code example.

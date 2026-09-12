@@ -8,8 +8,6 @@ tags: ["ai-governance", "explainable-ai", "security-assessments", "risk-manageme
 excerpt: "As AI permeates every facet of our digital landscape, its application in cybersecurity is rapidly evolving from theoretical to practical. One area..."
 ---
 
-# The AI Auditor: Governing Explainability in Automated Security Assessments
-
 As AI permeates every facet of our digital landscape, its application in cybersecurity is rapidly evolving from theoretical to practical. One area ripe for disruption is automated security assessments. Imagine an AI system capable of autonomously scanning, analyzing, and even prioritizing vulnerabilities across complex infrastructure. The efficiency gains are undeniable. However, with this power comes a critical governance challenge: explainability. When an "AI auditor" flags a critical vulnerability or, worse, gives a clean bill of health, how do we understand *why*?
 
 This isn't an academic exercise. It's a fundamental security and risk management imperative. Without explainability, we introduce a black box into our security posture that can erode trust, hinder remediation, and potentially lead to overlooked threats.

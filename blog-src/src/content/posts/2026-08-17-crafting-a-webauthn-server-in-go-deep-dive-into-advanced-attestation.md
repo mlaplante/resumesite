@@ -8,8 +8,6 @@ tags: ["webauthn", "go", "security", "cryptography", "authentication", "fido2"]
 excerpt: "WebAuthn has revolutionized secure authentication, moving beyond passwords to a more robust, phishing-resistant future. While many tutorials cover the..."
 ---
 
-# Crafting a WebAuthn Server in Go: Deep Dive into Advanced Attestation
-
 WebAuthn has revolutionized secure authentication, moving beyond passwords to a more robust, phishing-resistant future. While many tutorials cover the basics of WebAuthn registration and authentication, diving into advanced attestation formats and building a custom server to handle them provides a deeper understanding of the underlying security mechanisms.
 
 This post will guide you through building a WebAuthn Relying Party (RP) server in Go, focusing on parsing and validating various attestation statements, including `packed`, `fido-u2f`, and `android-key`. We'll explore the cryptographic nuances and practical implementation details.

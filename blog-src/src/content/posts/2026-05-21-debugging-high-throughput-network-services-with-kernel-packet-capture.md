@@ -8,8 +8,6 @@ excerpt: "Debugging High-Throughput Network Services With Kernel Packet Capture
  In the realm of high-throughput network services, performance isn't just a me..."
 ---
 
- # Debugging High-Throughput Network Services With Kernel Packet Capture
- 
  In the realm of high-throughput network services, performance isn't just a metric; it's the lifeblood of your application. When things go wrong, especially under heavy load, pinpointing the root cause can feel like searching for a needle in a haystack. Traditional application-level logging often falls short, either not capturing enough detail or introducing performance overhead that exacerbates the problem. This is where kernel-level packet capture, primarily using `tcpdump` and Wireshark, becomes an indispensable tool in an engineer's arsenal.
  
  ### The Challenge of High-Throughput

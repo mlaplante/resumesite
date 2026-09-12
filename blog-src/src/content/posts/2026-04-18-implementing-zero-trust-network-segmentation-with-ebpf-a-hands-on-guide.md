@@ -6,8 +6,6 @@ tags: []
 excerpt: "Zero Trust is more than a buzzword—it's a mandate for modern security. As network boundaries blur and attack surfaces expand, traditional..."
 ---
 
-# Implementing Zero Trust Network Segmentation with eBPF: A Hands-On Guide
-
 Zero Trust is more than a buzzword—it's a mandate for modern security. As network boundaries blur and attack surfaces expand, traditional perimeter-based security models are failing. Zero Trust segmentation is a powerful solution, but implementing it efficiently can be a challenge, especially at scale.
 
 Enter **eBPF** (extended Berkeley Packet Filter). eBPF allows us to program the Linux kernel in real time, enabling high-performance, granular network controls without the overhead or limitations of legacy approaches. In this post, we'll dive into practical steps to build Zero Trust network segmentation using eBPF, complete with code snippets and configuration details.

@@ -459,6 +459,18 @@ export function stripTitleDirective(content) {
     .replace(/^\s*\r?\n/, '');
 }
 
+// Drop a body that opens with its own H1 (ATX "# Title" or setext
+// "Title\n====="). The post template renders <h1>{title}</h1> from the
+// frontmatter, so a heading here shipped as a second, identical H1 on every
+// generated post. Only the very first heading is touched — the model keeps
+// using it as the TITLE cross-check (reconcileTitle) before we get here.
+export function stripLeadingHeading(content) {
+  if (typeof content !== 'string') return '';
+  return content
+    .replace(/^\s*#\s+[^\n]*\r?\n(?:\s*\r?\n)*/, '')
+    .replace(/^\s*[^\n]+\r?\n=+\s*\r?\n(?:\s*\r?\n)*/, '');
+}
+
 export function makeExcerpt(content) {
   const text = stripTitleDirective(content)
     .replace(/^#.+\n+/, '')
@@ -608,7 +620,7 @@ export async function runGenerator({ argv, providerName, generate, embed, suppor
   const date = new Date().toISOString().split('T')[0];
   const category = fromGit ? 'project-update' : 'thought-leadership';
   const tags = extractTags(content);
-  const body = stripTitleDirective(content);
+  const body = stripLeadingHeading(stripTitleDirective(content));
   const excerpt = makeExcerpt(body);
   const frontmatter = buildFrontmatter({ title, date, category, excerpt, tags });
   const fullPost = `${frontmatter}\n\n${body}`;

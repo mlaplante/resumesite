@@ -8,8 +8,6 @@ tags: ["linux", "security", "containers", "filesystem", "system-calls", "immutab
 excerpt: "In the world of containerized applications, security is paramount. One of the most effective strategies for bolstering security is to embrace..."
 ---
 
-# Demystifying mount_setattr: Crafting Immutable Container Filesystems for Enhanced Security
-
 In the world of containerized applications, security is paramount. One of the most effective strategies for bolstering security is to embrace immutability – the principle that once a system or component is deployed, it should not be modified. For containers, this often translates to read-only root filesystems, preventing attackers from modifying binaries, injecting malware, or altering critical configurations post-deployment. While tools like Docker's `read-only` flag or Kubernetes' `readOnlyRootFilesystem` are a good start, they often rely on existing mount options and can sometimes be circumvented or lack fine-grained control.
 
 This is where `mount_setattr`, a relatively new Linux system call introduced in kernel 5.12, comes into play. It offers a powerful, granular way to modify mount attributes, including making a mounted filesystem truly immutable from a security perspective, even for privileged processes. Let's dive into how `mount_setattr` works and how we can leverage it to create more secure container environments.

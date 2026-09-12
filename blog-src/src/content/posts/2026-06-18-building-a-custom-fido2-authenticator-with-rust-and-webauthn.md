@@ -8,8 +8,6 @@ tags: []
 excerpt: "As security professionals, we're constantly evaluating and implementing stronger authentication mechanisms. FIDO2, built upon the WebAuthn standard,..."
 ---
 
-# Building a Custom FIDO2 Authenticator with Rust and WebAuthn
-
 As security professionals, we're constantly evaluating and implementing stronger authentication mechanisms. FIDO2, built upon the WebAuthn standard, represents a significant leap forward, offering phishing-resistant, cryptographically secure authentication. While hardware authenticators are widely available, understanding the underlying mechanics by building a custom one can provide invaluable insight and open doors for specialized applications.
 
 In this post, we'll explore the journey of implementing a basic FIDO2 authenticator using Rust. Rust's memory safety, performance, and strong type system make it an excellent choice for security-critical applications like this. We won't build a full production-ready device, but rather a conceptual framework that demonstrates the core interactions.

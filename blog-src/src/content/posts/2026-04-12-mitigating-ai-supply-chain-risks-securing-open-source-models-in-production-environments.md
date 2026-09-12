@@ -6,8 +6,6 @@ tags: []
 excerpt: "The rapid adoption of open-source AI models has been a game changer for organizations aiming to innovate quickly and keep costs down. But with this sp..."
 ---
 
-# Mitigating AI Supply Chain Risks: Securing Open-Source Models in Production Environments
-
 The rapid adoption of open-source AI models has been a game changer for organizations aiming to innovate quickly and keep costs down. But with this speed and flexibility comes a new set of supply chain risks. As with any software, AI models sourced externally—especially from open repositories—can introduce vulnerabilities, compliance headaches, or even malicious code into your production environments.
 
 With over 15 years working at the intersection of InfoSec and operations, I've seen firsthand how unchecked enthusiasm for open-source can undermine otherwise strong security postures. Let's break down the risks, and more importantly, actionable steps you can take to secure your AI supply chain.

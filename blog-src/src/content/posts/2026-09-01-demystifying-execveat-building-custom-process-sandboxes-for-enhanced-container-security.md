@@ -8,8 +8,6 @@ tags: ["linux", "security", "containers", "syscalls", "sandboxing", "low-level"]
 excerpt: "As an SVP of Information Security and Operations, I've spent years advocating for and implementing robust security measures. While containers offer..."
 ---
 
-# Demystifying execveat: Building Custom Process Sandboxes for Enhanced Container Security
-
 As an SVP of Information Security and Operations, I've spent years advocating for and implementing robust security measures. While containers offer incredible agility, their security often relies on a layered approach. Beyond network segmentation and image scanning, true defense-in-depth demands granular control over what processes can actually *do* within a container. This is where a deep dive into Linux syscalls, specifically `execveat`, becomes invaluable for building custom, highly effective process sandboxes.
 
 You're probably familiar with `execve`, the workhorse syscall for executing a new program. But `execveat` offers a subtle yet powerful extension: the ability to specify the directory relative to which the program should be executed, and more importantly, to control its execution environment with flags. This "at" variant, common across many Linux syscalls (e.g., `openat`, `fstatat`), is a cornerstone for building robust sandboxes and even for how modern container runtimes operate.

@@ -8,8 +8,6 @@ tags: []
 excerpt: "The software supply chain has become a primary attack vector, making Software Bill of Materials (SBOMs) an indispensable tool for transparency and..."
 ---
 
-# AI Governance for SBOMs: Ensuring Trustworthy Software Supply Chains
-
 The software supply chain has become a primary attack vector, making Software Bill of Materials (SBOMs) an indispensable tool for transparency and risk management. As AI increasingly permeates every layer of software development, from code generation to dependency management, the integrity and trustworthiness of SBOMs themselves are at risk if AI is not governed properly. This post will explore how robust AI governance can ensure SBOMs remain reliable anchors in our quest for secure software supply chains.
 
 ## The AI-Driven Evolution of SBOMs

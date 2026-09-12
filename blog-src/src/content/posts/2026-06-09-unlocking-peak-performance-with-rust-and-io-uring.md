@@ -10,8 +10,6 @@ excerpt: "Unlocking Peak Performance With Rust and io_uring
  For those of us in the trenches of information security and operations, squeezing every last drop..."
 ---
 
- # Unlocking Peak Performance With Rust and io_uring
- 
  For those of us in the trenches of information security and operations, squeezing every last drop of performance out of our systems isn't just a nice-to-have, it's a fundamental requirement. Whether we're building high-throughput network services, optimizing data processing pipelines, or ensuring our storage solutions are lightning-fast, efficient I/O is king.
  
  For years, asynchronous I/O in Linux has largely been the domain of `epoll`, a powerful but sometimes complex beast. However, a newer, more capable player has emerged: `io_uring`. Designed from the ground up to be a truly asynchronous, zero-copy I/O interface, `io_uring` promises to revolutionize how we handle I/O operations on Linux. And when you combine its power with the safety and expressiveness of Rust, you get a formidable combination for building high-performance applications.

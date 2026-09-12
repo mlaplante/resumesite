@@ -6,8 +6,6 @@ tags: []
 excerpt: "Artificial Intelligence (AI) and Machine Learning (ML) are reshaping how organizations operate, unlocking new efficiencies and insights. But as we har..."
 ---
 
-# Building Secure AI Pipelines: Practical Strategies for Integrating DevSecOps into Machine Learning Workflows
-
 Artificial Intelligence (AI) and Machine Learning (ML) are reshaping how organizations operate, unlocking new efficiencies and insights. But as we harness these technologies, the stakes for securing our AI pipelines have never been higher. Integrating DevSecOps practices into ML workflows isn't just a best practice—it's a necessity.
 
 As someone who’s spent over 15 years in Information Security and Operations, I’ve seen firsthand how traditional security approaches often fall short when applied to dynamic, data-driven AI systems. In this post, I’ll walk you through practical strategies for embedding security into your ML pipeline, with real-world examples and actionable takeaways.

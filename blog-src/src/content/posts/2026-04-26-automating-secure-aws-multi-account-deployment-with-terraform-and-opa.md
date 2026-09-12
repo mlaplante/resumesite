@@ -6,8 +6,6 @@ tags: []
 excerpt: "In today's cloud-native landscape, managing a single AWS account is often insufficient for most organizations. The best practice, driven by security,..."
 ---
 
-# Automating Secure AWS Multi-Account Deployment with Terraform and OPA
-
 In today's cloud-native landscape, managing a single AWS account is often insufficient for most organizations. The best practice, driven by security, compliance, and operational efficiency, is to adopt a multi-account strategy. However, simply having multiple accounts isn't enough; they must be provisioned and managed securely and consistently. This is where the power of Infrastructure as Code (IaC) with Terraform, combined with policy enforcement using Open Policy Agent (OPA), truly shines.
 
 This post will delve into how we can automate the secure deployment of an AWS multi-account structure using Terraform for provisioning and OPA for validating adherence to security policies *before* deployment.

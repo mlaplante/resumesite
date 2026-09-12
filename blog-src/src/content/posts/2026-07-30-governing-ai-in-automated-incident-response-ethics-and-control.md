@@ -8,8 +8,6 @@ tags: ["ai-governance", "incident-response", "ethics", "risk-management", "secur
 excerpt: "As organizations increasingly grapple with the speed and sophistication of cyber threats, the allure of Artificial Intelligence (AI) for automating..."
 ---
 
-# Governing AI in Automated Incident Response: Ethics and Control
-
 As organizations increasingly grapple with the speed and sophistication of cyber threats, the allure of Artificial Intelligence (AI) for automating incident response (IR) is undeniable. AI can analyze vast amounts of data, detect anomalies, and even initiate containment actions far faster than human teams. However, this power comes with significant ethical considerations and demands robust governance frameworks to ensure these systems operate responsibly and effectively.
 
 My experience has shown that simply deploying an AI-powered tool without a clear understanding of its decision-making process and potential impact is a recipe for disaster. We need to move beyond technical implementation and focus on the "why" and "how" these AI systems are governed.

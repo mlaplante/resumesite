@@ -6,8 +6,6 @@ tags: []
 excerpt: "AI is changing the security landscape at an unprecedented pace. Generative AI (GenAI) tools are now part of many cloud workflows, promising efficiency..."
 ---
 
-# Navigating AI-Powered Threats: Practical Strategies for Securing GenAI Tools in Cloud Environments
-
 AI is changing the security landscape at an unprecedented pace. Generative AI (GenAI) tools are now part of many cloud workflows, promising efficiency and innovation—but also introducing unique risks. As defenders, we must move quickly to understand and mitigate these threats. Here’s how you can secure GenAI tools in your cloud environments without slowing down your teams.
 
 ## Understanding the Risks

@@ -8,8 +8,6 @@ tags: ["firmware", "reverse-engineering", "ghidra", "supply-chain-security", "em
 excerpt: "In the ever-expanding landscape of digital threats, supply chain security has emerged as a critical battleground. As an SVP of Information Security..."
 ---
 
-# Deep Dive: Reverse Engineering Firmware with Ghidra for Supply Chain Security Audits
-
 In the ever-expanding landscape of digital threats, supply chain security has emerged as a critical battleground. As an SVP of Information Security and Operations, I've seen firsthand how vulnerabilities lurking deep within hardware and firmware can compromise an entire infrastructure. While we often focus on software dependencies, the firmware embedded in network devices, IoT gadgets, and critical infrastructure components presents an equally, if not more, insidious risk.
 
 Auditing firmware for malicious implants, backdoors, or critical vulnerabilities requires a specialized skillset and the right tools. Today, we're going to take a practical deep dive into using Ghidra, the open-source reverse engineering framework developed by the NSA, to analyze firmware images. This isn't about theoretical concepts; it's about getting our hands dirty with a real-world approach to supply chain security.

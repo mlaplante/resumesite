@@ -1,6 +1,7 @@
 import type { APIContext, GetStaticPaths } from 'astro';
 import { getCollection } from 'astro:content';
-import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import satori from 'satori';
@@ -13,6 +14,38 @@ import { formatDateLong } from '../../utils/format';
 // satori can parse them. Done once per build, on demand, then memoized.
 const here = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = resolve(here, '../../../public');
+
+// Rendered cards are cached on disk (blog-src/.cache/og/, gitignored) keyed by
+// everything that feeds the render: the card template version, the post's
+// title/category/date, and the font bytes. Rendering 180+ cards is ~80% of a
+// cold build's wall-clock time; with the cache warm only new or retitled
+// posts pay the satori → resvg → sharp cost. CI restores the directory via
+// actions/cache (see .github/workflows/ci.yml).
+//
+// Bump CARD_VERSION whenever buildCard() or the PNG encoding below changes,
+// otherwise cached cards keep the old look.
+const CARD_VERSION = 1;
+const CACHE_DIR = resolve(here, '../../../.cache/og');
+const FONT_FILES = ['poppins-400.woff2', 'poppins-600.woff2'] as const;
+const fontsHash = createHash('sha256');
+for (const file of FONT_FILES) fontsHash.update(readFileSync(`${PUBLIC}/fonts/poppins/${file}`));
+const FONTS_DIGEST = fontsHash.digest('hex').slice(0, 16);
+
+function cacheKey(title: string, category: string, date: string): string {
+  return createHash('sha256')
+    .update(JSON.stringify({ v: CARD_VERSION, fonts: FONTS_DIGEST, title, category, date }))
+    .digest('hex');
+}
+
+function readCached(key: string): Buffer | null {
+  const path = resolve(CACHE_DIR, `${key}.png`);
+  return existsSync(path) ? readFileSync(path) : null;
+}
+
+function writeCached(key: string, png: Buffer): void {
+  mkdirSync(CACHE_DIR, { recursive: true });
+  writeFileSync(resolve(CACHE_DIR, `${key}.png`), png);
+}
 
 let fontCache: Array<{ name: string; data: Buffer; weight: 400 | 600; style: 'normal' }> | null = null;
 
@@ -28,8 +61,8 @@ function freshBuffer(u8: Uint8Array): Buffer {
 
 async function loadFonts() {
   if (fontCache) return fontCache;
-  const regular = readFileSync(`${PUBLIC}/fonts/poppins/poppins-400.woff2`);
-  const semibold = readFileSync(`${PUBLIC}/fonts/poppins/poppins-600.woff2`);
+  const regular = readFileSync(`${PUBLIC}/fonts/poppins/${FONT_FILES[0]}`);
+  const semibold = readFileSync(`${PUBLIC}/fonts/poppins/${FONT_FILES[1]}`);
   fontCache = [
     { name: 'Poppins', data: freshBuffer(await decompress(regular)), weight: 400, style: 'normal' },
     { name: 'Poppins', data: freshBuffer(await decompress(semibold)), weight: 600, style: 'normal' },
@@ -124,13 +157,24 @@ function buildCard(title: string, category: string, date: string): SatoriNode {
 export async function GET({ props }: APIContext) {
   // Astro types `props` as `Record<string, any>` from getStaticPaths — narrow it.
   const post = (props as { post: { data: { title: string; category: string; date: Date } } }).post;
-  const fonts = await loadFonts();
+  const date = formatDateLong(post.data.date);
+  const key = cacheKey(post.data.title, post.data.category, date);
+  const png = readCached(key) ?? (await renderCard(post.data.title, post.data.category, date, key));
 
-  const card = buildCard(
-    post.data.title,
-    post.data.category,
-    formatDateLong(post.data.date),
-  );
+  // Use a fresh ArrayBuffer-backed Uint8Array so Response can accept it as a
+  // BodyInit without TS complaints.
+  const body = new Uint8Array(png);
+  return new Response(body, {
+    headers: {
+      'Content-Type': 'image/png',
+      'Cache-Control': 'public, max-age=604800, immutable',
+    },
+  });
+}
+
+async function renderCard(title: string, category: string, date: string, key: string): Promise<Buffer> {
+  const fonts = await loadFonts();
+  const card = buildCard(title, category, date);
 
   // Cast: satori's JSX type expects a React element shape. Our handcrafted
   // node uses the same field layout, but TS can't prove the equivalence.
@@ -152,13 +196,6 @@ export async function GET({ props }: APIContext) {
     .png({ palette: true, colors: 256, compressionLevel: 9 })
     .toBuffer();
 
-  // Use a fresh ArrayBuffer-backed Uint8Array so Response can accept it as a
-  // BodyInit without TS complaints.
-  const body = new Uint8Array(png);
-  return new Response(body, {
-    headers: {
-      'Content-Type': 'image/png',
-      'Cache-Control': 'public, max-age=604800, immutable',
-    },
-  });
+  writeCached(key, png);
+  return png;
 }

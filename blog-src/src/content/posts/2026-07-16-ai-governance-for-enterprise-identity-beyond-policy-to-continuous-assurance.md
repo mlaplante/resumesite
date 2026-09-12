@@ -8,8 +8,6 @@ tags: ["ai-governance", "identity-and-access-management", "continuous-assurance"
 excerpt: "The integration of Artificial Intelligence (AI) into enterprise identity and access management (IAM) is no longer a futuristic concept; it's a present..."
 ---
 
-# AI Governance for Enterprise Identity: Beyond Policy to Continuous Assurance
-
 The integration of Artificial Intelligence (AI) into enterprise identity and access management (IAM) is no longer a futuristic concept; it's a present reality. From AI-powered anomaly detection in user behavior analytics (UBA) to intelligent provisioning and de-provisioning, AI promises to enhance security, streamline operations, and improve user experience. However, with great power comes great responsibility – and significant risk. Without robust AI governance, enterprises risk introducing new vulnerabilities, bias, and compliance nightmares into the very core of their security infrastructure.
 
 Many organizations approach AI governance with a policy-centric mindset: define rules, document procedures, and conduct periodic audits. While essential, this approach is insufficient for the dynamic and evolving nature of AI in IAM. We need to move beyond static policies to a model of **continuous assurance**.

@@ -6,8 +6,6 @@ tags: []
 excerpt: "Optimizing database query performance is a perennial challenge for any engineer working with data-intensive applications. Slow queries can cripple app..."
 ---
 
-# Unlocking PostgreSQL Performance: A Deep Dive with eBPF and EXPLAIN ANALYZE
-
 Optimizing database query performance is a perennial challenge for any engineer working with data-intensive applications. Slow queries can cripple application responsiveness, exhaust server resources, and ultimately lead to a poor user experience. While PostgreSQL's `EXPLAIN ANALYZE` is an invaluable tool for understanding query execution plans, sometimes you need to go deeper—peering into the kernel to understand the true bottlenecks. This is where eBPF shines, offering unprecedented visibility into system calls, I/O, and CPU utilization directly related to your database workload.
 
 In this post, we'll explore how to combine the power of `EXPLAIN ANALYZE` with eBPF to diagnose and resolve complex PostgreSQL performance issues. We'll move beyond just looking at the query plan and dive into the underlying system behavior.

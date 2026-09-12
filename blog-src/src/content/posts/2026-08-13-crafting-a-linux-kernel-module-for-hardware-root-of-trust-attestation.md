@@ -8,8 +8,6 @@ tags: ["linux-kernel", "security", "attestation", "trusted-computing", "embedded
 excerpt: "In the realm of system security, the concept of a Hardware Root of Trust (HRoT) is paramount. It provides an immutable, verifiable starting point for..."
 ---
 
-# Crafting a Linux Kernel Module for Hardware Root of Trust Attestation
-
 In the realm of system security, the concept of a Hardware Root of Trust (HRoT) is paramount. It provides an immutable, verifiable starting point for a system's boot process, ensuring that the software running on the device hasn't been tampered with. While many modern systems incorporate HRoT features through technologies like Trusted Platform Modules (TPMs) or Secure Elements, interacting with these directly from user space can be complex and, in some cases, less secure due to the privileged nature of attestation operations.
 
 This post will delve into how we can write a custom Linux kernel module to interface with a hypothetical HRoT device and perform attestation. This approach allows us to keep sensitive operations within the kernel, closer to the hardware, and provide a secure, controlled interface to user-space applications.

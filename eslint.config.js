@@ -24,7 +24,7 @@ export default tseslint.config(
 
   // Node-side ESM: draft generators, PurgeCSS pass, tests, config files.
   {
-    files: ['scripts/**/*.{js,mjs}', 'blog-src/scripts/**/*.mjs', 'tests/**/*.{js,ts}', '*.{js,ts,mjs}'],
+    files: ['scripts/**/*.{js,mjs}', 'blog-src/scripts/**/*.mjs', 'blog-src/*.mjs', 'tests/**/*.{js,ts}', '*.{js,ts,mjs}'],
     languageOptions: {
       globals: { ...globals.node },
     },

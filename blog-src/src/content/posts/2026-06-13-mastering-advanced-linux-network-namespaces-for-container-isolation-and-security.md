@@ -8,8 +8,6 @@ tags: []
 excerpt: "As an SVP of Information Security and Operations, I’ve seen firsthand how critical robust isolation is for modern application deployments. While..."
 ---
 
-# Mastering Advanced Linux Network Namespaces for Container Isolation and Security
-
 As an SVP of Information Security and Operations, I’ve seen firsthand how critical robust isolation is for modern application deployments. While Docker and Kubernetes abstract much of this away, a deep understanding of the underlying Linux primitives, particularly network namespaces, is invaluable. It not only helps in troubleshooting but also in designing more secure and performant custom environments.
 
 Network namespaces are a fundamental building block for containerization. They provide a virtualized network stack for a group of processes, completely isolated from other network namespaces and the host system. Each namespace has its own network interfaces, IP addresses, routing tables, and firewall rules. This post will dive beyond the basics, exploring how to manually construct and manipulate network namespaces to achieve granular control over container networking and enhance security.

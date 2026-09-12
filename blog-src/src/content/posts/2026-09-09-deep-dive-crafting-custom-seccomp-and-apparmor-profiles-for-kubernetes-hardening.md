@@ -8,8 +8,6 @@ tags: ["kubernetes", "security", "hardening", "seccomp", "apparmor", "linux"]
 excerpt: "In the dynamic world of Kubernetes, security is paramount. While Kubernetes offers robust built-in security features, true hardening often requires..."
 ---
 
-# Deep Dive: Crafting Custom Seccomp and AppArmor Profiles for Kubernetes Hardening
-
 In the dynamic world of Kubernetes, security is paramount. While Kubernetes offers robust built-in security features, true hardening often requires going a layer deeper, directly interacting with the Linux kernel's security mechanisms. Two powerful tools for this are `seccomp` (Secure Computing Mode) and `AppArmor` (Application Armor). These allow us to fine-tune the system calls a container can make and the resources it can access, significantly reducing the attack surface.
 
 This post will guide you through crafting custom `seccomp` and `AppArmor` profiles, demonstrating how to apply them to your Kubernetes deployments for enhanced security.

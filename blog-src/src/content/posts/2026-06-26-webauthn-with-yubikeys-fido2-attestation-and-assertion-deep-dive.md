@@ -8,8 +8,6 @@ tags: []
 excerpt: "As an SVP of Information Security and Operations, I've spent years navigating the complexities of authentication. Passwords, even strong ones, remain..."
 ---
 
-# WebAuthn with YubiKeys: FIDO2 Attestation and Assertion Deep Dive
-
 As an SVP of Information Security and Operations, I've spent years navigating the complexities of authentication. Passwords, even strong ones, remain a persistent vulnerability. Multi-factor authentication (MFA) helps, but often introduces friction or relies on less secure second factors. This is where WebAuthn, coupled with FIDO2 security keys like YubiKeys, offers a powerful, phishing-resistant alternative.
 
 In this post, we're going beyond the "what" and diving into the "how." We'll explore the FIDO2 attestation and assertion flows, specifically focusing on how a relying party (your application) interacts with a YubiKey through the browser. My goal is to equip you with the technical understanding needed to implement this robust authentication mechanism effectively.

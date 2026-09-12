@@ -6,8 +6,6 @@ tags: []
 excerpt: "Incident response in the cloud can feel like a high-stakes game of whack-a-mole. Alerts fire, engineers scramble, and the clock ticks. While the cloud..."
 ---
 
-# Automating Cloud Incident Response with Serverless Functions and Infrastructure as Code
-
 Incident response in the cloud can feel like a high-stakes game of whack-a-mole. Alerts fire, engineers scramble, and the clock ticks. While the cloud offers incredible agility and scale, it also introduces new complexities in detection and containment. Manually executing response playbooks under pressure is not only prone to error but also slow. This is where automation, powered by serverless functions and Infrastructure as Code (IaC), becomes a game-changer.
 
 Imagine an incident where a compromised EC2 instance is detected exfiltrating data. A traditional response might involve an analyst manually isolating the instance, creating a forensic snapshot, and then initiating further investigation. With automation, this entire sequence can be triggered and executed in seconds, consistently, and without human intervention for the initial steps.

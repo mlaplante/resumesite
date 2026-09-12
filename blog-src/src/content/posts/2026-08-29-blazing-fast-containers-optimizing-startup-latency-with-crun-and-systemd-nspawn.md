@@ -8,8 +8,6 @@ tags: ["containers", "systemd", "linux", "performance", "security", "engineering
 excerpt: "In the world of microservices and serverless functions, container startup latency is a critical metric. Slow spin-up times can impact user experience,..."
 ---
 
-# Blazing Fast Containers: Optimizing Startup Latency with crun and systemd-nspawn
-
 In the world of microservices and serverless functions, container startup latency is a critical metric. Slow spin-up times can impact user experience, increase autoscaling costs, and degrade the responsiveness of event-driven architectures. While Docker and containerd are the de facto standards for container orchestration, sometimes their overhead is more than what's needed for specific, performance-sensitive use cases.
 
 Today, I want to dive into a powerful, yet often overlooked, combination for achieving near-instantaneous container startups: `crun` and `systemd-nspawn`. This duo leverages the strengths of Linux kernel features to provide lightweight, secure, and incredibly fast containerization.

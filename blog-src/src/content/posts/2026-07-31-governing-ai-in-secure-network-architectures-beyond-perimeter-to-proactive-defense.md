@@ -8,8 +8,6 @@ tags: ["ai-governance", "network-security", "zero-trust", "threat-detection", "s
 excerpt: "The increasing integration of Artificial Intelligence (AI) into core network functions—from intrusion detection systems (IDS) and Security Information..."
 ---
 
-# Governing AI in Secure Network Architectures: Beyond Perimeter to Proactive Defense
-
 The increasing integration of Artificial Intelligence (AI) into core network functions—from intrusion detection systems (IDS) and Security Information and Event Management (SIEM) platforms to network access control (NAC) and even firewall rule optimization—demands a fundamental shift in how we govern our secure network architectures. The traditional perimeter-centric defense, while still relevant, is insufficient against sophisticated, AI-augmented threats. We need a proactive, AI-aware governance model that embeds security and ethical considerations directly into the fabric of our network's AI capabilities.
 
 ## The Shifting Landscape: AI as Both Defender and Attacker

@@ -8,8 +8,6 @@ tags: []
 excerpt: "In the world of system administration and information security, knowing what is happening on your file system, and when, is paramount. Whether you're..."
 ---
 
-# Demystifying `inotify`: Real-time File System Monitoring for Security and Operations
-
 In the world of system administration and information security, knowing *what* is happening on your file system, and *when*, is paramount. Whether you're tracking unauthorized file modifications, monitoring log file growth, or triggering automated responses to new data, real-time file system events provide critical visibility. This is where `inotify` comes in – a powerful Linux kernel subsystem that allows applications to monitor file system events efficiently and asynchronously.
 
 Unlike polling, where an application repeatedly checks a directory for changes, `inotify` is event-driven. Your application registers interest in specific events on files or directories, and the kernel notifies it only when those events occur. This is far more efficient, reducing CPU cycles and I/O operations, making it ideal for high-performance monitoring.

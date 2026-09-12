@@ -8,8 +8,6 @@ tags: ["ai-governance", "kubernetes", "container-security", "secure-architecture
 excerpt: "The rise of AI in enterprise applications, particularly within containerized environments, introduces a new frontier for security and governance...."
 ---
 
-# AI Governance for Secure Container Orchestration: A Kube-Native Approach
-
 The rise of AI in enterprise applications, particularly within containerized environments, introduces a new frontier for security and governance. While Kubernetes offers robust orchestration capabilities, integrating AI models brings unique challenges related to data provenance, model integrity, and runtime security. This post will explore how to establish effective AI governance within a Kubernetes-native framework, focusing on practical, actionable strategies to secure your AI/ML workloads.
 
 ## The Intersection of AI, Kubernetes, and Governance

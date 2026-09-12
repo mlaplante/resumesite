@@ -8,8 +8,6 @@ tags: ["ai-governance", "explainable-ai", "threat-detection", "security-operatio
 excerpt: "Artificial Intelligence (AI) is rapidly becoming indispensable in modern threat detection, sifting through vast quantities of data to identify..."
 ---
 
-# Governing Explainable AI in Threat Detection: From Algorithm to Actionable Insight
-
 Artificial Intelligence (AI) is rapidly becoming indispensable in modern threat detection, sifting through vast quantities of data to identify anomalies and potential attacks. However, the "black box" nature of many advanced AI models presents a significant challenge, particularly in a security context where understanding *why* a decision was made is paramount. This is where Explainable AI (XAI) comes in. But for XAI to be truly effective in threat detection, it needs robust governance. It's not enough to have an explainable algorithm; we need a governed process to translate that explanation into actionable security insights.
 
 ## The Imperative for Explainability in Threat Detection

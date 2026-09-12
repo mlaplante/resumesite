@@ -3,12 +3,8 @@ title: "Securing Generative AI Workflows: Practical Strategies for Integrating A
 date: 2026-04-05
 category: "thought-leadership"
 tags: []
-excerpt: "Securing Generative AI Workflows: Practical Strategies for Integrating AI Models into Your DevSecOps Pipeline
-========================================..."
+excerpt: "Practical strategies for securing generative AI models inside a DevSecOps pipeline: threat modeling, data and prompt controls, supply-chain checks, and runtime monitoring."
 ---
-
-Securing Generative AI Workflows: Practical Strategies for Integrating AI Models into Your DevSecOps Pipeline
-=============================================================================================================
 
 Generative AI is transforming how businesses innovate, automate, and scale. But with great power comes great responsibility—especially when it comes to security. Integrating AI models into your DevSecOps pipeline isn’t just about deploying impressive technology; it’s about ensuring those models don’t become vectors for risk. In this post, I’ll share actionable strategies for securing generative AI workflows, drawing from real-world experience in information security and operations.
 

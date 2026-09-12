@@ -6,8 +6,6 @@ tags: []
 excerpt: "Zero-downtime deployments are the holy grail of modern application delivery pipelines. But when it comes to databases, the challenge ratchets up: sche..."
 ---
 
-# Automating Zero-Downtime Database Migrations with Blue-Green Deployment in Kubernetes
-
 Zero-downtime deployments are the holy grail of modern application delivery pipelines. But when it comes to databases, the challenge ratchets up: schema changes, data migrations, and version mismatches can all introduce risk. Today, I’ll walk through how to automate zero-downtime database migrations using blue-green deployment patterns in Kubernetes. We’ll dive into the technical weeds — config examples, migration orchestration, and the operational pitfalls you need to watch for.
 
 ## Why Zero-Downtime Database Migrations Are Hard

@@ -6,8 +6,6 @@ tags: []
 excerpt: "Building a Kubernetes cluster is one thing; building a hardened Kubernetes cluster is an entirely different beast. In today's threat landscape, simply..."
 ---
 
-# From Zero to Secure: Building a Hardened Kubernetes Cluster with GitOps and eBPF for Runtime Security
-
 Building a Kubernetes cluster is one thing; building a *hardened* Kubernetes cluster is an entirely different beast. In today's threat landscape, simply deploying a cluster and hoping for the best is a recipe for disaster. We need to bake security in from the ground up, automate its enforcement, and gain deep visibility into runtime behavior.
 
 This post isn't about high-level concepts. We're going to roll up our sleeves and discuss a practical approach to building a secure Kubernetes cluster, leveraging GitOps for consistent configuration and eBPF for unparalleled runtime security monitoring and enforcement.

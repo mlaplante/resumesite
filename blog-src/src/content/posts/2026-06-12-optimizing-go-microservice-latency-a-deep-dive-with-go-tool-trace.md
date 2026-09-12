@@ -8,8 +8,6 @@ tags: []
 excerpt: "In the world of microservices, latency is king. Even small improvements can significantly impact user experience and system throughput. While Go's..."
 ---
 
-# Optimizing Go Microservice Latency: A Deep Dive with `go tool trace` and Custom Spans
-
 In the world of microservices, latency is king. Even small improvements can significantly impact user experience and system throughput. While Go's runtime is renowned for its performance, understanding and pinpointing latency bottlenecks in complex, distributed systems requires more than just educated guesses. This is where `go tool trace` becomes an invaluable ally.
 
 Many engineers know `go tool trace` for visualizing goroutine activity, garbage collection, and scheduler events. However, its true power for microservice optimization lies in its ability to incorporate custom application-level spans. This allows us to correlate high-level business logic with low-level runtime events, providing a holistic view of execution flow and potential contention points.

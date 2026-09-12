@@ -8,8 +8,6 @@ tags: ["ssh", "security", "fido2", "openssh", "authentication"]
 excerpt: "As security professionals, we're constantly evaluating and enhancing our authentication mechanisms. SSH, the backbone of remote administration, is a..."
 ---
 
-# SSH Hardening with FIDO2 and OpenSSH 8.2+: Key Types and Agent Forwarding
-
 As security professionals, we're constantly evaluating and enhancing our authentication mechanisms. SSH, the backbone of remote administration, is a prime target. While SSH key pairs are a significant improvement over passwords, the advent of FIDO2-based authentication with OpenSSH 8.2+ offers a new frontier in hardening access. This post dives into leveraging FIDO2 for SSH, focusing on key types, agent forwarding, and practical implementation details.
 
 ## The FIDO2 Advantage for SSH

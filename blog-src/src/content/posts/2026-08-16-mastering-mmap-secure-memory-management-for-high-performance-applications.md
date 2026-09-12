@@ -8,8 +8,6 @@ tags: ["memory-management", "system-programming", "security", "performance", "li
 excerpt: "As an SVP of Information Security and Operations, I've spent years observing how seemingly subtle choices in system design can have profound impacts..."
 ---
 
-# Mastering mmap: Secure Memory Management for High-Performance Applications
-
 As an SVP of Information Security and Operations, I've spent years observing how seemingly subtle choices in system design can have profound impacts on both performance and security. One such critical, yet often underutilized, system call is `mmap`. For high-performance applications, especially those dealing with large datasets or requiring efficient inter-process communication, `mmap` isn't just a convenience – it's a fundamental building block. But like any powerful tool, its mastery requires a deep understanding of its mechanisms and careful consideration of its security implications.
 
 ## Why `mmap`? Beyond `read()` and `write()`

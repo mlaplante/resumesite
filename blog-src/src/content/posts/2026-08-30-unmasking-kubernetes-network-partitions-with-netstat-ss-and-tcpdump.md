@@ -8,8 +8,6 @@ tags: ["kubernetes", "networking", "debugging", "operations", "incident-response
 excerpt: "Network partitions in Kubernetes can be notoriously difficult to diagnose. A pod might be \"running\" according to kubectl get pods, but its application..."
 ---
 
-# Unmasking Kubernetes Network Partitions with `netstat`, `ss`, and `tcpdump`
-
 Network partitions in Kubernetes can be notoriously difficult to diagnose. A pod might be "running" according to `kubectl get pods`, but its application remains unreachable or exhibits sporadic connectivity issues. This often points to a deeper networking problem, where one part of your cluster can't communicate effectively with another. While Kubernetes provides high-level abstractions, sometimes you need to drop down to the host level and use classic Linux networking tools to uncover the truth.
 
 In this post, we'll explore how to leverage `netstat`, `ss`, and `tcpdump` directly on Kubernetes nodes to debug network partitions. These tools, while venerable, remain indispensable for understanding the actual network state, bypassing the abstractions that can sometimes obscure the root cause.

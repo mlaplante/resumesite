@@ -6,8 +6,6 @@ tags: []
 excerpt: "Cloud environments have revolutionized how organizations deploy, scale, and manage their infrastructure. But as the cloud expands, so do the attack su..."
 ---
 
-# Leveraging AI for Real-Time Threat Detection in Cloud Environments: Practical Approaches and Pitfalls
-
 Cloud environments have revolutionized how organizations deploy, scale, and manage their infrastructure. But as the cloud expands, so do the attack surfaces and the speed at which threats emerge. Traditional security approaches often lag behind evolving tactics. Enter AI-powered threat detection—a promising way to identify attacks as they happen, before they can do real damage.
 
 In this post, I’ll explore practical ways to leverage AI for real-time threat detection in cloud environments, drawing from my experience leading security operations. I’ll also highlight common pitfalls and how to avoid them.

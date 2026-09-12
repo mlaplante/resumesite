@@ -6,8 +6,6 @@ tags: []
 excerpt: "Database schema changes are one of the trickiest parts of modern application delivery. Unlike stateless code updates, schema migrations risk breaking..."
 ---
 
-# Automating Zero-Downtime Database Schema Migrations with GitOps and Kubernetes
-
 Database schema changes are one of the trickiest parts of modern application delivery. Unlike stateless code updates, schema migrations risk breaking production if not handled carefully. In a cloud-native world, where deployments are frequent and infrastructure is managed declaratively, the challenge isn’t just *how* to migrate schemas, but *how to do it reliably, repeatably, and without downtime*.
 
 Today, let’s dive into practical strategies for automating zero-downtime database schema migrations using GitOps workflows and Kubernetes. I’ll share concrete examples and hands-on engineering detail you can apply to your own environments.

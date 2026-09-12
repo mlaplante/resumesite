@@ -10,8 +10,6 @@ excerpt: "Building Secure Microservices: Rust's Capability-Based Security Model
  In the world of microservices, managing access control is paramount...."
 ---
 
- # Building Secure Microservices: Rust's Capability-Based Security Model
- 
  In the world of microservices, managing access control is paramount. Traditional role-based access control (RBAC) can become unwieldy as systems grow, leading to complex permission matrices and potential security gaps. Today, let's dive into a more granular and robust approach: implementing a **capability-based security model in Rust**.
  
  ## What is Capability-Based Security?

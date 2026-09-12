@@ -28,6 +28,11 @@ export const getStaticPaths = (async () => {
 
 const { tag, posts } = Astro.props;
 const siteUrl = SITE_URL;
+// Two thirds of tags are used by a single post, and a one-card tag page is
+// thin duplicate content next to the post itself. Keep those crawlable for
+// navigation but out of the index; a tag becomes indexable once it groups
+// several posts.
+const noindex = posts.length < 2;
 
 const breadcrumbSchema = safeJsonLd(breadcrumbList([
   { name: 'Home', item: siteUrl },
@@ -39,6 +44,7 @@ const breadcrumbSchema = safeJsonLd(breadcrumbList([
 <BlogLayout
   title={`Tag: ${tag}`}
   description={`${posts.length} post${posts.length === 1 ? '' : 's'} tagged "${tag}".`}
+  noindex={noindex}
 >
   <Fragment slot="head">
     <script type="application/ld+json" set:html={breadcrumbSchema} />

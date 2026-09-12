@@ -8,8 +8,6 @@ tags: ["go", "profiling", "performance", "microservices", "pprof", "observabilit
 excerpt: "In the world of high-performance, latency-sensitive microservices, a few milliseconds can make a substantial difference. While Go's built-in pprof..."
 ---
 
-# Building a Custom Go Runtime Profiler for Latency-Sensitive Microservices
-
 In the world of high-performance, latency-sensitive microservices, a few milliseconds can make a substantial difference. While Go's built-in `pprof` offers an incredible array of profiling capabilities, there are scenarios where you need to go a step further. You might need to correlate specific application events with runtime behavior, profile only a subset of requests, or capture very short-lived spikes that standard sampling might miss. This is where building a custom, event-driven profiler can shine.
 
 Let's explore how we can instrument our Go applications to selectively capture and analyze runtime profiles, giving us surgical precision in diagnosing performance bottlenecks.

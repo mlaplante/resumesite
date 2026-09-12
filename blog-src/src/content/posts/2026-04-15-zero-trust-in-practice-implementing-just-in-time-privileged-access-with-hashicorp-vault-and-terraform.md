@@ -6,8 +6,6 @@ tags: []
 excerpt: "“Zero Trust” is a buzzword that’s easy to say, but much trickier to implement. At its core, Zero Trust means never trust, always verify—but what does..."
 ---
 
-# Zero Trust in Practice: Implementing Just-in-Time Privileged Access with HashiCorp Vault and Terraform
-
 “Zero Trust” is a buzzword that’s easy to say, but much trickier to implement. At its core, Zero Trust means *never trust, always verify*—but what does that really look like for privileged access in an engineering organization? In this post, let’s get practical: we’ll walk through building just-in-time (JIT) privileged access with [HashiCorp Vault](https://www.vaultproject.io/) and [Terraform](https://www.terraform.io/), enabling ephemeral, auditable credentials for sensitive operations.
 
 ## The Problem: Standing Privileges Are a Liability

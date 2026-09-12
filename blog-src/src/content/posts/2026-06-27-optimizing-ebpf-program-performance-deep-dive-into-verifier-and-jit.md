@@ -8,8 +8,6 @@ tags: []
 excerpt: "eBPF has revolutionized how we observe, secure, and network Linux systems. Its power lies in its ability to execute custom bytecode safely and..."
 ---
 
-# Optimizing eBPF Program Performance: A Deep Dive into Verifier and JIT Compiler Internals
-
 eBPF has revolutionized how we observe, secure, and network Linux systems. Its power lies in its ability to execute custom bytecode safely and efficiently within the kernel. But "efficiently" isn't a given; it's something we, as engineers, must actively optimize for. This post will peel back the layers and explore two critical components that dictate eBPF program performance: the Verifier and the Just-In-Time (JIT) compiler. Understanding their internals is key to writing faster, more robust eBPF programs.
 
 ## The eBPF Verifier: Your Kernel's Gatekeeper

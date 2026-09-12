@@ -8,8 +8,6 @@ tags: []
 excerpt: "As security professionals and system administrators, understanding what's happening under the hood of our Linux systems is paramount. When an incident..."
 ---
 
-# From Strace to eBPF: Advanced Linux System Call Tracing for Security Forensics
-
 As security professionals and system administrators, understanding what's happening under the hood of our Linux systems is paramount. When an incident occurs or when we need to deeply inspect system behavior, tracing system calls is a fundamental technique. For years, `strace` has been the go-to tool for this. However, the landscape of system observability has evolved dramatically, and `eBPF` (extended Berkeley Packet Filter) offers a powerful, more performant, and flexible alternative for advanced system call tracing, particularly in security forensics.
 
 ## The Familiar Friend: `strace`

@@ -6,8 +6,6 @@ tags: []
 excerpt: "Incident response is a race against time. The faster you can detect, contain, and eradicate a threat, the less impact it will have on your organizatio..."
 ---
 
-# Automating Incident Response Playbooks with Serverless Functions and Infrastructure as Code
-
 Incident response is a race against time. The faster you can detect, contain, and eradicate a threat, the less impact it will have on your organization. While well-defined playbooks are crucial for guiding your team through a crisis, relying solely on manual execution can introduce delays, human error, and inconsistencies. This is where automation, specifically leveraging serverless functions and Infrastructure as Code (IaC), becomes a game-changer.
 
 As an SVP of Information Security and Operations, I've seen firsthand how automating these repetitive, yet critical, steps can drastically improve response times and free up security engineers to focus on more complex analysis and decision-making.

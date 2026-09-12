@@ -8,8 +8,6 @@ tags: []
 excerpt: "Embedded systems, by their very nature, often operate with stringent resource constraints. Limited memory, CPU cycles, and non-volatile storage are..."
 ---
 
-# Crafting a Secure Key-Value Store in Rust for Embedded Systems
-
 Embedded systems, by their very nature, often operate with stringent resource constraints. Limited memory, CPU cycles, and non-volatile storage are common challenges. When it comes to security, these constraints can make traditional database solutions or complex file systems impractical. Yet, many embedded applications require a robust, secure way to store configuration parameters, cryptographic keys, or small pieces of sensitive data persistently.
 
 This is where a custom, lightweight key-value (KV) store, built with security in mind, becomes invaluable. Rust, with its memory safety guarantees, performance characteristics, and excellent tooling for embedded development, is an ideal language for this task.

@@ -8,8 +8,6 @@ tags: ["rust", "lsm-tree", "key-value", "data-structures", "security", "performa
 excerpt: "In the realm of high-performance data storage, the Log-Structured Merge-tree (LSM-tree) reigns supreme for its write-optimized architecture and..."
 ---
 
-# Building a Secure, High-Performance Key-Value Store with LSM-Trees in Rust
-
 In the realm of high-performance data storage, the Log-Structured Merge-tree (LSM-tree) reigns supreme for its write-optimized architecture and ability to handle massive data volumes. From RocksDB to Cassandra, LSM-trees power many of today's most demanding applications. But how do you build one, especially with a focus on both performance and security, using a language like Rust?
 
 This post will dive into the core concepts of building a secure, high-performance key-value store leveraging LSM-trees in Rust. We'll explore the fundamental components, discuss performance considerations, and highlight security aspects inherent in its design.

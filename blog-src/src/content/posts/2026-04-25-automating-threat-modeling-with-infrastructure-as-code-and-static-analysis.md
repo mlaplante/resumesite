@@ -6,8 +6,6 @@ tags: []
 excerpt: "Threat modeling is a critical exercise for identifying potential security vulnerabilities early in the development lifecycle. However, it's often perc..."
 ---
 
-# Automating Threat Modeling with Infrastructure as Code and Static Analysis
-
 Threat modeling is a critical exercise for identifying potential security vulnerabilities early in the development lifecycle. However, it's often perceived as a manual, time-consuming process that struggles to keep pace with agile development and rapidly evolving infrastructure. What if we could embed threat modeling directly into our automated CI/CD pipelines, making it a continuous, proactive activity rather than a periodic chore?
 
 The convergence of Infrastructure as Code (IaC) and static analysis tools offers a powerful pathway to automate significant aspects of threat modeling. By treating our infrastructure definitions as code and subjecting them to rigorous automated analysis, we can identify architectural weaknesses and misconfigurations that represent potential threats, long before they're deployed.

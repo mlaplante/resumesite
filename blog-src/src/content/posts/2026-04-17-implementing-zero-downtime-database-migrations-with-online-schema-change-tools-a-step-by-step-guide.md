@@ -6,8 +6,6 @@ tags: []
 excerpt: "Database schema changes are notoriously risky in production environments. Even adding an index or modifying a column can trigger downtime, lock tables..."
 ---
 
-# Implementing Zero-Downtime Database Migrations with Online Schema Change Tools: A Step-by-Step Guide
-
 Database schema changes are notoriously risky in production environments. Even adding an index or modifying a column can trigger downtime, lock tables, or slow down your application. As your infrastructure scales, the stakes get higher—so how do you safely evolve your database schema without impacting availability?
 
 Let’s walk through a pragmatic approach to zero-downtime migrations using online schema change tools, with real-world examples and actionable steps.

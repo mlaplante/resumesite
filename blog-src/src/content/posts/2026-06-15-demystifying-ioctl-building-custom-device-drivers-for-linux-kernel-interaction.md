@@ -8,8 +8,6 @@ tags: []
 excerpt: "As security professionals and system engineers, we often operate at the intersection of userland applications and kernel-level functionality. While..."
 ---
 
-# Demystifying `ioctl`: Building Custom Device Drivers for Linux Kernel Interaction
-
 As security professionals and system engineers, we often operate at the intersection of userland applications and kernel-level functionality. While standard system calls cover a wide range of operations, there are times when interacting with custom hardware or specialized kernel modules requires a more direct, bespoke communication channel. This is where `ioctl` (input/output control) shines – it's the Swiss Army knife for user-space programs to send arbitrary commands and data to device drivers.
 
 Let's dive into how `ioctl` works, why it's crucial for custom device drivers, and how you can implement it for practical kernel interaction.

@@ -8,8 +8,6 @@ tags: ["linux", "security", "sandboxing", "landlock", "syscall-filtering", "c-pr
 excerpt: "In the realm of application security, the principle of least privilege is paramount. Restricting what an application can access, especially its..."
 ---
 
-# Demystifying Landlock: Crafting Fine-Grained Filesystem Sandboxes for Linux Applications
-
 In the realm of application security, the principle of least privilege is paramount. Restricting what an application can access, especially its interaction with the filesystem, significantly reduces the attack surface. While tools like `chroot` and `seccomp` provide some level of isolation, they often fall short when truly fine-grained control over filesystem access is required. This is where `landlock` steps in, offering a robust, kernel-level mechanism to define precise access rules for a process and its children.
 
 `landlock` is a Linux Security Module (LSM) that allows unprivileged processes to create and enforce their own security policies. Unlike `seccomp` which filters system calls, `landlock` operates at a higher semantic level, defining what *types* of filesystem operations are permitted on *specific* filesystem objects (files or directories). This distinction is crucial: you're not just blocking `openat`, but saying "this process can only read from `/etc/config` and write to `/var/log/myapp.log`."

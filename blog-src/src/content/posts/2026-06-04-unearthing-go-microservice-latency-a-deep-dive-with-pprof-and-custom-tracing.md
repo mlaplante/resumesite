@@ -6,8 +6,6 @@ tags: []
 excerpt: "In the world of high-performance microservices, every millisecond counts. Go, with its concurrency primitives and efficient runtime, is a popular choi..."
 ---
 
-# Unearthing Go Microservice Latency: A Deep Dive with `pprof` and Custom Tracing
-
 In the world of high-performance microservices, every millisecond counts. Go, with its concurrency primitives and efficient runtime, is a popular choice for building services that demand low latency. However, even well-written Go applications can develop performance bottlenecks over time. When your service's response times start creeping up, you need robust tools and techniques to pinpoint the root cause. This post will walk through a practical approach to optimizing Go microservice latency, combining the power of the built-in `pprof` profiler with strategic custom tracing.
 
 ## The Mystery of the Slow Endpoint

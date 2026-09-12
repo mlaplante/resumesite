@@ -6,8 +6,6 @@ tags: []
 excerpt: "A kernel panic is arguably one of the most dreaded events for any system administrator or engineer. It means your Linux kernel has encountered a criti..."
 ---
 
-# Debugging Kernel Panics: A Hands-On Guide to `kdump` and `crash`
-
 A kernel panic is arguably one of the most dreaded events for any system administrator or engineer. It means your Linux kernel has encountered a critical, unrecoverable error and has stopped all operations. The system freezes, perhaps displaying a cryptic message on the console, and then reboots—leaving you with a blank slate and a gnawing question: "What just happened?"
 
 While the immediate impact is clear, the underlying cause is often elusive. This is where `kdump` and `crash` become indispensable tools in your debugging arsenal. `kdump` is a kernel crash dumping mechanism that captures the state of the system's memory at the time of a panic. `crash` is an interactive utility that allows you to analyze this memory dump, providing a window into the kernel's internal state.

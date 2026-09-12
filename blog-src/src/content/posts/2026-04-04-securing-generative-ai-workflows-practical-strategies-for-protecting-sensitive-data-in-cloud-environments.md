@@ -6,8 +6,6 @@ tags: []
 excerpt: "Generative AI has become a cornerstone of innovation, enabling organizations to automate processes, generate content, and unlock new business insights..."
 ---
 
-# Securing Generative AI Workflows: Practical Strategies for Protecting Sensitive Data in Cloud Environments
-
 Generative AI has become a cornerstone of innovation, enabling organizations to automate processes, generate content, and unlock new business insights. But as these workflows increasingly move to cloud environments, the risks to sensitive data grow exponentially. In my 15+ years leading information security, I’ve seen firsthand how the rapid adoption of new technologies can outpace security controls—and generative AI is no exception.
 
 Let’s cut through the hype and focus on practical strategies you can implement today to secure your generative AI workflows in the cloud.

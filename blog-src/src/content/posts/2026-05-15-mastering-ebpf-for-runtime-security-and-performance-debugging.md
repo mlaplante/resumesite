@@ -6,8 +6,6 @@ tags: []
 excerpt: "eBPF has revolutionized how we interact with the Linux kernel, moving beyond theoretical discussions to become an indispensable tool for engineers foc..."
 ---
 
-# Mastering eBPF for Runtime Security and Performance Debugging
-
 eBPF has revolutionized how we interact with the Linux kernel, moving beyond theoretical discussions to become an indispensable tool for engineers focused on runtime security and performance debugging. For those of us who've spent years grappling with the limitations of traditional kernel modules or the overhead of user-space agents, eBPF offers a refreshing, powerful, and safe alternative.
 
 At its core, eBPF allows us to run sandboxed programs within the kernel without modifying kernel source code or loading kernel modules. This capability unlocks unprecedented visibility and control, enabling us to observe and react to system events with minimal overhead. Let's dive into how we can leverage this technology in practical scenarios.

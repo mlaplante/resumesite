@@ -8,8 +8,6 @@ tags: []
 excerpt: "The rapid adoption of Artificial Intelligence (AI) across enterprise functions, including security operations, brings unprecedented opportunities –..."
 ---
 
-# Navigating AI Risk: Practical NIST AI RMF Adoption for SecOps
-
 The rapid adoption of Artificial Intelligence (AI) across enterprise functions, including security operations, brings unprecedented opportunities – and significant new risks. While AI can supercharge threat detection and automate responses, its inherent complexities introduce challenges related to bias, transparency, explainability, and potential misuse. To effectively manage these risks, organizations need a structured approach. This is where frameworks like the NIST AI Risk Management Framework (AI RMF 1.0) become invaluable.
 
 As an SVP of Information Security and Operations, I've seen firsthand how crucial it is to integrate AI risk management into existing security practices. The NIST AI RMF provides a voluntary, flexible, and comprehensive framework designed to help organizations manage risks associated with AI systems. It's not a prescriptive checklist, but rather a guide to fostering trustworthy AI. Let's explore practical steps for adopting the NIST AI RMF within your Security Operations Center (SOC).

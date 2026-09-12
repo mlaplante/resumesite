@@ -8,8 +8,6 @@ tags: ["ai-security", "devsecops", "mlsecops", "secure-architecture", "risk-mana
 excerpt: "The rapid adoption of Artificial Intelligence (AI) and Machine Learning (ML) is transforming industries, but it also introduces a new frontier of..."
 ---
 
-# Securing the AI Development Lifecycle: A Practical DevSecOps Approach
-
 The rapid adoption of Artificial Intelligence (AI) and Machine Learning (ML) is transforming industries, but it also introduces a new frontier of security challenges. As an SVP of Information Security and Operations, I've seen firsthand that integrating security late in the AI development lifecycle is a recipe for disaster. Just as traditional software development moved to DevSecOps, AI/ML development (often termed MLOps) requires a similar shift: MLSecOps.
 
 This post will outline a practical DevSecOps approach to securing the AI development lifecycle, ensuring security is baked in from conception to deployment and beyond.

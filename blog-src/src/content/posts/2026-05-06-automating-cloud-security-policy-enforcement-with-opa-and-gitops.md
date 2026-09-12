@@ -6,8 +6,6 @@ tags: []
 excerpt: "In the dynamic landscape of cloud infrastructure, manual security policy enforcement is a recipe for drift, inconsistency, and ultimately, compromise...."
 ---
 
-# Automating Cloud Security Policy Enforcement with OPA and GitOps
-
 In the dynamic landscape of cloud infrastructure, manual security policy enforcement is a recipe for drift, inconsistency, and ultimately, compromise. As environments scale and change velocity increases, relying on human intervention to validate every configuration against security baselines becomes untenable. This is where the powerful combination of Open Policy Agent (OPA) and GitOps principles shines, offering a robust, automated framework for continuous security policy enforcement.
 
 As security and operations professionals, our goal isn't to be the "department of no," but rather the "department of secure enablement." We want to empower development teams to innovate quickly, knowing that foundational security guardrails are automatically in place.

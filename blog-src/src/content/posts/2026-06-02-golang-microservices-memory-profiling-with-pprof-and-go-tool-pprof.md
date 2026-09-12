@@ -6,8 +6,6 @@ tags: []
 excerpt: "Golang microservices are celebrated for their performance and efficiency, but even the most well-architected systems can suffer from memory bloat if n..."
 ---
 
-# Golang Microservices: Memory Profiling with `pprof` and `go tool pprof`
-
 Golang microservices are celebrated for their performance and efficiency, but even the most well-architected systems can suffer from memory bloat if not carefully managed. Uncontrolled memory usage can lead to increased infrastructure costs, reduced throughput, and even service instability. Understanding and addressing memory consumption is a critical skill for any Go developer operating services in production.
 
 In this post, we'll take a deep dive into memory profiling for Go microservices, focusing on the powerful `pprof` package and its companion `go tool pprof`. We'll walk through a practical example, generating a memory profile, analyzing the output, and identifying potential areas for optimization.

@@ -6,8 +6,6 @@ tags: []
 excerpt: "Keeping secrets safe in Kubernetes is a critical task—but keeping them fresh is just as important. Stale credentials are a security risk, but manual r..."
 ---
 
-# Automating Secrets Rotation in Kubernetes with External Secrets and GitOps Workflows
-
 Keeping secrets safe in Kubernetes is a critical task—but keeping them fresh is just as important. Stale credentials are a security risk, but manual rotation is tedious and error-prone. Fortunately, we can automate secrets rotation by combining External Secrets and GitOps workflows. Let’s walk through how to build a robust, automated secrets management pipeline that fits right into your Kubernetes deployment practices.
 
 ## Why Automate Secrets Rotation?

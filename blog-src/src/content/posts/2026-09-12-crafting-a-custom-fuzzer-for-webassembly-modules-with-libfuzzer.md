@@ -8,8 +8,6 @@ tags: ["webassembly", "fuzzing", "security", "libfuzzer", "wasm"]
 excerpt: "WebAssembly (Wasm) has emerged as a powerful, performant, and secure compilation target for the web and beyond. Its sandboxed execution environment..."
 ---
 
-# Crafting a Custom Fuzzer for WebAssembly Modules with libFuzzer
-
 WebAssembly (Wasm) has emerged as a powerful, performant, and secure compilation target for the web and beyond. Its sandboxed execution environment and compact binary format make it appealing for various applications, from client-side web apps to serverless functions and even blockchain smart contracts. However, with great power comes the need for robust security, and like any complex binary format, Wasm modules can harbor vulnerabilities.
 
 Traditional testing methods often struggle to uncover subtle edge cases or unexpected interactions within Wasm modules. This is where fuzzing shines. Fuzzing is an automated software testing technique that involves feeding a program with large amounts of random or semi-random data to discover bugs, crashes, or security vulnerabilities. For Wasm, this means generating malformed or unexpected Wasm binaries and observing how a Wasm runtime or parser handles them.

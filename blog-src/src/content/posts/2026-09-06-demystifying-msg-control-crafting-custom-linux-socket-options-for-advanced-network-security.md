@@ -8,8 +8,6 @@ tags: ["linux-networking", "sockets", "network-security", "c-programming", "adva
 excerpt: "As an SVP of Information Security and Operations, I've spent years diving deep into the internals of systems, understanding not just what they do, but..."
 ---
 
-# Demystifying msg_control: Crafting Custom Linux Socket Options for Advanced Network Security
-
 As an SVP of Information Security and Operations, I've spent years diving deep into the internals of systems, understanding not just *what* they do, but *how* they do it. When it comes to network security, the standard toolkit often suffices, but there are times when you need to go beyond `setsockopt` and `getsockopt` to truly control the behavior of your network interactions. This is where `msg_control` comes into play, offering a powerful, yet often overlooked, mechanism for exchanging auxiliary data with the kernel during socket operations.
 
 Think of `msg_control` as a side channel for your `sendmsg` and `recvmsg` calls. While the main buffer handles your application data, `msg_control` allows you to send or receive metadata, such as file descriptors, credentials, or even packet information, directly from the kernel. This capability opens up a world of possibilities for advanced network security features, custom packet handling, and fine-grained control that standard socket options simply can't provide.

@@ -8,8 +8,6 @@ tags: []
 excerpt: "File Integrity Monitoring (FIM) is a cornerstone of any robust security strategy. Detecting unauthorized changes to critical system files, binaries,..."
 ---
 
-# Real-time File Integrity with `fanotify` and LSMs
-
 File Integrity Monitoring (FIM) is a cornerstone of any robust security strategy. Detecting unauthorized changes to critical system files, binaries, and configuration files can be the difference between a minor incident and a full-blown breach. Traditional FIM often relies on periodic scans and cryptographic hashes, which, while valuable, introduce a detection lag. In a high-stakes environment, real-time detection is paramount.
 
 This post dives into how we can leverage the Linux kernel's `fanotify` subsystem and Linux Security Modules (LSMs) to build a powerful, real-time FIM solution. We'll explore the technical details and provide actionable examples.

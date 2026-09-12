@@ -8,8 +8,6 @@ tags: []
 excerpt: "In the realm of information security, handling sensitive data is a constant challenge. Whether it's cryptographic keys, passwords, or proprietary..."
 ---
 
-# Secure Ephemeral Memory With Memfd_create and Seccomp
-
 In the realm of information security, handling sensitive data is a constant challenge. Whether it's cryptographic keys, passwords, or proprietary algorithms, we need robust mechanisms to protect this information from unauthorized access. While many solutions focus on disk encryption or network security, a critical attack surface often overlooked is the memory space of a running process. This is where `memfd_create` and `seccomp` come into play, offering a powerful combination for creating secure, ephemeral memory regions.
 
 ## The Problem: Sensitive Data in Plain Memory

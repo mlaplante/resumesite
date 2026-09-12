@@ -6,8 +6,6 @@ tags: []
 excerpt: "Concurrency in Go, with its lightweight goroutines and channels, is a powerful paradigm that enables building highly performant and scalable applicati..."
 ---
 
-# Diving Deep: Debugging Concurrency Issues in Go with Delve and `pprof`
-
 Concurrency in Go, with its lightweight goroutines and channels, is a powerful paradigm that enables building highly performant and scalable applications. However, with great power comes great responsibility – and the potential for subtle, hard-to-diagnose concurrency bugs. Race conditions, deadlocks, and goroutine leaks can manifest intermittently, making them notoriously difficult to reproduce and fix using traditional logging alone.
 
 In this post, we'll explore how to leverage two indispensable tools in the Go ecosystem – the Delve debugger and the `pprof` profiling tool – to effectively identify and resolve these elusive concurrency issues.

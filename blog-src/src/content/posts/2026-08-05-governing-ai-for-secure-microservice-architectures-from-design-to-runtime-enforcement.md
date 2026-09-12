@@ -8,8 +8,6 @@ tags: ["ai-governance", "microservices", "secure-architecture", "runtime-enforce
 excerpt: "The rise of microservices has brought unparalleled agility and scalability to application development. However, integrating AI components into these..."
 ---
 
-# Governing AI for Secure Microservice Architectures: From Design to Runtime Enforcement
-
 The rise of microservices has brought unparalleled agility and scalability to application development. However, integrating AI components into these distributed systems introduces a new layer of complexity, particularly concerning security and governance. As AI models become integral to microservice functions – from fraud detection to personalized recommendations – ensuring their secure operation from design to runtime enforcement is paramount. This post explores how to establish robust AI governance within a microservice architecture, focusing on practical steps and tools.
 
 ## The Unique Challenges of AI in Microservices

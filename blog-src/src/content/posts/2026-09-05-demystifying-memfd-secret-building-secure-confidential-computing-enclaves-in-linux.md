@@ -8,8 +8,6 @@ tags: ["linux", "security", "kernel", "confidential-computing", "systems-program
 excerpt: "Confidential computing is a hot topic, promising to protect data not just at rest and in transit, but in use. While hardware-based trusted execution..."
 ---
 
-# Demystifying `memfd_secret`: Building Secure, Confidential Computing Enclaves in Linux
-
 Confidential computing is a hot topic, promising to protect data not just at rest and in transit, but *in use*. While hardware-based trusted execution environments (TEEs) like Intel SGX or AMD SEV get a lot of attention, the Linux kernel is also evolving to provide software-defined mechanisms for isolating sensitive data. One such powerful, yet often overlooked, addition is the `memfd_secret` system call.
 
 This post will dive deep into `memfd_secret`, explaining its purpose, how it works, and demonstrating a practical example of its use for creating secure, confidential memory regions within a standard Linux environment.

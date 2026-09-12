@@ -8,8 +8,6 @@ tags: ["linux", "kernel", "debugging", "kprobes", "ftrace", "systems-programming
 excerpt: "Debugging issues that manifest deep within the Linux kernel can feel like navigating a maze blindfolded. Standard user-space tools like gdb are often..."
 ---
 
-# Unveiling the Linux Kernel's Dark Corners: Debugging with KProbes and Ftrace
-
 Debugging issues that manifest deep within the Linux kernel can feel like navigating a maze blindfolded. Standard user-space tools like `gdb` are often insufficient, and recompiling the kernel for every potential theory is a non-starter in production environments. This is where dynamic instrumentation tools like KProbes and the powerful Ftrace framework become indispensable. They allow us to peer into the kernel's execution flow, observe function calls, and even extract runtime data without modifying source code or rebooting.
 
 As an SVP of Information Security and Operations, I've seen firsthand how crucial these capabilities are when diagnosing elusive performance regressions, intermittent system hangs, or even suspicious activity that points to kernel-level compromise. Let's peel back the layers and explore how to leverage KProbes and Ftrace effectively.

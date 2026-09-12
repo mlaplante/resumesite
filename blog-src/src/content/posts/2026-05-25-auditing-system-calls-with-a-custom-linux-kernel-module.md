@@ -8,8 +8,6 @@ excerpt: "Auditing System Calls With a Custom Linux Kernel Module
  As security professionals, understanding what's happening at the deepest levels of our syst..."
 ---
 
- # Auditing System Calls With a Custom Linux Kernel Module
- 
  As security professionals, understanding what's happening at the deepest levels of our systems is paramount. While tools like `strace` and `auditd` are invaluable, they often operate at a higher level or can generate overwhelming amounts of data. For highly specific, granular auditing needs, especially in sensitive environments, building a custom Linux kernel module offers unparalleled control and insight.
  
  This post will walk you through the foundational concepts and practical steps involved in creating a simple kernel module to audit specific system calls. We'll focus on intercepting `open` and `write` system calls to demonstrate the principles.

@@ -190,6 +190,10 @@ cache expires.
 
 - Per-post OG images (`blog-src/src/pages/og/[slug].png.ts`) are generated at build time using
   `satori` (layout → SVG) + `@resvg/resvg-js` (SVG → PNG raster).
+  Since 2026-09-12 the rendered PNGs are cached in `blog-src/.cache/og/` (gitignored; restored in
+  CI by `actions/cache`) keyed by `CARD_VERSION` + title/category/date + font bytes. Bump
+  `CARD_VERSION` when the card template changes. `build.concurrency: 4` in `astro.config.mjs`
+  overlaps route rendering; cold build ≈17s, warm ≈3s (was 24s).
 - The résumé PDF (`blog-src/src/pages/resume.pdf.ts`) is generated at build time with `pdfkit`,
   reading from `resume.ts` (§2.3). `wawoff2` is used to decompress WOFF2 fonts for use in these
   build-time renderers (neither satori nor pdfkit consume WOFF2 natively).

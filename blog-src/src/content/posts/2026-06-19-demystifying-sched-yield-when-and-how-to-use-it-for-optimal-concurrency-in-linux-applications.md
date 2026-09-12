@@ -8,8 +8,6 @@ tags: []
 excerpt: "In the realm of high-performance, concurrent Linux applications, subtle system calls can have a profound impact on performance and responsiveness. One..."
 ---
 
-# Demystifying `sched_yield()`: When and How to Use It for Optimal Concurrency in Linux Applications
-
 In the realm of high-performance, concurrent Linux applications, subtle system calls can have a profound impact on performance and responsiveness. One such call, often misunderstood and sometimes misused, is `sched_yield()`. While it might seem counter-intuitive to explicitly give up the CPU, understanding its precise semantics and appropriate use cases can be a game-changer for finely-tuned systems.
 
 Let's dive into what `sched_yield()` does, when it's beneficial, and when it's best left alone.
