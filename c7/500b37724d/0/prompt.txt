@@ -1,0 +1,9 @@
+our generate blog post draft action is failing. Can we investigate and update the action so it works again
+
+---
+
+here is the key: generated uniquely for this test 
+
+<pasted_content id="fb23">
+AQ.REDACTED
+</pasted_content id="fb23">
