@@ -348,7 +348,9 @@ function postText(post) {
 
 // Get the embedding for `text`, hitting the on-disk cache first.
 export async function getEmbedding(text, embed, cache) {
-  const key = textKey(text);
+  // Namespace by embedding model when the adapter declares one: vectors from
+  // different models have different dimensions and must never be compared.
+  const key = textKey(embed.model ? `${embed.model}\0${text}` : text);
   if (cache[key]) return cache[key];
   const vec = await embed(text);
   if (!Array.isArray(vec) || vec.length === 0) {

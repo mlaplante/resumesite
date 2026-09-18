@@ -11,21 +11,22 @@
  * Environment:
  *   GEMINI_API_KEY        - required
  *   GEMINI_MODEL          - optional, defaults to "gemini-2.5-flash"
- *   GEMINI_EMBED_MODEL    - optional, defaults to "text-embedding-004"
+ *   GEMINI_EMBED_MODEL    - optional, defaults to "gemini-embedding-001"
  *   SEMANTIC_THRESHOLD    - optional, cosine cutoff for dedupe (default 0.85)
  */
 
 import { runGenerator } from './lib/blog-post.js';
 
 const PRIMARY_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-const FALLBACK_MODELS = (process.env.GEMINI_FALLBACK_MODELS || 'gemini-2.0-flash,gemini-2.5-flash-lite')
+const FALLBACK_MODELS = (process.env.GEMINI_FALLBACK_MODELS || 'gemini-3.6-flash,gemini-2.5-flash-lite')
   .split(',').map(s => s.trim()).filter(Boolean);
 const MODELS = [PRIMARY_MODEL, ...FALLBACK_MODELS.filter(m => m !== PRIMARY_MODEL)];
-const EMBED_MODEL = process.env.GEMINI_EMBED_MODEL || 'text-embedding-004';
+const EMBED_MODEL = process.env.GEMINI_EMBED_MODEL || 'gemini-embedding-001';
 const apiUrlFor = (model) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 const embedUrlFor = (model) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:embedContent`;
 
 const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
+const MODEL_UNAVAILABLE_STATUS = new Set([400, 404]);
 const RETRY_DELAYS = [2000, 5000];
 
 async function generate({ system, user, maxTokens = 2500, temperature = 0.7 }) {
@@ -67,7 +68,16 @@ async function generate({ system, user, maxTokens = 2500, temperature = 0.7 }) {
 
       lastErr = `[${model}] ${res.status}: ${await res.text()}`;
 
-      // Non-retryable errors (e.g., 400 bad request, 401/403 auth) — fail fast.
+      // Model retired / unknown / doesn't accept this request shape — skip to
+      // the next model instead of aborting, so one stale name in the chain
+      // can't kill the whole run.
+      if (MODEL_UNAVAILABLE_STATUS.has(res.status)) {
+        console.warn(`Gemini API error ${lastErr}`);
+        console.warn(`[${model}] unavailable, trying next fallback model...`);
+        break;
+      }
+
+      // Other non-retryable errors (e.g., 401/403 auth) — fail fast.
       if (!RETRYABLE_STATUS.has(res.status)) {
         console.error(`Gemini API error ${lastErr}`);
         process.exit(1);
@@ -111,6 +121,7 @@ async function embed(text) {
   }
   return values;
 }
+embed.model = EMBED_MODEL;
 
 runGenerator({
   argv: process.argv,

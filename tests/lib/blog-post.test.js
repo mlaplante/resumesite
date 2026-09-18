@@ -359,6 +359,24 @@ describe('findMostSimilarSemantic (cosine of provided embeddings)', () => {
     expect(calls).toBe(firstRun);
   });
 
+  it('does not reuse cached vectors across embedding models', async () => {
+    let calls = 0;
+    const makeEmbed = (model) => {
+      const embed = async () => {
+        calls++;
+        return [0.1, 0.2, 0.3, 0.4];
+      };
+      embed.model = model;
+      return embed;
+    };
+    const posts = [{ title: 'Post One', excerpt: '' }];
+    await findMostSimilarSemantic({ title: 'Candidate', excerpt: '' }, posts, makeEmbed('old-model'));
+    expect(calls).toBe(2);
+    await findMostSimilarSemantic({ title: 'Candidate', excerpt: '' }, posts, makeEmbed('new-model'));
+    // A different model must re-embed rather than hit the old model's cache.
+    expect(calls).toBe(4);
+  });
+
   it('throws when embed returns a non-array', async () => {
     await expect(
       findMostSimilarSemantic(

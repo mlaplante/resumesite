@@ -219,14 +219,15 @@ in `og/[slug].png.ts`, bump `CARD_VERSION` there so every card re-renders;
 ### AI draft dedupe
 
 The `auto` mode of `generate-post-gemini.js` and `generate-post-gh-models.js`
-uses **embedding cosine similarity** (Gemini `text-embedding-004` /
+uses **embedding cosine similarity** (Gemini `gemini-embedding-001` /
 GitHub Models `text-embedding-3-small`) against every existing title +
 excerpt to reject near-duplicate topic suggestions like "Zero-Trust with eBPF"
 vs "Zero-Trust with Istio". Cosine cutoff is tunable via the
 `SEMANTIC_THRESHOLD` env var (default 0.85). The pipeline falls back to
 lexical Jaccard if the embedding call fails. Embeddings are cached in
-`scripts/.embeddings-cache.json` (git-ignored) so daily runs only embed the
-new candidate.
+`scripts/.embeddings-cache.json` (git-ignored; persisted across CI runs via
+`actions/cache` in `generate-blog-post.yml`) so daily runs only embed the
+new candidate. Cache keys are namespaced by embedding model.
 
 The LLM is also required to emit a `TITLE:` directive on the first line
 of every draft; `extractTitle` validates that it isn't a file path, code
