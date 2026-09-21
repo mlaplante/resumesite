@@ -151,6 +151,12 @@ export async function generate({ system, user, maxTokens = POST_MAX_TOKENS, temp
     console.error(`Refusing to use response with finishReason=${finishReason}.`);
     process.exit(1);
   }
+
+  // Unreachable today — every branch above returns or exits — but falling out
+  // of the loop would hand callers `undefined`, which surfaces much later as an
+  // opaque TypeError. Fail loudly instead.
+  console.error('Refusing to use response: exhausted attempts without a STOP finish.');
+  process.exit(1);
 }
 
 // Embedding adapter: a tiny single-shot fetch — no retry, no fallback to a

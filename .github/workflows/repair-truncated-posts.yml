@@ -16,6 +16,11 @@ on:
         required: true
         default: '5'
         type: string
+      only:
+        description: 'Repair just this one filename (overrides limit)'
+        required: false
+        default: ''
+        type: string
       dry_run:
         description: 'Report what would change without writing files'
         required: false
@@ -47,17 +52,27 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           INPUT_LIMIT: ${{ github.event.inputs.limit }}
+          INPUT_ONLY: ${{ github.event.inputs.only }}
           INPUT_DRY_RUN: ${{ github.event.inputs.dry_run }}
         run: |
-          # The limit reaches a shell command, so never trust it unvalidated.
+          # Both inputs reach a shell command, so never trust them unvalidated.
           case "$INPUT_LIMIT" in
             ''|*[!0-9]*) echo "limit must be a positive integer: $INPUT_LIMIT" >&2; exit 1 ;;
           esac
 
+          SELECT=(--limit "$INPUT_LIMIT")
+          if [ -n "$INPUT_ONLY" ]; then
+            # A post filename and nothing else — no paths, no shell metacharacters.
+            case "$INPUT_ONLY" in
+              *[!A-Za-z0-9.-]*) echo "only must be a bare post filename: $INPUT_ONLY" >&2; exit 1 ;;
+            esac
+            SELECT=(--only "$INPUT_ONLY")
+          fi
+
           if [ "$INPUT_DRY_RUN" = "true" ]; then
-            node scripts/repair-truncated-posts.js --dry-run --limit "$INPUT_LIMIT"
+            node scripts/repair-truncated-posts.js --dry-run "${SELECT[@]}"
           else
-            node scripts/repair-truncated-posts.js --limit "$INPUT_LIMIT"
+            node scripts/repair-truncated-posts.js "${SELECT[@]}"
           fi
 
       - name: Check for repairs
@@ -89,7 +104,7 @@ jobs:
           git push -u origin "$BRANCH"
 
           # Filenames come from git, not from model output, so they're safe to list.
-          FILES=$(git show --stat --name-only --format='' HEAD | sed 's|^|- `|;s|$|`|')
+          FILES=$(git show --name-only --format='' HEAD | sed 's|^|- `|;s|$|`|')
 
           gh label create blog-repair --color "D93F0B" --description "Backfill of truncated posts" 2>/dev/null || true
 

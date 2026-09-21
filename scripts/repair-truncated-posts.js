@@ -98,11 +98,14 @@ async function repair(post) {
     temperature: 0.6,
   });
 
-  // The model sometimes opens with a stray fence or blank padding; normalise the
-  // seam so the join never introduces a spurious blank line inside a code block.
-  const tail = continuation.replace(/^\s*\n/, '').replace(/\s+$/, '');
-  const joiner = seam.endsWith('\n') || /^```/.test(tail) ? '\n' : '\n';
-  const body = `${seam}${joiner}${tail}\n`;
+  const tail = continuation.replace(/^\s*\n+/, '').replace(/\s+$/, '');
+
+  // How the two halves join depends on where the cut landed. Inside an open
+  // code block the continuation is more code, so it belongs on the very next
+  // line; in prose it starts a new block and needs a blank line, or Markdown
+  // welds it onto the seam's last paragraph.
+  const insideCodeBlock = (seam.match(/^\s*```/gm) || []).length % 2 !== 0;
+  const body = `${seam}${insideCodeBlock ? '\n' : '\n\n'}${tail}\n`;
 
   const stillBroken = findTruncation(body);
   if (stillBroken) throw new Error(`repair still truncated: ${stillBroken}`);
