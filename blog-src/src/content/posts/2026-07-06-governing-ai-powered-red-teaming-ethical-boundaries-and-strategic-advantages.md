@@ -59,7 +59,7 @@ Here are key ethical considerations and how to govern them:
           "Action": "*",
           "Resource": "*",
           "Condition": {
-            "StringNotEquals": {
+            "StringEquals": {
               "ec2:VpcTag/Environment": "Production"
             }
           }
@@ -67,7 +67,7 @@ Here are key ethical considerations and how to govern them:
       ]
     }
     ```
-    This IAM policy snippet demonstrates how to constrain an AI agent's actions to resources tagged for a "RedTeamSandbox" project and explicitly deny access to "Production" environments.
+    This IAM policy snippet demonstrates how to constrain an AI agent's actions to resources tagged for a "RedTeamSandbox" project and explicitly deny access to "Production" environments. The two statements work together: the `Allow` only grants `DescribeInstances`/`RunInstances` on resources tagged `VpcTag/Project = RedTeamSandbox`, and the `Deny` unconditionally blocks every action on anything tagged `VpcTag/Environment = Production`, regardless of what any other statement allows — in IAM, an explicit `Deny` always wins. That second statement is your safety net: even if a resource is mistakenly included in both tag sets, or the AI agent attempts an action outside its intended scope, it still cannot touch anything tagged as Production.
 
 2.  **Data Handling and Privacy:**
     *   **Ethical Challenge:** AI-powered reconnaissance and exploitation might inadvertently access sensitive personal data (PII), proprietary information, or intellectual property.

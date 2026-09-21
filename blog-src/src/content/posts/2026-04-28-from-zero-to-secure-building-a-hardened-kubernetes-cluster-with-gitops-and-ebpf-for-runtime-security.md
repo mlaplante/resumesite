@@ -69,7 +69,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: default-deny-ingress
-  namespace: default # Apply to all namespaces, or specific ones
+  namespace: default # A NetworkPolicy only ever applies to pods in its own namespace — repeat this manifest (via Kustomize or a per-namespace overlay) for every namespace you want covered
 spec:
   podSelector: {} # Selects all pods
   policyTypes:
@@ -220,14 +220,15 @@ spec:
       # slack:
       #   webhookurl: <YOUR_SLACK_WEBHOOK_URL>
     driver:
-      kind: eBPF
-      # Ensure eBPF is enabled and correctly configured for your kernel
-      # Some cloud providers might require specific settings or kernel versions
+      kind: modern_ebpf
+      # Valid values are kmod, modern_ebpf, or auto — ensure your kernel supports
+      # modern eBPF (5.8+) and that some cloud providers' restricted kernels don't
+      # require falling back to kmod instead
 ```
 
 ```yaml
 # kube-cluster-config/base/security-tools/falcosecurity-helmrepo.yaml
-apiVersion: source.toolkit.fluxcd.io/v2beta1
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: falcosecurity
@@ -258,7 +259,7 @@ data:
         container.name in (nginx, apache, caddy) and
         proc.name in (bash, sh, dash, zsh) and
         evt.type = execve and
-        evt.is_privileged = false and
+        container.privileged = false and
         container.id != host
       output: >
         Shell spawned in web server container (user=%user.name

@@ -51,14 +51,31 @@ We'll write a C program that will be compiled into eBPF bytecode. This program w
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_endian.h>
 
-// Define our HTTP method and path constants
-#define HTTP_GET_LEN 3
-static const char http_get_str[] = "GET";
-#define HTTP_HEALTHZ_LEN 7
+// Define our HTTP method and path constants. Both include the byte that
+// follows them ("GET " has a trailing space, so we don't have to special-
+// case the separator when comparing).
+#define HTTP_GET_LEN 4
+static const char http_get_str[] = "GET ";
+#define HTTP_HEALTHZ_LEN 8
 static const char http_healthz_str[] = "/healthz";
 
-// Helper macro to calculate pointer offset safely
-#define cursor_advance(_CURSOR, _LEN) ({ _CURSOR += _LEN; })
+// Bounds-check macro: true if reading _LEN bytes starting at _CURSOR would
+// run past the end of the packet. Deliberately does NOT advance _CURSOR —
+// the header pointers below (eth, ip, tcp) are dereferenced afterward and
+// need to keep pointing at the start of their own header.
+#define header_overruns(_CURSOR, _LEN) ((void *)(_CURSOR) + (_LEN) > data_end)
+
+// Fixed-length byte comparison. len is always passed as a compile-time
+// constant from this file, so #pragma unroll turns this into straight-line
+// code the verifier can bound statically.
+static __always_inline int bytes_eq(const char *a, const char *b, int len) {
+#pragma unroll
+    for (int i = 0; i < len; i++) {
+        if (a[i] != b[i])
+            return 0;
+    }
+    return 1;
+}
 
 SEC("tc")
 int http_policy_enforcer(struct __sk_buff *skb) {
@@ -66,7 +83,7 @@ int http_policy_enforcer(struct __sk_buff *skb) {
     void *data = (void *)(long)skb->data;
 
     struct ethhdr *eth = data;
-    if (cursor_advance(eth, sizeof(*eth)) > data_end) {
+    if (header_overruns(eth, sizeof(*eth))) {
         return TC_ACT_OK; // Not an Ethernet packet or truncated
     }
 
@@ -76,7 +93,7 @@ int http_policy_enforcer(struct __sk_buff *skb) {
     }
 
     struct iphdr *ip = (struct iphdr *)(eth + 1);
-    if (cursor_advance(ip, sizeof(*ip)) > data_end) {
+    if (header_overruns(ip, sizeof(*ip))) {
         return TC_ACT_OK;
     }
 
@@ -87,7 +104,7 @@ int http_policy_enforcer(struct __sk_buff *skb) {
 
     struct tcphdr *tcp = (struct tcphdr *)(ip + 1);
     // Ensure the TCP header is fully within the packet
-    if (cursor_advance(tcp, sizeof(*tcp)) > data_end) {
+    if (header_overruns(tcp, sizeof(*tcp))) {
         return TC_ACT_OK;
     }
 
@@ -96,26 +113,39 @@ int http_policy_enforcer(struct __sk_buff *skb) {
         return TC_ACT_OK; // Not for port 80, let it pass
     }
 
-    // Check for SYN or non-data packets
-    if (tcp->syn || tcp->fin || tcp->rst || (tcp->ack && !skb->len_diff)) {
-        return TC_ACT_OK; // Allow TCP handshake and control packets
+    // Let TCP handshake and control packets through untouched; the payload
+    // bounds check just below already handles packets that carry no HTTP
+    // data (a pure ACK, for instance, simply won't have enough bytes past
+    // the TCP header to pass the check).
+    if (tcp->syn || tcp->fin || tcp->rst) {
+        return TC_ACT_OK;
     }
 
     // Calculate TCP payload offset
     // TCP header length is in 4-byte words
     unsigned int tcp_hdr_len = tcp->doff * 4;
-    void *payload = data + ETH_HLEN + (ip->ihl * 4) + tcp_hdr_len;
+    unsigned int payload_off = ETH_HLEN + (ip->ihl * 4) + tcp_hdr_len;
+    void *payload = data + payload_off;
 
-    if (payload + HTTP_GET_LEN + HTTP_HEALTHZ_LEN + 1 /* for space */ > data_end) {
-        // Not enough data for even minimal HTTP header, allow
+    if (payload + HTTP_GET_LEN + HTTP_HEALTHZ_LEN > data_end) {
+        // Not enough data for even minimal HTTP request line, allow
         return TC_ACT_OK;
     }
 
-    // Check for "GET /healthz HTTP/1.1" (or similar)
+    // Copy the request line's leading bytes into a small on-stack buffer.
+    // TC programs can't assume skb data is linear in the kernel's memory,
+    // so we use bpf_skb_load_bytes() rather than dereferencing `payload`
+    // directly for the comparison.
+    char buf[HTTP_GET_LEN + HTTP_HEALTHZ_LEN];
+    if (bpf_skb_load_bytes(skb, payload_off, buf, sizeof(buf)) < 0) {
+        return TC_ACT_OK;
+    }
+
+    // Check for "GET /healthz ..." at the start of the request.
     // We're doing a very basic string match here for demonstration.
     // A real-world scenario might involve more robust parsing.
-    if (bpf_memcmp(payload, http_get_str, HTTP_GET_LEN) == 0 &&
-        bpf_memcmp(payload + HTTP_GET_LEN + 1, http_healthz_str, HTTP_HEALTHZ_LEN) == 0) {
+    if (bytes_eq(buf, http_get_str, HTTP_GET_LEN) &&
+        bytes_eq(buf + HTTP_GET_LEN, http_healthz_str, HTTP_HEALTHZ_LEN)) {
         // It's a GET /healthz request, allow it
         return TC_ACT_OK;
     }
@@ -135,9 +165,10 @@ char _license[] SEC("license") = "GPL";
 *   `SEC("tc")`: This macro marks the function `http_policy_enforcer` as an eBPF program suitable for the TC hook.
 *   `struct __sk_buff *skb`: The primary context for network programs, containing packet data and metadata.
 *   `data` and `data_end`: Pointers defining the start and end of the packet data within the `skb`.
-*   **Header Parsing:** We manually parse Ethernet, IP, and TCP headers to locate the TCP payload.
+*   **Header Parsing:** We manually parse Ethernet, IP, and TCP headers to locate the TCP payload. Each `header_overruns()` check is a pure bounds check — it doesn't advance the header pointer, because `eth`, `ip`, and `tcp` all get dereferenced again afterward (`eth->h_proto`, `ip->protocol`, `tcp->dest`, and so on) under the assumption they still point at the start of their own header.
 *   `bpf_ntohs`: Converts network byte order to host byte order for multi-byte fields.
-*   `bpf_memcmp`: Performs a memory comparison, crucial for string matching.
+*   `bpf_skb_load_bytes`: Copies bytes out of the packet into a stack buffer we can safely read from and compare against, since TC programs can't assume the underlying `skb` data is stored contiguously.
+*   `bytes_eq` / `#pragma unroll`: A small fixed-length comparison, unrolled at compile time since the verifier needs to prove every loop terminates in a bounded number of steps.
 *   `TC_ACT_OK`: Allows the packet to continue processing (pass).
 *   `TC_ACT_SHOT`: Drops the packet (block).
 *   `bpf_printk`: A simple way to log messages from the eBPF program, visible via `sudo cat /sys/kernel/debug/tracing/trace_pipe`.

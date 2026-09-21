@@ -75,22 +75,38 @@ pub fn _start() {
 
 struct AuthLoggerRoot;
 
+// RootContext and HttpContext both extend the Context trait, and Context's
+// ~60 default-bodied methods (get_property, dispatch_http_call, etc.) don't
+// get implemented automatically just because a supertrait is implemented —
+// Rust still requires an explicit impl block to satisfy the bound. It can be
+// empty; we don't need to override anything here.
+impl Context for AuthLoggerRoot {}
+
 impl RootContext for AuthLoggerRoot {
     fn on_vm_start(&mut self, _vm_configuration_size: usize) -> bool {
         log::info!("AuthLoggerRoot: VM started.");
         true
     }
 
-    fn new_http_context(&self, _context_id: u32) -> Box<dyn HttpContext> {
-        Box::new(AuthLoggerFilter {
+    // Envoy asks the RootContext to hand back an HttpContext for every new
+    // HTTP stream. The method is create_http_context, and it returns
+    // Option<Box<dyn HttpContext>> — the default implementation on
+    // RootContext returns None, so if you get the method name wrong (or
+    // its signature), your override is just a dead inherent method: Envoy
+    // silently gets None from the default and never routes any request
+    // through your filter at all.
+    fn create_http_context(&self, _context_id: u32) -> Option<Box<dyn HttpContext>> {
+        Some(Box::new(AuthLoggerFilter {
             path_prefix_to_match: "/api/v1/".to_string(),
-        })
+        }))
     }
 }
 
 struct AuthLoggerFilter {
     path_prefix_to_match: String,
 }
+
+impl Context for AuthLoggerFilter {}
 
 impl HttpContext for AuthLoggerFilter {
     fn on_http_request_headers(&mut self, _num_headers: usize, _end_of_stream: bool) -> Action {

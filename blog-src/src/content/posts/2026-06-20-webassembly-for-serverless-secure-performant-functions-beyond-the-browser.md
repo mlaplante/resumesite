@@ -40,9 +40,9 @@ To run Wasm outside the browser, we rely on specialized runtimes. Projects like 
 
 Let's illustrate with a basic example using Rust, a popular language for Wasm development due to its performance and memory safety.
 
-First, ensure you have Rust and the `wasm32-wasi` target installed:
+First, ensure you have Rust and the `wasm32-wasip1` target installed. (The target used to be called `wasm32-wasi`; it was renamed to `wasm32-wasip1` — WASI preview 1 — and the old name was removed from the stable toolchain as of Rust 1.84. If you're targeting the newer WASI preview 2 component model instead, the target is `wasm32-wasip2`.)
 ```bash
-rustup target add wasm32-wasi
+rustup target add wasm32-wasip1
 ```
 
 Now, create a new Rust library project:
@@ -175,9 +175,9 @@ panic = "abort" # No unwinding, smaller binaries
 
 Now, compile to Wasm:
 ```bash
-cargo build --target wasm32-wasi --release
+cargo build --target wasm32-wasip1 --release
 ```
-This will produce `target/wasm32-wasi/release/wasm_serverless_example.wasm`.
+This will produce `target/wasm32-wasip1/release/wasm_serverless_example.wasm`.
 
 ### Running with a Wasm Runtime (e.g., Wasmtime)
 
@@ -199,7 +199,7 @@ fn main() -> Result<()> {
     // 2. Load the Wasm module
     let module = Module::from_file(
         &engine,
-        "target/wasm32-wasi/release/wasm_serverless_example.wasm",
+        "target/wasm32-wasip1/release/wasm_serverless_example.wasm",
     )?;
 
     // 3. Instantiate it. This particular module doesn't call any WASI functions
@@ -270,4 +270,4 @@ It's worth being honest about the rough edges before you bet a platform on this:
 
 WebAssembly outside the browser isn't a replacement for containers in every scenario — but for latency-sensitive, multi-tenant serverless workloads, it addresses the three things that matter most: startup time, density, and blast radius under compromise. The capability-based sandbox model is a meaningfully stronger security boundary than namespace-and-cgroup isolation, and the cold-start numbers speak for themselves.
 
-If you're building a new serverless platform, or evaluating whether an existing one could run leaner, Wasm is worth a serious look. Start small: pick one latency-critical function, port it to `wasm32-wasi`, and measure the cold-start and memory numbers against your current container baseline before committing further.
+If you're building a new serverless platform, or evaluating whether an existing one could run leaner, Wasm is worth a serious look. Start small: pick one latency-critical function, port it to `wasm32-wasip1`, and measure the cold-start and memory numbers against your current container baseline before committing further.

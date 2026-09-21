@@ -153,11 +153,12 @@ fn main() -> io::Result<()> {
 // Helper to submit an accept operation
 fn submit_accept(ring: &IoUring, listener_fd: i32) -> io::Result<()> {
     let mut sq = ring.submission();
+    // Accept::new takes only (fd, addr, addrlen); flags are set separately
+    // via the `.flags()` builder method, not as a fourth constructor argument.
     let accept_sqe = opcode::Accept::new(
         io_uring::types::Fd(listener_fd),
         ptr::null_mut(),
         ptr::null_mut(),
-        0 // flags
     )
     .build()
     .user_data(get_next_user_data()); // Unique ID for this operation

@@ -48,7 +48,7 @@ excerpt: "Building Secure Microservices: Rust's Capability-Based Security Model
  #[derive(Debug, Clone, PartialEq, Eq, Hash)]
  pub struct ResourceId(String);
  
- #[derive(Debug, Clone)]
+ #[derive(Debug, Clone, PartialEq, Eq, Hash)]
  pub struct Capability {
   action: Action,
   resource_id: ResourceId,

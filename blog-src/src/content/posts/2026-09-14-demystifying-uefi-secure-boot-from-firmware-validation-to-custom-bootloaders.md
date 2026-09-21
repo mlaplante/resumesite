@@ -71,9 +71,9 @@ openssl req -new -x509 -newkey rsa:2048 -keyout KEK.key -out KEK.crt -days 3650 
 openssl req -new -x509 -newkey rsa:2048 -keyout DB.key -out DB.crt -days 3650 -nodes -subj "/CN=My DB Key/"
 
 # Convert certificates to EFI signature list format (.esl) for enrollment
-cert-to-efi-siglist -g $(uuidgen) PK.crt PK.esl
-cert-to-efi-siglist -g $(uuidgen) KEK.crt KEK.esl
-cert-to-efi-siglist -g $(uuidgen) DB.crt DB.esl
+cert-to-efi-sig-list -g $(uuidgen) PK.crt PK.esl
+cert-to-efi-sig-list -g $(uuidgen) KEK.crt KEK.esl
+cert-to-efi-sig-list -g $(uuidgen) DB.crt DB.esl
 ```
 
 **Step 2: Enroll Your Keys in the UEFI Firmware**

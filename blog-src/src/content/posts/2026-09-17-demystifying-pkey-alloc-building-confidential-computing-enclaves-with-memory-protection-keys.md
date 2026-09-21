@@ -10,7 +10,7 @@ excerpt: "Confidential Computing is rapidly gaining traction as organizations se
 
 Confidential Computing is rapidly gaining traction as organizations seek to protect data not just at rest and in transit, but also *in use*. While hardware-backed Trusted Execution Environments (TEEs) like Intel SGX, AMD SEV, and ARM TrustZone provide robust solutions, they often come with significant development overhead and platform-specific complexities. What if we could achieve a meaningful level of memory isolation for critical application components directly within a standard Linux environment, without specialized hardware or a full TEE SDK?
 
-This is where Linux's Memory Protection Keys (MPKs) — specifically the `pkey_alloc()` system call — become a fascinating and powerful primitive. MPKs, introduced with Intel's Protection Keys for Supervisor Mode Access (PKS) and User Mode Access (PKU) features, allow us to assign a "protection key" to pages of memory and then dynamically control access to those pages based on the current protection key rights held by a thread. Think of it as a lightweight, per-thread, software-defined Memory Management Unit (MMU) overlay.
+This is where Linux's Memory Protection Keys (MPKs) — specifically the `pkey_alloc()` system call — become a fascinating and powerful primitive. MPKs are built on Intel's Protection Keys for Userspace (PKU) feature, which lets us assign a "protection key" to pages of memory and then dynamically control access to those pages based on the current protection key rights held by a thread. (Intel also ships a related but separate feature, Protection Keys for Supervisor Mode — PKS — which applies the same idea to kernel-only memory; it's a different register, a different instruction interface, and isn't exposed through the `pkey_alloc()` family we're covering here.) Think of it as a lightweight, per-thread, software-defined Memory Management Unit (MMU) overlay.
 
 ## The Core Concept: Protection Keys and Access Control
 
@@ -49,15 +49,12 @@ static inline int sys_pkey_mprotect(void *addr, size_t len, int prot, int pkey) 
     return syscall(SYS_pkey_mprotect, addr, len, prot, pkey);
 }
 
-// Wrapper for pkey_set
-static inline int sys_pkey_set(int pkey, unsigned int access_rights) {
-    return syscall(SYS_pkey_set, pkey, access_rights);
-}
-
-// Wrapper for pkey_get
-static inline unsigned int sys_pkey_get(int pkey) {
-    return syscall(SYS_pkey_get, pkey);
-}
+// pkey_set() and pkey_get() are NOT system calls — there's no SYS_pkey_set
+// or SYS_pkey_get. They're glibc wrapper functions, declared in <sys/mman.h>,
+// that execute the WRPKRU/RDPKRU instructions directly in userspace with no
+// kernel round-trip at all. That's the entire performance point of PKU: once
+// a thread has a key allocated, flipping its access rights costs two CPU
+// instructions, not a syscall. We call them straight from glibc below.
 
 // Wrapper for pkey_free
 static inline int sys_pkey_free(int pkey) {
@@ -127,14 +124,14 @@ Now, let's demonstrate controlled access. We'll write data into the enclave, the
 
     // Enable write and read access for our key
     printf("Enabling R/W access for pkey %d...\n", pkey);
-    if (sys_pkey_set(pkey, 0) == -1) { // 0 means enable both read and write
+    if (pkey_set(pkey, 0) == -1) { // 0 means enable both read and write
         perror("pkey_set enable failed");
         // Cleanup and exit
         munmap(enclave_mem, enclave_size);
         sys_pkey_free(pkey);
         return 1;
     }
-    printf("Access rights for pkey %d: 0x%x (0x0 means R/W enabled)\n", pkey, sys_pkey_get(pkey));
+    printf("Access rights for pkey %d: 0x%x (0x0 means R/W enabled)\n", pkey, pkey_get(pkey));
 
     // Now, write to the enclave memory
     printf("Writing 'S' to enclave_mem[0] with access enabled...\n");
@@ -149,14 +146,14 @@ Now, let's demonstrate controlled access. We'll write data into the enclave, the
 
     // Disable access again
     printf("Disabling R/W access for pkey %d...\n", pkey);
-    if (sys_pkey_set(pkey, PKEY_DISABLE_ACCESS | PKEY_DISABLE_WRITE) == -1) {
+    if (pkey_set(pkey, PKEY_DISABLE_ACCESS | PKEY_DISABLE_WRITE) == -1) {
         perror("pkey_set disable failed");
         // Cleanup and exit
         munmap(enclave_mem, enclave_size);
         sys_pkey_free(pkey);
         return 1;
     }
-    printf("Access rights for pkey %d: 0x%x\n", pkey, sys_pkey_get(pkey));
+    printf("Access rights for pkey %d: 0x%x\n", pkey, pkey_get(pkey));
 
     // Attempt to read with access disabled - this should cause a fault
     printf("Attempting to read from enclave_mem with access disabled...\n");

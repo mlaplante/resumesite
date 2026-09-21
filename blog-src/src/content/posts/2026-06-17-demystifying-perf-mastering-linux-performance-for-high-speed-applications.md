@@ -170,19 +170,28 @@ excerpt: "Demystifying Perf: Mastering Linux Performance for High-Speed Applicat
  
  #### Kprobes
  
- Kprobes allow you to dynamically probe arbitrary kernel functions. This is powerful but requires careful use.
+ Kprobes allow you to dynamically probe arbitrary kernel functions. This is powerful but requires careful use. Unlike static tracepoints, a kprobe event doesn't exist until you create one — `perf probe` does that, adding it under the `probe:` group so the rest of the `perf` toolchain can use it like any other event:
  
  ```bash
- # Record calls to a specific kernel function (e.g., tcp_sendmsg)
- perf record -e 'kprobes:tcp_sendmsg' -- ./my_network_app
+ # Create a probe on entry to a specific kernel function (e.g., tcp_sendmsg)
+ perf probe --add tcp_sendmsg
+ 
+ # Record calls to it, using the event perf probe just created
+ perf record -e probe:tcp_sendmsg -- ./my_network_app
  perf report
+ 
+ # Clean up when you're done — probes persist across reboots otherwise
+ perf probe --del tcp_sendmsg
  ```
  
- You can even probe user-space functions by prefixing with `uprobes:`.
+ You can do the same for a function in your own binary with `perf probe -x`, which creates the event under a `probe_<binary_name>:` group instead:
  
  ```bash
- # Record calls to a user-space function in your application
- perf record -e 'uprobes:/path/to/your/app:my_function' -- ./my_app
+ # Create a probe on entry to my_function inside ./my_app
+ perf probe -x ./my_app my_function
+ 
+ # Record calls to it
+ perf record -e probe_my_app:my_function -- ./my_app
  ```
  
  ## Practical Workflow for Low-Latency Optimization

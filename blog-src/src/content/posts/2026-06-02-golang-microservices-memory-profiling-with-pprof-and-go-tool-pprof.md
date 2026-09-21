@@ -36,7 +36,6 @@ import (
 	_ "net/http/pprof" // Import pprof for HTTP endpoints
 	"runtime"
 	"sync"
-	"time"
 )
 
 // Global slice to simulate memory growth

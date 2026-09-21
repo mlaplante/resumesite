@@ -47,7 +47,7 @@ resource "azurerm_virtual_network_gateway_connection" "azure_to_aws" {
     ike_encryption_algorithm    = "AES256"
     ike_integrity_algorithm     = "SHA384"
     ipsec_encryption_algorithm  = "AES256"
-    ipsec_integrity_algorithm   = "SHA384"
+    ipsec_integrity_algorithm   = "SHA256" # ipsec_integrity's allowed values (GCMAES128/192/256, MD5, SHA1, SHA256) differ from ike_integrity's — SHA384 is valid for IKE but not for IPsec
     pfs_group                   = "PFS24"
     sa_lifetime_seconds         = 27000
     dh_group                    = "DHGroup24"
@@ -111,13 +111,15 @@ spec:
       - matchLabels:
           app: database-service
           env: production
-    - toPorts:
+      toPorts:
       - ports:
         - port: "5432"
           protocol: TCP
 ```
 
-This policy, when applied, would instruct the eBPF programs on the nodes hosting `frontend-service` to allow egress to `database-service` on port 5432. If `database-service` is in Azure and `frontend-service` is in AWS, Cilium (with appropriate multi-cluster configuration) would manage the underlying routing and encryption over your IaC-provisioned VPN tunnel.
+Note that `toEndpoints` and `toPorts` are two keys *inside the same rule*, not two separate list items under `egress`. Cilium ORs together separate items in the `egress` list, but ANDs together the fields within one rule — so this single rule reads as "destination is `database-service`, AND the destination port is 5432." Split into two list items instead, it would silently become two much broader rules — all ports to `database-service`, and port 5432 to any destination — which is not what "allow `frontend-service` to reach `database-service` on port 5432" is supposed to mean.
+
+This policy, when applied, would instruct the eBPF programs on the nodes hosting `frontend-service` to allow egress to `database-service` on port 5432 only. If `database-service` is in Azure and `frontend-service` is in AWS, Cilium (with appropriate multi-cluster configuration) would manage the underlying routing and encryption over your IaC-provisioned VPN tunnel.
 
 The eBPF programs attached to the network interfaces would then enforce this policy directly in the kernel, inspecting each packet and either permitting or dropping it based on the defined rules and the workload's identity.
 

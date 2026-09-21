@@ -175,6 +175,7 @@ import (
 	"time"
 
 	"github.com/cilium/ebpf"
+	"github.com/cilium/ebpf/link"
 	"github.com/cilium/ebpf/perf"
 	"golang.org/x/sys/unix"
 )

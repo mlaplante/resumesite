@@ -14,7 +14,7 @@ Many engineers know `go tool trace` for visualizing goroutine activity, garbage 
 
 Let's dive into a practical example. Imagine a Go microservice that handles user requests, involving database interactions, external API calls, and some in-memory processing. Without proper instrumentation, a high P99 latency might lead to vague assumptions ("the database is slow" or "the external API is slow"). With custom tracing, we can pinpoint the exact stage causing the delay.
 
-## Setting Up Custom Spans with `context/trace`
+## Setting Up Custom Spans with `runtime/trace`
 
 The core of custom tracing in Go relies on the `runtime/trace` package. We'll use `trace.WithRegion` and `trace.Log` to define custom regions and log arbitrary events within our application code.
 

@@ -35,7 +35,7 @@ sudo apt install clang llvm libelf-dev build-essential linux-headers-$(uname -r)
 
 ## Example: Intercepting `openat` Calls
 
-Let's say we want to prevent a specific application from opening files in a sensitive directory, like `/etc/shadow`, even if it has the necessary permissions. We'll write an eBPF program that attaches to `sys_openat` and checks the path being opened. If it matches our target, we'll return an error code, effectively blocking the operation.
+Let's say we want visibility into which processes are trying to open files in a sensitive directory, like `/etc/shadow`. We'll write an eBPF program that attaches to `sys_openat`, checks the path being opened, and logs a detection event when it matches our target. A `kprobe` fires *before* the probed function runs, which makes it a natural fit for observation — but, as we'll get to below, it isn't the right tool for actually denying the open. For that, we'll turn to the BPF LSM once we've seen why.
 
 ### The eBPF C Program (`openat_blocker.c`)
 
@@ -58,20 +58,30 @@ Let's say we want to prevent a specific application from opening files in a sens
 SEC("kprobe/sys_openat")
 int kprobe_sys_openat(struct pt_regs *ctx) {
     char path_buf[MAX_PATH_LEN];
-    const char *pathname = (const char *)PT_REGS_PARM2(ctx); // arg2 of sys_openat is pathname
+
+    // On x86_64 kernels built with CONFIG_ARCH_HAS_SYSCALL_WRAPPER (the
+    // default since 4.17), the function we're probing takes a single
+    // `struct pt_regs *` argument holding the *real* syscall registers —
+    // PT_REGS_PARM2(ctx) on the outer kprobe context is not the pathname,
+    // it's whatever happened to be in that register at the call site.
+    // Unwrap the inner pt_regs first with PT_REGS_SYSCALL_REGS(), then
+    // pull the syscall's own arguments out of that.
+    struct pt_regs *real_regs = PT_REGS_SYSCALL_REGS(ctx);
+    const char *pathname = (const char *)PT_REGS_PARM2(real_regs); // arg2 of sys_openat is pathname
 
     // Read the user-space string into our kernel-space buffer
     // bpf_probe_read_user_str returns the length read or a negative error code
     long res = bpf_probe_read_user_str(&path_buf, sizeof(path_buf), pathname);
 
     if (res > 0) {
-        // Example: Block access to /etc/shadow
+        // Example: flag access attempts to /etc/shadow
         if (bpf_strncmp(path_buf, MAX_PATH_LEN, "/etc/shadow") == 0) {
-            bpf_printk("eBPF: Blocking openat for /etc/shadow by PID %d\n", bpf_get_current_pid_tgid() >> 32);
-            // Return -EPERM to block the syscall
-            // This effectively changes the return value of the syscall for the user process
-            PT_REGS_RC(ctx) = -EPERM;
-            return 0; // Indicate successful eBPF program execution
+            bpf_printk("eBPF: Detected openat for /etc/shadow by PID %d\n", bpf_get_current_pid_tgid() >> 32);
+            // NOTE: this is a detection point, not an enforcement point.
+            // A kprobe handler runs before the probed function executes,
+            // and sys_openat will still run to completion regardless of
+            // anything we do here — see "A Note on kprobes vs. the BPF
+            // LSM for Enforcement" below for how to actually deny the open.
         }
         // Example: Log attempts to open files in /tmp for a specific PID
         // u32 current_pid = bpf_get_current_pid_tgid() >> 32;
@@ -80,7 +90,7 @@ int kprobe_sys_openat(struct pt_regs *ctx) {
         // }
     }
 
-    return 0; // Allow the syscall to proceed normally
+    return 0;
 }
 
 char _license[] SEC("license") = "GPL";
@@ -92,11 +102,10 @@ char _license[] SEC("license") = "GPL";
 2.  **`#include <bpf/bpf_helpers.h>` and `<bpf/bpf_tracing.h>`**: These provide eBPF helper functions and macros for tracing.
 3.  **`SEC("kprobe/sys_openat")`**: This macro tells the eBPF loader to attach this program to the `sys_openat` kernel function as a `kprobe`.
 4.  **`int kprobe_sys_openat(struct pt_regs *ctx)`**: This is our eBPF program function. `struct pt_regs *ctx` provides access to the CPU registers at the time of the `kprobe` hit.
-5.  **`PT_REGS_PARM2(ctx)`**: This macro (from `bpf_tracing.h`) helps us extract the second argument of the `sys_openat` function. For `sys_openat(int dfd, const char *filename, int flags, umode_t mode)`, the second argument is `filename` (the path).
+5.  **`PT_REGS_SYSCALL_REGS(ctx)` and `PT_REGS_PARM2(real_regs)`**: On kernels with the syscall wrapper enabled, the function we've probed doesn't receive `sys_openat`'s own arguments directly — it receives one argument, a pointer to a `struct pt_regs` holding the register state userspace passed into the syscall. `PT_REGS_SYSCALL_REGS()` (from `bpf_tracing.h`) unwraps that inner `pt_regs`, and *then* `PT_REGS_PARM2` on the result gives us the second logical argument to `sys_openat(int dfd, const char *filename, int flags, umode_t mode)` — `filename` (the path).
 6.  **`bpf_probe_read_user_str(&path_buf, sizeof(path_buf), pathname)`**: This crucial helper function safely reads a string from user-space memory (where `pathname` resides) into our eBPF program's kernel-space buffer (`path_buf`). Direct dereferencing of user-space pointers from eBPF is not allowed for security reasons.
 7.  **`bpf_strncmp(path_buf, MAX_PATH_LEN, "/etc/shadow") == 0`**: We compare the read path with our target sensitive path. `bpf_strncmp` is another eBPF helper for string comparison.
-8.  **`PT_REGS_RC(ctx) = -EPERM;`**: This is the core of the interception. By modifying `PT_REGS_RC(ctx)` (which represents the return code register for the syscall), we effectively change the return value of the `sys_openat` call *before* it returns to user-space. Returning `-EPERM` (Permission denied) tells the calling process that the operation failed due to insufficient permissions.
-9.  **`bpf_printk(...)`**: This helper allows us to print debug messages from our eBPF program, which can be viewed with `sudo cat /sys/kernel/debug/tracing/trace_pipe`.
+8.  **`bpf_printk(...)`**: When the path matches, we log a detection event, which can be viewed with `sudo cat /sys/kernel/debug/tracing/trace_pipe`. This is as far as a `kprobe` can take us: it's a pre-execution observation point, not a gate. Writing to `PT_REGS_RC(ctx)` here would *not* stop `sys_openat` from running — the kernel proceeds to execute the real function regardless of what a kprobe handler does to the registers. Actually overriding a probed function's return value requires the dedicated `bpf_override_return()` helper (gated behind `CONFIG_BPF_KPROBE_OVERRIDE` and the target function being marked `ALLOW_ERROR_INJECTION`), and even then the kernel maintainers consider it a debugging/fault-injection facility, not a production enforcement mechanism — which is exactly why the next section reaches for the BPF LSM instead.
 
 ### Compiling the eBPF Program
 
@@ -134,45 +143,43 @@ sudo bpftool prog show
 sudo bpftool link show
 ```
 
-### Testing the Interceptor
+### Testing the Interceptor (Detection, Not Blocking)
 
-Now, try to open `/etc/shadow` as a normal user.
+Remember, this program only logs — it doesn't touch the syscall's outcome. `/etc/shadow`'s own file permissions (typically mode `0640`, owned by `root:shadow`) are still what stand between a normal user and the file, entirely independent of our eBPF program:
 
 ```bash
 cat /etc/shadow
 ```
 
-You should see:
+You should see the usual denial, which has nothing to do with our kprobe:
 ```
 cat: /etc/shadow: Permission denied
 ```
 
-This is expected, as even `root` cannot read `/etc/shadow` directly with `cat` (it often requires specific shadow utilities). However, the key is that *our eBPF program* is now the one enforcing this, not the standard kernel permissions.
+To actually see our program do something, read the file as root, where the filesystem permission check passes and the open reaches `sys_openat`'s real implementation:
 
-Let's try a benign file:
 ```bash
-cat /etc/hosts
+sudo cat /etc/shadow
 ```
-This should work normally, as our eBPF program only intercepts `/etc/shadow`.
 
-To see the `bpf_printk` output from our program, tail the shared trace pipe in a separate terminal while you run the tests above:
+The contents print normally — our kprobe never stood in the way of that. What it *did* do is log the attempt. Tail the shared trace pipe in a separate terminal while you run the command above:
 
 ```bash
 sudo cat /sys/kernel/debug/tracing/trace_pipe
 ```
 
-You should see a line logged for every blocked attempt at `/etc/shadow`, including the PID that made it.
+You should see a line logged for the `sudo cat /etc/shadow` invocation, including the PID that made it — confirmation that both the detection logic and the `PT_REGS_SYSCALL_REGS()` unwrapping are working. Try `cat /etc/hosts` as well: it should produce no matching log line, since our program only flags paths equal to `/etc/shadow`.
 
 ### Cleaning Up
 
-Once you're done, detach and remove the program so it doesn't keep intercepting syscalls on a system you're no longer actively testing on:
+Once you're done, detach and remove the program so it doesn't keep tracing syscalls on a system you're no longer actively testing on:
 
 ```bash
 sudo bpftool link detach id <LINK_ID>
 sudo rm /sys/fs/bpf/openat_blocker
 ```
 
-Forgetting this step is a common source of confusion in eBPF demos — a pinned program under `/sys/fs/bpf` survives reboots on many systems and will keep silently enforcing a rule you've forgotten about.
+Forgetting this step is a common source of confusion in eBPF demos — a pinned program under `/sys/fs/bpf` survives reboots on many systems and will keep silently logging accesses you've forgotten you're watching for.
 
 ## A Note on `kprobes` vs. the BPF LSM for Enforcement
 

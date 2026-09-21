@@ -65,7 +65,7 @@ A `seccomp` profile is essentially a JSON document that defines these rules. Let
 
 In this simplified profile:
 
-*   `"defaultAction": "SCMP_ACT_ERRNO"`: This is crucial. It means any syscall *not explicitly allowed* will result in an `EPERM` error, effectively denying it. Other common default actions include `SCMP_ACT_KILL` (terminate the process) or `SCMP_ACT_LOG` (log the violation). For production, `SCMP_ACT_KILL` or `SCMP_ACT_ERRNO` are preferred.
+*   `"defaultAction": "SCMP_ACT_ERRNO"`: This is crucial. It means any syscall *not explicitly allowed* will result in an `EPERM` error, effectively denying it. Other common default actions include `SCMP_ACT_KILL` (despite the name, this kills only the offending *thread* — it's an alias for `SCMP_ACT_KILL_THREAD`; reach for `SCMP_ACT_KILL_PROCESS` if you need the entire process to die) or `SCMP_ACT_LOG` (log the violation). For production, `SCMP_ACT_KILL_PROCESS` or `SCMP_ACT_ERRNO` are preferred.
 *   `"syscalls"`: This array contains rules for specific syscalls.
     *   `"names"`: A list of syscall names (e.g., `exit`, `read`, `write`).
     *   `"action": "SCMP_ACT_ALLOW"`: Explicitly permits these syscalls.
@@ -153,7 +153,9 @@ Now, take the generated profile and start tightening it.
 
     If it crashes or fails, check your container logs for `seccomp` violations. Docker will typically log messages like: `seccomp: seccomp_load: Invalid argument` or `seccomp: seccomp_load: Operation not permitted`. You'll need to re-enable the necessary syscalls in your profile.
 
-4.  **Consider arguments and return values.** `seccomp` can also filter based on syscall arguments. For instance, you could restrict `openat` to only allow opening files within specific paths or with certain flags. This adds a layer of complexity but offers even finer granularity.
+4.  **Consider arguments — but know the limits.** `seccomp` can filter on syscall arguments, but only on the raw values the kernel captured in registers at syscall entry: integers, file descriptors, and flag bitmasks. It **cannot** inspect the memory a pointer argument refers to, because the BPF program never dereferences pointers — it only ever sees the pointer's numeric value. That matters a lot for `openat(dirfd, pathname, flags, mode)`: `pathname` is a pointer, so a `seccomp` arg filter can compare that raw address (useful for little beyond a NULL check) but can never read the path string and decide "allow this path, deny that one." If you need per-path access control, `seccomp` is the wrong tool. Reach for a Linux Security Module instead — AppArmor or SELinux, or Landlock (a dedicated LSM for unprivileged path-based sandboxing, available since Linux 5.13) — or, if you specifically need to intercept at the syscall layer, `SECCOMP_RET_USER_NOTIF`, which hands the syscall off to a supervisor process that can read the calling process's memory (e.g., via `/proc/<pid>/mem`) and make the path-aware decision itself before the syscall is allowed to proceed.
+
+    What argument filtering *is* good for is exactly what it can see: integer-valued arguments. Here's a legitimate example — blocking the `O_CREAT` flag on `openat` so a process can open files that already exist but can't create new ones:
 
     ```json
     {
@@ -161,15 +163,15 @@ Now, take the generated profile and start tightening it.
       "action": "SCMP_ACT_ALLOW",
       "args": [
         {
-          "index": 1,
-          "value": 0,
+          "index": 2,
+          "value": 64,
           "valueTwo": 0,
-          "op": "SCMP_CMP_EQ"
+          "op": "SCMP_CMP_MASKED_EQ"
         }
       ]
     }
     ```
-    This example is overly simplistic. Real-world argument filtering is complex and often requires understanding the syscall's specific argument structure (e.g., `openat`'s `flags` argument).
+    `index: 2` is `openat`'s `flags` argument. `SCMP_CMP_MASKED_EQ` ANDs the actual argument against `value` (used here as a mask, `64` — decimal for `0100` octal, the numeric value of `O_CREAT` on the common Linux ABI; JSON has no octal literal syntax, so the profile has to spell it out in decimal) and compares the result to `valueTwo` (the expected value, `0`). So this rule only matches, and therefore only allows, calls where the `O_CREAT` bit is clear; an `openat` call that passes `O_CREAT` won't match this `ALLOW` rule and falls through to the profile's `defaultAction` instead. That's the real ceiling of `seccomp` argument filtering: narrowing flag combinations, not inspecting what a pointer points to.
 
 ### Step 4: Maintenance
 

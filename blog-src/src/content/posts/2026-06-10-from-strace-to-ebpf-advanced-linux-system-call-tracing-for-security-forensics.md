@@ -150,7 +150,10 @@ BPF_HASH(syscall_counts, u64, u64);
 
 int syscall__openat(struct pt_regs *ctx) {
     u64 id = bpf_get_current_pid_tgid();
-    u64 *count = syscall_counts.lookup_or_init(&id, 0);
+    u64 zero = 0;
+    // lookup_or_init's default-value argument has to be a pointer to the
+    // map's value type, not a bare literal.
+    u64 *count = syscall_counts.lookup_or_init(&id, &zero);
     (*count)++;
     return 0;
 }

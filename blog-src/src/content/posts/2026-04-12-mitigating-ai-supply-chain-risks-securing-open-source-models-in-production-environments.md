@@ -49,7 +49,7 @@ Just as you wouldn’t install random binaries from the Internet, don’t pull m
 Model files can contain executable code (e.g., pickled objects in Python). Before deploying:
 
 - **Use static analysis tools** to scan for known vulnerabilities in code dependencies.
-- **Employ model scanners** like Microsoft's AMI (AI Model Inspector) to detect malicious payloads in model artifacts.
+- **Employ model scanners** like Microsoft Defender for Cloud's AI model scanning to detect malicious payloads in model artifacts.
 - **Automate dependency checks** with tools like Dependabot or Snyk for supporting libraries.
 
 ### 3. **Isolate and Monitor Model Execution**
@@ -84,7 +84,7 @@ Suppose your team wants to deploy an open-source sentiment analysis model from H
 
 1. **Review the model card** for publisher reputation, intended use, and license terms.
 2. **Download and verify the model** using Hugging Face’s CLI, checking the SHA256 hash and signature.
-3. **Scan the model artifact** with AMI for any suspicious code or payloads.
+3. **Scan the model artifact** with Microsoft Defender for Cloud's AI model scanning for any suspicious code or payloads.
 4. **Run the model in a Docker container** with no Internet access and minimal file system permissions.
 5. **Test predictions** on your own curated data to ensure outputs match expectations.
 6. **Document the process** and save artifacts for future audits.

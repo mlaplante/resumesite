@@ -23,6 +23,10 @@ Here’s a simplified eBPF C program that monitors `execve` calls and prints the
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_tracing.h>
 
+#define TASK_COMM_LEN 16 // vmlinux.h is BTF-generated and carries types, not
+                          // #defines, so constants like this one (normally
+                          // pulled from linux/sched.h) still need declaring
+
 char LICENSE[] SEC("license") = "GPL";
 
 struct {
@@ -81,6 +85,8 @@ Let's look at how we can use eBPF to profile disk I/O latency by tracing `block_
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_tracing.h>
 
+#define TASK_COMM_LEN 16 // vmlinux.h carries types, not #defines
+
 char LICENSE[] SEC("license") = "GPL";
 
 // Map to store timestamps of issued requests
@@ -103,15 +109,15 @@ struct io_event {
     char comm[TASK_COMM_LEN];
 };
 
-SEC("tp/block/block_rq_issue")
+SEC("tp_btf/block_rq_issue")
 int BPF_PROG(block_rq_issue, struct request *rq) {
     u64 ts = bpf_ktime_get_ns();
     bpf_map_update_elem(&start, &rq, &ts, BPF_ANY);
     return 0;
 }
 
-SEC("tp/block/block_rq_complete")
-int BPF_PROG(block_rq_complete, struct request *rq, unsigned int bytes) {
+SEC("tp_btf/block_rq_complete")
+int BPF_PROG(block_rq_complete, struct request *rq, blk_status_t error, unsigned int nr_bytes) {
     u64 *start_ts_p;
     u64 delta_ns;
     struct io_event *e;
@@ -144,6 +150,8 @@ int BPF_PROG(block_rq_complete, struct request *rq, unsigned int bytes) {
 ```
 
 This eBPF program measures the time taken for block I/O requests to complete and reports events where latency exceeds 1 millisecond. The user-space component would then read from the ring buffer and print these events, providing a real-time view of I/O performance bottlenecks.
+
+Note the `tp_btf/` prefix rather than `tp/`: it's what lets `BPF_PROG()` hand you the tracepoint's original, typed kernel arguments (here, the real `struct request *rq, blk_status_t error, unsigned int nr_bytes` from the `block_rq_complete` tracepoint definition) via BTF, instead of the flattened `struct trace_event_raw_block_rq_complete *ctx` you'd get from a classic `tp/block/block_rq_complete` attachment. Our earlier `execve` example intentionally used the classic form — `tp/syscalls/sys_enter_execve` paired with `struct trace_event_raw_sys_enter *ctx` — which is why it didn't use `BPF_PROG()`.
 
 **Key Takeaways for Performance Debugging:**
 

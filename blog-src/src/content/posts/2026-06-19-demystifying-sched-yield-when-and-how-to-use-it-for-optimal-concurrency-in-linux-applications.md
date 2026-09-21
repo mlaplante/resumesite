@@ -21,7 +21,7 @@ Crucially, it does *not* put the calling thread to sleep. Instead, it moves the 
 Think of it like this: You're in a queue for a ride. `sched_yield()` means you step to the back of *your current queue*. If your friends (same priority) are behind you, they get to go next. If someone important (higher priority) comes along, they get to go next. If no one else is there, you just get back in the ride.
 
 The man page for `sched_yield(2)` on Linux states:
-> `sched_yield()` causes the calling thread to relinquish the CPU. The thread is moved to the end of the queue for its static priority and a new thread is scheduled.
+> `sched_yield()` causes the calling thread to relinquish the CPU. The thread is moved to the end of the queue for its static priority and a new thread gets to run.
 
 This is important: it only affects threads with the *same or higher static priority*. It does not necessarily yield to *any* other thread on the system.
 

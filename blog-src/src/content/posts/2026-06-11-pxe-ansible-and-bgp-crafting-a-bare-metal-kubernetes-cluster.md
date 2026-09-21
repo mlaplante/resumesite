@@ -256,10 +256,12 @@ kube_node
         KUBECONFIG: /home/k8sadmin/.kube/config
 
     - name: Wait for Calico pods to be ready
-      ansible.builtin.command: kubectl -n calico-system wait --for=condition=Ready pods --all --timeout=300s
+      ansible.builtin.command: kubectl -n kube-system wait --for=condition=Ready pods --all --timeout=300s
       environment:
         KUBECONFIG: /home/k8sadmin/.kube/config
     ```
+
+    Note the namespace: this manifest is the non-operator Calico install, so `calico-node` and `calico-kube-controllers` land in `kube-system` alongside the rest of the cluster's system pods, not in a separate `calico-system` namespace. Pointing the wait at the wrong namespace doesn't error — `kubectl wait` against a namespace with no matching pods just returns immediately, so a typo here silently skips the readiness gate instead of failing loudly. If you switch to the Tigera operator-based install later, it does create its own `calico-system` namespace, so this command would need to change with it.
 
 6.  **`06-join-workers.yml` (Worker Nodes Only)**:
     *   Run the `kubeadm join` command captured from the control plane, using `hostvars` to pull it across the play.

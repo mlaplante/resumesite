@@ -54,7 +54,7 @@ The quality of the JIT-generated code directly dictates your program's performan
 *   **Register Usage:** Efficient use of eBPF registers is crucial. If your program frequently spills registers to the stack and reloads them, the JIT will generate more memory access instructions, which are slower than register-to-register operations.
 *   **Instruction Count:** Fewer eBPF instructions generally translate to fewer native instructions. Each eBPF instruction has a cost.
 *   **Branch Predictability:** Conditional branches (`if/else` statements) can introduce performance penalties if the CPU's branch predictor frequently guesses incorrectly. Writing code where branches are highly predictable (e.g., checking common cases first) can help.
-*   **Helper Function Calls:** While powerful, `bpf_call` to kernel helper functions incurs a context switch cost. Minimize unnecessary calls.
+*   **Helper Function Calls:** A `bpf_call` to a kernel helper is a direct function call into code that's already resident in the kernel — not a context switch, since your eBPF program is already executing in kernel context when the hook fires and helpers require no foreign-function interface to reach. The real cost is the call/return overhead itself plus whatever work the helper does internally: a `bpf_map_lookup_elem()` that walks a hash bucket costs far more than a `bpf_ktime_get_ns()` that just reads a clock. Minimize calls to the expensive helpers on your hot path; don't assume every helper costs the same.
 
 **Example: Register Spills**
 

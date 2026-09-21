@@ -34,26 +34,30 @@ Even though raw data isn't shared, model updates can still leak information abou
 **1. Differential Privacy (DP):**
    *   **Challenge:** Malicious actors could potentially reconstruct aspects of the training data from aggregated model updates, especially if a client's dataset is unique or small.
    *   **Governance Action:** Mandate the application of Differential Privacy mechanisms during local model training and update transmission. DP adds carefully calibrated noise to the model updates, statistically guaranteeing that the presence or absence of any single data point does not significantly alter the output of the FL algorithm.
-   *   **Concrete Example:** In a TensorFlow Federated (TFF) setup, you can configure a DP mechanism for the aggregation:
+   *   **Concrete Example:** In a TensorFlow Federated (TFF) setup, TFF ships a purpose-built helper for this, `tff.learning.model_update_aggregator.dp_aggregator`, so you don't need to hand-assemble the DP mechanics yourself:
      ```python
      import tensorflow_federated as tff
-     import tensorflow as tf
 
-     # ... (define your model, data, and client_update_fn) ...
+     # ... (define your_model_fn, matching tff.learning.models.VariableModel) ...
 
-     # Configure differentially private aggregation
-     dp_aggregator = tff.aggregators.DifferentiallyPrivateFactory(
-         tff.aggregators.SumFactory(),
-         noise_multiplier=0.5, # Controls the amount of noise
-         clip_norm=1.0 # Clips gradients to bound sensitivity
+     # noise_multiplier controls how much Gaussian noise is added to the
+     # aggregate; clients_per_round calibrates that noise to the number of
+     # client updates expected each round. Clipping is handled adaptively
+     # internally.
+     aggregation_factory = tff.learning.model_update_aggregator.dp_aggregator(
+         noise_multiplier=0.5,
+         clients_per_round=100
      )
 
-     # Build the federated learning process with DP
-     iterative_process = tff.learning.algorithms.build_weighted_averaging_process(
-         model_fn=your_model_fn,
-         client_optimizer_fn=lambda: tf.keras.optimizers.SGD(learning_rate=0.01),
-         server_optimizer_fn=lambda: tf.keras.optimizers.SGD(learning_rate=1.0),
-         model_aggregator=dp_aggregator
+     # Build the federated learning process with DP. Note this uses
+     # *unweighted* averaging: letting a client's dataset size influence how
+     # much its update counts would undermine the per-client noise
+     # calibration the DP guarantee depends on.
+     learning_process = tff.learning.algorithms.build_unweighted_fed_avg(
+         your_model_fn,
+         client_optimizer_fn=tff.learning.optimizers.build_sgdm(learning_rate=0.01),
+         server_optimizer_fn=tff.learning.optimizers.build_sgdm(learning_rate=1.0, momentum=0.9),
+         model_aggregator=aggregation_factory,
      )
      ```
    *   **Takeaway:** Integrate DP as a mandatory component of your FL framework, carefully balancing privacy guarantees with model utility.

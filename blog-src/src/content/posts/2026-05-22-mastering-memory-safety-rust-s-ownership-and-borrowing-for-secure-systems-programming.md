@@ -82,23 +82,40 @@ At the heart of Rust's memory safety model are three interconnected concepts:
             y
         }
     }
+    ```
 
+    Here's the part that trips people up, because the borrow checker's reasoning is stricter than it first appears. Consider:
+
+    ```rust
     fn main() {
         let string1 = String::from("long string is long");
         let result;
         {
             let string2 = String::from("xyz");
             result = longest(string1.as_str(), string2.as_str());
-            // string2 goes out of scope here. If 'result' held a reference
-            // to string2, this would be a dangling pointer.
-            // But due to lifetime rules, the compiler ensures 'result'
-            // cannot outlive string2 if it were to reference it.
-            // In this specific case, result references string1, which is fine.
-        }
-        println!("The longest string is {}", result);
+        } // string2 is dropped here
+        println!("The longest string is {}", result); // won't compile
     }
     ```
-    If `longest` were written in a way that *could* return a reference to `string2` and `string2` went out of scope, the compiler would prevent the `result = longest(...)` line from compiling, because `result` would outlive `string2`.
+
+    This does **not** compile — and it's worth understanding exactly why, because the reason is the whole point of lifetimes. `x` and `y` in `longest` share a single lifetime parameter, `'a`. That tells the compiler "the returned reference is valid for as long as *both* inputs are valid" — not "valid for as long as whichever input actually gets returned." The compiler doesn't evaluate `x.len() > y.len()` at compile time; it has to assume the return value could be tied to `string2`'s lifetime just as easily as `string1`'s. Since `result` is used in the `println!` after `string2` has already been dropped, the compiler rejects the borrow — it has no way to know, from the function signature alone, that this particular call happens to return `string1`. The actual error is `` `string2` does not live long enough ``.
+
+    The fix isn't to convince the compiler your code is "fine, actually" — it's to restructure so the reference is only used while everything it could point to is still alive:
+
+    ```rust
+    fn main() {
+        let string1 = String::from("long string is long");
+
+        {
+            let string2 = String::from("xyz");
+            let result = longest(string1.as_str(), string2.as_str());
+            println!("The longest string is {}", result);
+        } // now both string1 and string2 — and any use of result — are
+          // confined to a scope where both are still valid
+    }
+    ```
+
+    Moving the `println!` inside the block, so `result` is both created and used while `string2` is still alive, is what makes this compile. That's the mechanism lifetimes actually enforce: not "the compiler figures out which branch runs," but "every use of a reference must fall within a span where the compiler can *prove*, from the signatures alone, that the data it could point to is still valid."
 
 ## Actionable Takeaways for Secure Systems Programming
 

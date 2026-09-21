@@ -82,14 +82,10 @@ Let's create a file named `ami.nix` (or similar) to define our system:
 
   # Allow outbound HTTP/HTTPS for updates (if needed)
   networking.firewall.allowedOutPorts = [ 80 443 ];
-
-  # For generating the AMI, we need a specific format
-  virtualisation.amazon-image.ami.name = "my-nginx-immutable-server";
-  virtualisation.amazon-image.ami.description = "Nginx server built with NixOS";
 }
 ```
 
-To build this into an AMI, you'd typically use a tool like `nix-build-ami` (a community tool) or a custom script that leverages `nixos-build-vms` and then uploads the resulting disk image to S3, registering it as an AMI. For simplicity in this blog post, let's assume we have a process that takes this `ami.nix` and produces an AMI ID.
+The `amazon-image.nix` module we imported configures the *runtime* environment for an EC2 instance (boot parameters, filesystem layout, growing the root partition on first boot, metadata service integration) — it doesn't expose options for the AMI's own name or description. Those are AWS-side attributes, set when you register the built disk image as an AMI, not NixOS configuration. Building the actual image and registering it is a separate step, handled by your image-build tooling (for example, `nixos-rebuild build-image`, which as of NixOS 25.05 folds in most of what the now-archived `nixos-generators` project used to do) followed by the AWS side of the pipeline — uploading the resulting disk image and calling something equivalent to `aws ec2 register-image --name "my-nginx-immutable-server" --description "Nginx server built with NixOS" ...` to give it its name and description. For simplicity in this blog post, let's assume we have a process that takes this `ami.nix` and produces an AMI ID.
 
 **Actionable Takeaway:** Your `ami.nix` file is your single source of truth for the server's configuration. Version control this file!
 

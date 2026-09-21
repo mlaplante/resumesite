@@ -69,10 +69,10 @@ A static analysis tool like [Checkov](https://www.checkov.io/) or [Terrascan](ht
 ```
 ❯ checkov -f my_s3_bucket.tf
 ...
-Check: CKV_AWS_18: "S3 Bucket should not have public ACL"
+Check: CKV_AWS_20: "S3 Bucket has an ACL defined which allows public access"
     PASSED for resource: aws_s3_bucket.my_bucket
     File: /my_s3_bucket.tf:1-18
-    Guide: https://docs.bridgecrew.io/docs/s3_bucket_18
+    Guide: https://docs.bridgecrew.io/docs/s3_bucket_20
 
 Summary:
 
@@ -88,7 +88,7 @@ Skipped checks: 0
 ...
 FAILED checks:
 
-Check: CKV_AWS_18: "S3 Bucket should not have public ACL"
+Check: CKV_AWS_20: "S3 Bucket has an ACL defined which allows public access"
     FAILED for resource: aws_s3_bucket.my_bucket
     File: /my_s3_bucket.tf:1-18
     Code:

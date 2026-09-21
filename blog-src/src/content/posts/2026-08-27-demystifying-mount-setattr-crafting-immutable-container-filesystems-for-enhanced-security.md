@@ -10,7 +10,7 @@ excerpt: "In the world of containerized applications, security is paramount. One
 
 In the world of containerized applications, security is paramount. One of the most effective strategies for bolstering security is to embrace immutability – the principle that once a system or component is deployed, it should not be modified. For containers, this often translates to read-only root filesystems, preventing attackers from modifying binaries, injecting malware, or altering critical configurations post-deployment. While tools like Docker's `read-only` flag or Kubernetes' `readOnlyRootFilesystem` are a good start, they often rely on existing mount options and can sometimes be circumvented or lack fine-grained control.
 
-This is where `mount_setattr`, a relatively new Linux system call introduced in kernel 5.12, comes into play. It offers a powerful, granular way to modify mount attributes, including making a mounted filesystem truly immutable from a security perspective, even for privileged processes. Let's dive into how `mount_setattr` works and how we can leverage it to create more secure container environments.
+This is where `mount_setattr`, a relatively new Linux system call introduced in kernel 5.12, comes into play. It offers a powerful, granular way to modify mount attributes — including applying a read-only attribute atomically and recursively across an entire mount tree, in a way the classic `mount(2)`/remount dance can't match. On its own it doesn't make a filesystem immune to a privileged process reverting it; what makes a container's root filesystem genuinely hard to reverse is pairing `mount_setattr` with dropping the capability that would let anyone remount it. Let's dive into how `mount_setattr` actually works and how to combine it with capability dropping to build a real hardened, read-only container root.
 
 ## The Challenge with Traditional Read-Only Mounts
 
@@ -24,25 +24,27 @@ The core issue is that `MS_RDONLY` is a *suggestion* to the kernel that can be o
 
 ## Enter `mount_setattr`: A New Era of Mount Control
 
-`mount_setattr` allows you to atomically change various attributes of an existing mount point. Its true power for security lies in its ability to apply attributes that *cannot be undone* by a simple `remount` operation, even by root.
+`mount_setattr` allows you to atomically change various attributes of an existing mount point — and, with the right flag, do it recursively across every submount in a tree in one call, instead of walking each mount by hand with `mount -o remount`.
 
 The system call signature looks like this:
 
 ```c
-int mount_setattr(int dfd, const char *path, unsigned int flags, struct mount_attr *attr);
+int mount_setattr(int dirfd, const char *path, unsigned int flags,
+                   struct mount_attr *attr, size_t size);
 ```
 
 Key arguments:
 
-*   `dfd`, `path`: Identify the mount point.
-*   `flags`: Control how `path` is resolved (e.g., `AT_EMPTY_PATH` for an already open file descriptor, `AT_RECURSIVE` to apply to submounts).
-*   `attr`: A structure containing the attributes to set. This is where the magic happens.
+*   `dirfd`, `path`: Identify the mount point.
+*   `flags`: Control how `path` is resolved (e.g., `AT_EMPTY_PATH` for an already open file descriptor, `AT_RECURSIVE` to apply the change to every submount beneath `path`, not just the mount point itself).
+*   `attr`: A `struct mount_attr` describing the attributes to set (`attr_set`) and clear (`attr_clr`).
+*   `size`: The size of the `struct mount_attr` passed in — always `sizeof(attr)`. This extra argument (absent from the older `mount(2)`) is what lets the kernel grow the struct in future releases without breaking old binaries, the same pattern used by newer syscalls like `sched_setattr`.
 
-For our purpose of creating immutable filesystems, the `mount_attr` struct has a crucial field: `attr_set`. Within `attr_set`, we're interested in `MOUNT_ATTR_IMMUTABLE`.
+For our purpose of building a read-only container root, the field we care about in `attr_set` is `MOUNT_ATTR_RDONLY` — the same read-only semantics as the classic `MS_RDONLY` mount flag, but applied through a call that can target an entire mount tree atomically instead of one mount at a time.
 
-## Crafting an Immutable Container Root Filesystem
+## Crafting a Read-Only Container Root Filesystem
 
-Let's walk through a practical example of how you could leverage `mount_setattr` to make a container's root filesystem truly immutable *after* it has been set up but *before* the main application process starts.
+Let's walk through a practical example of how you could leverage `mount_setattr` to lock a container's root filesystem read-only *after* it has been set up but *before* the main application process starts — and then take the extra step that actually makes it stick: dropping the capability that would let anyone undo it.
 
 Imagine a container runtime or an orchestrator like Kubernetes that wants to enforce this.
 
@@ -70,15 +72,16 @@ First, compile the C program:
 // lock_mount.c
 #define _GNU_SOURCE
 #include <fcntl.h>
+#include <linux/mount.h>   // struct mount_attr, MOUNT_ATTR_* (not in glibc's sys/mount.h yet)
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/mount.h>
 #include <sys/syscall.h>
 #include <unistd.h>
 
-// Helper for mount_setattr system call
-int __mount_setattr(int dfd, const char *path, unsigned int flags, struct mount_attr *attr) {
-    return syscall(SYS_mount_setattr, dfd, path, flags, attr);
+// Wrapper for the mount_setattr system call (glibc has no wrapper for it yet)
+static int do_mount_setattr(int dirfd, const char *path, unsigned int flags,
+                             struct mount_attr *attr, size_t size) {
+    return syscall(SYS_mount_setattr, dirfd, path, flags, attr, size);
 }
 
 int main(int argc, char *argv[]) {
@@ -90,27 +93,28 @@ int main(int argc, char *argv[]) {
     const char *mount_point = argv[1];
     struct mount_attr attr = {0};
 
-    // Set the IMMUTABLE attribute
-    attr.attr_set = MOUNT_ATTR_IMMUTABLE;
+    // Set the read-only attribute; AT_RECURSIVE (below) applies it to every
+    // submount under mount_point in one atomic call.
+    attr.attr_set = MOUNT_ATTR_RDONLY;
 
-    printf("Attempting to set MOUNT_ATTR_IMMUTABLE on %s...\n", mount_point);
+    printf("Attempting to set MOUNT_ATTR_RDONLY on %s...\n", mount_point);
 
-    if (__mount_setattr(AT_FDCWD, mount_point, 0, &attr) == -1) {
+    if (do_mount_setattr(AT_FDCWD, mount_point, AT_RECURSIVE, &attr, sizeof(attr)) == -1) {
         perror("mount_setattr failed");
         return EXIT_FAILURE;
     }
 
-    printf("Successfully set MOUNT_ATTR_IMMUTABLE on %s.\n", mount_point);
+    printf("Successfully set MOUNT_ATTR_RDONLY on %s.\n", mount_point);
 
     // Verify by attempting a write
     printf("Attempting to create a file in %s...\n", mount_point);
-    FILE *fp = fopen("/test_immutable.txt", "w");
+    FILE *fp = fopen("/test_readonly.txt", "w");
     if (fp == NULL) {
         perror("Failed to create file (as expected)");
     } else {
-        fprintf(stderr, "ERROR: Successfully created file, immutability failed!\n");
+        fprintf(stderr, "ERROR: Successfully created file, read-only mount failed!\n");
         fclose(fp);
-        unlink("/test_immutable.txt");
+        unlink("/test_readonly.txt");
         return EXIT_FAILURE;
     }
 
@@ -145,8 +149,8 @@ docker cp ./lock_mount immutable-test:/usr/local/bin/
 docker exec immutable-test /usr/local/bin/lock_mount /
 
 # Expected output from lock_mount:
-# Attempting to set MOUNT_ATTR_IMMUTABLE on /...
-# Successfully set MOUNT_ATTR_IMMUTABLE on /.
+# Attempting to set MOUNT_ATTR_RDONLY on /...
+# Successfully set MOUNT_ATTR_RDONLY on /.
 # Attempting to create a file in /...
 # Failed to create file (as expected): Read-only file system
 
@@ -158,30 +162,39 @@ docker exec immutable-test touch /another_test.txt
 docker exec immutable-test sh -c "echo 'hello' >> /etc/hosts"
 # sh: 1: cannot create /etc/hosts: Read-only file system
 
-# Even trying to remount as rw won't work:
+# But because this container still has CAP_SYS_ADMIN (we ran it --privileged),
+# a root process inside it CAN remount the tree read-write again:
 docker exec immutable-test mount -o remount,rw /
-# mount: /: permission denied.
-# (This error message can vary depending on kernel version and capabilities)
+# (succeeds — no error)
+docker exec immutable-test touch /another_test.txt
+# (now succeeds too — the read-only attribute is gone)
 ```
 
-**Important Note on `--privileged`:** Running a container with `--privileged` in Docker gives it almost full host capabilities. In a production scenario, a container runtime would use specific capabilities (like `CAP_SYS_ADMIN` and potentially `CAP_DAC_OVERRIDE` if paths need to be resolved against a different user's permissions) to perform the `mount_setattr` call, not a blanket `--privileged` flag. The goal is that the *application container itself* does not have these capabilities; only the runtime orchestrating it does.
+**This is the part that's easy to miss.** `mount_setattr` applied `MOUNT_ATTR_RDONLY` atomically and recursively, which is genuinely useful, but the attribute itself is no stickier than the read-only bit `mount -o ro` has always set: anything holding `CAP_SYS_ADMIN` in the mount's namespace can remount it read-write again. There is no flag that makes a mount attribute survive a privileged remount — if you want that, the mechanism is capabilities, not the mount call.
 
-## How `MOUNT_ATTR_IMMUTABLE` Differs
+**Important Note on `--privileged`:** Running a container with `--privileged` in Docker gives it almost full host capabilities, `CAP_SYS_ADMIN` included, which is exactly why the remount above succeeded. In a production scenario, a container runtime would perform the `mount_setattr` call itself — using its *own* `CAP_SYS_ADMIN`, from outside the container — and then start the application process in the container **without** `CAP_SYS_ADMIN` at all. The goal is that the *application container itself* never holds the capability that could reverse the mount; only the runtime orchestrating it does, and only briefly, before the workload starts.
 
-The key distinction with `MOUNT_ATTR_IMMUTABLE` is that once set, it's sticky. It cannot be unset, and the filesystem cannot be remounted read-write, even by a process with `CAP_SYS_ADMIN`. The only way to remove this attribute is to unmount the filesystem entirely.
+## Making the Read-Only Mount Actually Stick
 
-This makes it incredibly powerful for security:
+The fix isn't a stronger `mount_setattr` flag — it's making sure nothing inside the container can call `mount_setattr` (or plain `mount -o remount,rw`) with effect. Two pieces do that:
 
-*   **Post-Exploitation Defense:** Even if an attacker gains root within the container, they cannot modify the core binaries or configuration files on the root filesystem. This significantly limits their ability to persist, escalate privileges, or pivot.
+*   **Drop `CAP_SYS_ADMIN` before the application starts.** A container runtime typically does the `mount_setattr` call as one of its last privileged setup steps, then execs the application process with a capability set that no longer includes `CAP_SYS_ADMIN` (e.g. via `capset(2)` or, in Docker/OCI terms, simply not granting it — this is Docker's non-`--privileged` default). With `CAP_SYS_ADMIN` gone, `mount -o remount,rw` inside the container fails with `EPERM`, full stop.
+*   **Or scope it to a user namespace that doesn't map to the host.** A process can hold `CAP_SYS_ADMIN` *inside* its own user namespace without that capability meaning anything on the host mount namespace — this is how rootless container runtimes let an unprivileged user "administer" their own sandbox without ever being root outside it.
+
+Once either of those is true, the atomic, recursive `MOUNT_ATTR_RDONLY` that `mount_setattr` applied really does become effectively unreversible from inside the container — not because the attribute is special, but because nothing left in the container has the privilege to undo it.
+
+This combination is genuinely useful for security:
+
+*   **Post-Exploitation Defense:** If an attacker gains root *inside* the container but the container process never had `CAP_SYS_ADMIN`, they cannot modify the core binaries or configuration files on the root filesystem, and they cannot remount their way around that. This significantly limits their ability to persist, escalate privileges, or pivot.
 *   **Integrity Guarantees:** You can have higher confidence that the deployed binaries are precisely what you intended, reducing the risk of supply chain attacks or accidental corruption.
-*   **Simplified Auditing:** If an immutable filesystem is involved, you know that any changes must have occurred in a separate, explicitly writable volume, simplifying incident response.
+*   **Simplified Auditing:** If a read-only root filesystem is enforced this way, you know that any changes must have occurred in a separate, explicitly writable volume, simplifying incident response.
 
 ## Actionable Takeaways for Enhanced Container Security
 
-1.  **Understand `mount_setattr`'s Potential:** Recognize that `mount_setattr` is a game-changer for enforcing filesystem immutability beyond what traditional `MS_RDONLY` offers.
-2.  **Advocate for Runtime Integration:** If you're involved in designing container platforms or runtimes, push for the integration of `mount_setattr` to enforce immutable root filesystems by default or as a strong option. This could be a post-creation hook that locks down the mount.
+1.  **Understand what `mount_setattr` actually buys you:** an atomic, recursive way to apply `MOUNT_ATTR_RDONLY` (and friends) across a whole mount tree in one call — not a stronger, unreversible form of read-only. The durability comes from capability dropping, not the syscall.
+2.  **Advocate for Runtime Integration:** If you're involved in designing container platforms or runtimes, push for `mount_setattr` plus capability dropping as a post-creation hook that locks down the mount *and* removes the ability to undo it, before the application process starts.
 3.  **Kernel Version Awareness:** Remember that `mount_setattr` requires Linux kernel 5.12 or newer. Ensure your host systems meet this requirement if you plan to utilize it.
-4.  **Layered Security:** While `mount_setattr` provides strong filesystem immutability, it's part of a broader security strategy. Combine it with:
+4.  **Layered Security:** `mount_setattr` plus capability dropping is one layer of a broader security strategy. Combine it with:
     *   **Least Privilege:** Run container processes as non-root users.
     *   **Seccomp Profiles:** Restrict available system calls.
     *   **AppArmor/SELinux:** Add mandatory access control.

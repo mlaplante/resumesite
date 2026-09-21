@@ -52,13 +52,15 @@ For our PostgreSQL example, we can use eBPF tools from the `bcc` (BPF Compiler C
 
 ### Scenario: High I/O During Sequential Scans
 
-Let's assume our `EXPLAIN ANALYZE` shows a `Seq Scan` taking a long time, and we suspect it's due to high disk I/O. We can use `biosnoop` (or `ext4slower`, `xfslower` for specific filesystems) to monitor block device I/O:
+Let's assume our `EXPLAIN ANALYZE` shows a `Seq Scan` taking a long time, and we suspect it's due to high disk I/O. Rather than trying to match every `postgres` process on the box, it's more precise to scope these tools to the one backend actually running our query. Open a `psql` session, run `SELECT pg_backend_pid();`, and keep that session open — that PID (call it `$PGPID` below) is the one we'll trace.
+
+We can use `biosnoop` (or `ext4slower`, `xfslower` for specific filesystems) to monitor block device I/O. `biosnoop` has no built-in PID filter, so we run it unfiltered and filter its output on the PID column ourselves:
 
 ```bash
-sudo biosnoop -p $(pgrep -d',' -f '^postgres: ')
+sudo biosnoop | awk -v pid="$PGPID" '$3 == pid'
 ```
 
-This command will show I/O operations, including the process ID (PID), block device, and latency, for all PostgreSQL processes. If we see a large number of read operations with high latencies during our query execution, it confirms our suspicion of I/O being the bottleneck.
+This command will show I/O operations, including the process ID (PID), block device, and latency, filtered down to just our backend. If we see a large number of read operations with high latencies during our query execution, it confirms our suspicion of I/O being the bottleneck.
 
 ```
 # Example biosnoop output during a slow Seq Scan
@@ -71,23 +73,23 @@ TIME(s)        COMM             PID    DISK    T  BYTES  LAT(ms)
 
 ### Scenario: Unexpected CPU Usage or Context Switching
 
-Perhaps the `EXPLAIN ANALYZE` shows a costly `Sort` operation, and we're wondering if it's consuming excessive CPU or leading to context switching. We can use `profile` to sample CPU stacks or `syscount` to monitor system calls.
+Perhaps the `EXPLAIN ANALYZE` shows a costly `Sort` operation, and we're wondering if it's consuming excessive CPU or leading to context switching. We can use `profile` to sample CPU stacks or `syscount` to monitor system calls — both of these do take a `-p` flag, unlike `biosnoop`.
 
-To profile CPU usage for PostgreSQL processes:
-
-```bash
-sudo profile -p $(pgrep -d',' -f '^postgres: ') -F 99 -f -a -d 5
-```
-
-This will sample stack traces at 99Hz for 5 seconds, showing which functions are consuming CPU time within the PostgreSQL processes. If we see a significant portion of CPU time spent in sorting algorithms or other unexpected functions, it can guide further investigation.
-
-For system call monitoring, `syscount` can be useful:
+To profile CPU usage for our backend:
 
 ```bash
-sudo syscount -p $(pgrep -d',' -f '^postgres: ')
+sudo profile -p "$PGPID" -F 99 -f -a 5
 ```
 
-This will show the count of system calls made by PostgreSQL processes. A sudden spike in `read()` or `write()` calls during a query, especially if not expected, can indicate inefficient data access patterns.
+This will sample stack traces at 99Hz for 5 seconds, showing which functions are consuming CPU time within that backend. If we see a significant portion of CPU time spent in sorting algorithms or other unexpected functions, it can guide further investigation.
+
+For system call monitoring, `syscount` can be useful. Note that its `-p` only accepts a single PID (not a comma-separated list), which is exactly what we have here:
+
+```bash
+sudo syscount -p "$PGPID"
+```
+
+This will show the count of system calls made by our backend. A sudden spike in `read()` or `write()` calls during a query, especially if not expected, can indicate inefficient data access patterns.
 
 ## Combining the Insights: A Practical Example
 

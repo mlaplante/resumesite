@@ -218,7 +218,7 @@ Building a secure key-value store goes beyond just memory safety.
     ```rust
     // Conceptual application-level encryption
     use aes_gcm::{Aes256Gcm, Key as AesKey, Nonce}; // For AES-256 GCM
-    use aes_gcm::aead::{Aead, NewAead};
+    use aes_gcm::aead::{Aead, KeyInit};
     use rand::{rngs::OsRng, RngCore};
 
     pub fn encrypt_value(key: &AesKey<Aes256Gcm>, plaintext: &[u8]) -> Result<Vec<u8>, aes_gcm::Error> {

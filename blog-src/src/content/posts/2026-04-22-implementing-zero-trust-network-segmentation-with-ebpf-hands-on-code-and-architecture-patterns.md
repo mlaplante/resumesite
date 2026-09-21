@@ -66,21 +66,30 @@ sudo apt-get install clang llvm libbpf-dev
 
 ### Step 2: Write an eBPF Program
 
-Here's a minimal eBPF C program that attaches to the socket connect event (`tcp_connect`) and drops connections not initiated by `appuser` (UID 1001):
+A common first instinct is to reach for a kprobe on `tcp_connect` and have the handler return non-zero to "block" the connection. That doesn't work: a plain kprobe is observation-only — the kernel never consults a kprobe handler's return value to alter the function it's attached to. (The one exception, `bpf_override_return()`, only works on functions explicitly tagged `BPF_ALLOW_ERROR_INJECTION()` in the kernel source, and `tcp_connect` isn't one of them.) If you want an eBPF program that can actually veto a connection, you need the **BPF LSM** (Linux Security Module) hook, not a kprobe.
+
+BPF LSM lets an eBPF program attach to the same hooks the kernel's Mandatory Access Control modules (SELinux, AppArmor) use, and return a value that genuinely determines whether the operation proceeds. It requires `CONFIG_BPF_LSM=y` and the `bpf` LSM enabled in your kernel's LSM list (typically via the `lsm=` boot parameter, e.g. `lsm=landlock,lockdown,yama,bpf`) — check `cat /sys/kernel/security/lsm` to confirm `bpf` is active. Here's the same "only `appuser` may connect out" policy, implemented on the real `socket_connect` LSM hook:
 
 ```c
 // file: zero_trust_egress.c
-#include <linux/bpf.h>
+#include "vmlinux.h"
 #include <bpf/bpf_helpers.h>
-#include <linux/ptrace.h>
-#include <linux/sched.h>
+#include <bpf/bpf_tracing.h>
+#include <bpf/bpf_core_read.h>
+#include <errno.h>
 
-SEC("kprobe/tcp_connect")
-int block_non_appuser(struct pt_regs *ctx) {
+SEC("lsm/socket_connect")
+int BPF_PROG(block_non_appuser, struct socket *sock, struct sockaddr *address, int addrlen, int ret)
+{
+    // ret carries the outcome of any earlier LSM in the stack; if something
+    // already denied this connect(), don't override that decision.
+    if (ret != 0)
+        return ret;
+
     u64 uid = bpf_get_current_uid_gid() & 0xFFFFFFFF;
     // Only permit appuser (UID 1001)
     if (uid != 1001) {
-        return 1; // Non-zero => block
+        return -EPERM; // Non-zero (negative errno) => connect() actually fails
     }
     return 0; // Zero => allow
 }
@@ -88,24 +97,38 @@ int block_non_appuser(struct pt_regs *ctx) {
 char LICENSE[] SEC("license") = "GPL";
 ```
 
+Because this runs on the real security hook (`security_socket_connect()` in kernel source), returning `-EPERM` here makes the calling process's `connect()` syscall fail with `EPERM` — the block is real, not just logged.
+
 ### Step 3: Compile the eBPF Program
 
+CO-RE (Compile Once – Run Everywhere) programs need BTF debug info, so compile with `-g`:
+
 ```bash
-clang -O2 -target bpf -c zero_trust_egress.c -o zero_trust_egress.o
+# Generate vmlinux.h once, from the running kernel's BTF:
+bpftool btf dump file /sys/kernel/btf/vmlinux format c > vmlinux.h
+
+clang -O2 -g -target bpf -c zero_trust_egress.c -o zero_trust_egress.o
 ```
 
 ### Step 4: Load and Attach the Program
 
-You can use [bpftool](https://github.com/libbpf/bpftool) or Python's [bcc](https://github.com/iovisor/bcc) to load the program. Here's a snippet using Python BCC:
+LSM programs are loaded through libbpf, not BCC's older text-compile-and-attach flow. `bpftool` can generate a typed skeleton header that does the open/load/attach boilerplate for you:
 
-```python
-from bcc import BPF
-
-bpf_program = open('zero_trust_egress.c').read()
-b = BPF(text=bpf_program)
-b.attach_kprobe(event="tcp_connect", fn_name="block_non_appuser")
-print("Zero Trust egress policy active: only appuser can make outbound TCP connections")
+```bash
+bpftool gen skeleton zero_trust_egress.o > zero_trust_egress.skel.h
 ```
+
+From a small C loader (or any libbpf-based language binding), that skeleton gives you:
+
+```c
+#include "zero_trust_egress.skel.h"
+
+struct zero_trust_egress_bpf *skel = zero_trust_egress_bpf__open_and_load();
+zero_trust_egress_bpf__attach(skel); // attaches block_non_appuser to lsm/socket_connect
+printf("Zero Trust egress policy active: only appuser can make outbound TCP connections\n");
+```
+
+From this point on, any process not running as UID 1001 that calls `connect()` gets `EPERM` back from the kernel — the policy is enforced, not just observed.
 
 ---
 
@@ -113,7 +136,7 @@ print("Zero Trust egress policy active: only appuser can make outbound TCP conne
 
 The real power of eBPF comes from integrating it with external context—Kubernetes labels, workload identity, real-time threat intelligence. Here are actionable tips:
 
-- **Integrate with orchestration:** Use Kubernetes `PodSecurityPolicy` or custom controllers to manage eBPF rules per pod/container.
+- **Integrate with orchestration:** `PodSecurityPolicy` was deprecated in Kubernetes 1.21 and removed entirely in 1.25 — and it never governed network or eBPF policy in the first place (it controlled pod-level settings like privileged mode and host namespaces). For admission-time control over which workloads are allowed to run, use Pod Security Admission (Kubernetes' built-in replacement) or a policy engine like Kyverno or OPA Gatekeeper, paired with custom controllers that translate workload identity into eBPF map entries.
 - **Leverage identity:** Map container/process identity to network policy (e.g., only allow traffic from trusted workloads).
 - **Automate auditing:** Use eBPF to log policy violations, sending alerts to SIEMs or dashboards.
 
@@ -140,31 +163,46 @@ for pod in get_k8s_pods():
 
 Visibility is a core Zero Trust principle. eBPF can log every connection attempt, policy enforcement action, and anomaly. Integrate with Prometheus, ELK, or your SIEM for full visibility.
 
-**Example: Logging Blocked Connections**
+Enforcement and observation are two different jobs, and it's worth keeping them on two different hooks: the LSM program above enforces the policy; a plain kprobe (or tracepoint) is the right tool for logging, precisely *because* it's observation-only and can't affect the traced function no matter what it returns.
+
+**Example: Logging Denied Connection Attempts**
 
 ```c
+// file: zero_trust_audit.c
+#include "vmlinux.h"
+#include <bpf/bpf_helpers.h>
+#include <bpf/bpf_tracing.h>
+
 struct event_t {
     u64 pid;
     u64 uid;
     char comm[16];
 };
 
-BPF_PERF_OUTPUT(events);
+struct {
+    __uint(type, BPF_MAP_TYPE_RINGBUF);
+    __uint(max_entries, 256 * 1024);
+} events SEC(".maps");
 
 SEC("kprobe/tcp_connect")
-int monitor_and_block(struct pt_regs *ctx) {
+int monitor_connect_attempts(struct pt_regs *ctx) {
     u64 uid = bpf_get_current_uid_gid() & 0xFFFFFFFF;
     if (uid != 1001) {
-        struct event_t event = {};
-        event.pid = bpf_get_current_pid_tgid() >> 32;
-        event.uid = uid;
-        bpf_get_current_comm(&event.comm, sizeof(event.comm));
-        events.perf_submit(ctx, &event, sizeof(event));
-        return 1;
+        struct event_t *event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
+        if (!event)
+            return 0;
+        event->pid = bpf_get_current_pid_tgid() >> 32;
+        event->uid = uid;
+        bpf_get_current_comm(&event->comm, sizeof(event->comm));
+        bpf_ringbuf_submit(event, 0);
     }
-    return 0;
+    return 0; // A kprobe's return value is purely informational; it cannot block tcp_connect()
 }
+
+char LICENSE[] SEC("license") = "GPL";
 ```
+
+This program doesn't enforce anything on its own — it fires on *every* `tcp_connect`, records the ones from non-`appuser` processes, and lets a userspace reader (via the ring buffer) push those events to your SIEM. The actual blocking already happened, or didn't, in the `lsm/socket_connect` program from Step 2.
 
 ---
 

@@ -111,7 +111,10 @@ static int __init hrot_attest_init(void) {
     printk(KERN_INFO "HROT_ATTEST: Registered with major number %d\n", major_number);
 
     // 2. Register the device class
-    hrot_attest_class = class_create(THIS_MODULE, CLASS_NAME);
+    // Since kernel 6.4, class_create() takes only the class name — the
+    // owner/THIS_MODULE argument was dropped when struct class stopped
+    // tracking a module pointer.
+    hrot_attest_class = class_create(CLASS_NAME);
     if (IS_ERR(hrot_attest_class)) {
         unregister_chrdev(major_number, DEVICE_NAME);
         printk(KERN_ALERT "HROT_ATTEST: Failed to register device class\n");
@@ -153,8 +156,9 @@ static void __exit hrot_attest_exit(void) {
     }
 
     // Destroy device, class, and unregister
+    // class_destroy() already calls class_unregister() internally, so
+    // calling both here would unregister the same class kset twice.
     device_destroy(hrot_attest_class, MKDEV(major_number, 0));
-    class_unregister(hrot_attest_class);
     class_destroy(hrot_attest_class);
     unregister_chrdev(major_number, DEVICE_NAME);
     printk(KERN_INFO "HROT_ATTEST: Goodbye from the HROT Attestation LKM!\n");

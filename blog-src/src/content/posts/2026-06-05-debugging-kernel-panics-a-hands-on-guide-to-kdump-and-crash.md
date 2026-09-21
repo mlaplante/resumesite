@@ -59,9 +59,11 @@ path /var/crash
 # reboot (default), poweroff, halt, shutdown
 default reboot
 
-# To specify the dump format (makedumpfile options)
-# We often want to exclude zero-filled pages to save space
-dump_filter 0x1f
+# To control the dump format, fold makedumpfile flags into the
+# core_collector line rather than using a separate directive.
+# -d 31 tells makedumpfile to exclude zero, cache, private cache,
+# user-data, and free pages, keeping only what's needed for analysis.
+core_collector makedumpfile -l --message-level 1 -d 31
 ```
 
 After modifying `kdump.conf`, you need to enable and start the `kdump` service:

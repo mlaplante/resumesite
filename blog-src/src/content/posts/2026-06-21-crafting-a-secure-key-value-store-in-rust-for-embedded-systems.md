@@ -154,7 +154,9 @@ Now, let's sketch out the `KeyValueStore` struct and some core methods.
 use alloc::vec::Vec;
 use alloc::boxed::Box;
 
-const CRC_ALG: Crc<u32> = CRC_32_ISO_HDLC;
+// `CRC_32_ISO_HDLC` is an `Algorithm<u32>`, not a `Crc<u32>` itself — it's the
+// parameter table `Crc::new` consumes to build the actual checksum instance.
+const CRC_ALG: Crc<u32> = Crc::<u32>::new(&CRC_32_ISO_HDLC);
 
 pub struct KeyValueStore<F: Flash> {
     flash: F,

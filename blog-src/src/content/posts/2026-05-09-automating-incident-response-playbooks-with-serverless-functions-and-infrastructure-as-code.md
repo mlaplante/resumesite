@@ -52,7 +52,7 @@ graph TD
     A[SIEM Alert (e.g., Splunk, CrowdStrike Falcon LogScale)] --> B(AWS EventBridge Custom Bus)
     B --> C{EventBridge Rule: Suspicious Login}
     C --> D(AWS Lambda Function: `handleSuspiciousLogin`)
-    D -- AWS SDK Call --> E[AWS IAM (Lock User)]
+    D -- AWS SDK Call --> E[AWS IAM (Quarantine User)]
     D -- AWS SDK Call --> F[AWS WAF (Add IP to Blocklist)]
     D -- HTTP POST --> G[Slack Webhook]
     D -- HTTP POST --> H[Jira API]
@@ -108,6 +108,7 @@ import requests
 
 # Environment variables
 IAM_USER_LOCK_ROLE_ARN = os.environ.get('IAM_USER_LOCK_ROLE_ARN')
+IAM_QUARANTINE_POLICY_ARN = os.environ.get('IAM_QUARANTINE_POLICY_ARN') # explicit-deny policy, pre-created
 WAF_IP_SET_ID = os.environ.get('WAF_IP_SET_ID')
 WAF_SCOPE = os.environ.get('WAF_SCOPE', 'REGIONAL') # or CLOUDFRONT
 SLACK_WEBHOOK_URL = os.environ.get('SLACK_WEBHOOK_URL')
@@ -130,18 +131,24 @@ def assume_role(role_arn):
     )
 
 def lock_iam_user(username, iam_client):
-    """Locks an IAM user by setting their password and access keys to inactive."""
+    """Quarantines a compromised IAM user: removes console access, deactivates
+    programmatic access keys, and attaches an explicit-deny policy so that
+    credentials or sessions the attacker already holds stop working
+    immediately, not just on the user's next sign-in."""
     try:
-        # Disable console password
-        iam_client.update_login_profile(
-            UserName=username,
-            PasswordResetRequired=True # Forces password reset on next login
-        )
-        print(f"Set password reset required for IAM user: {username}")
+        # Remove console access outright. This is deliberately
+        # delete_login_profile(), not update_login_profile(PasswordResetRequired=True):
+        # PasswordResetRequired only forces a password change on the user's
+        # *next* console sign-in, it doesn't invalidate the current password
+        # or end a session that's already open. Deleting the login profile
+        # removes password-based console access immediately. It has no effect
+        # on programmatic (access-key) access, which we handle separately below.
+        iam_client.delete_login_profile(UserName=username)
+        print(f"Deleted console login profile for IAM user: {username}")
     except iam_client.exceptions.NoSuchLoginProfileException:
-        print(f"No login profile found for IAM user: {username}, skipping password action.")
+        print(f"No login profile found for IAM user: {username}, skipping.")
     except Exception as e:
-        print(f"Error updating login profile for {username}: {e}")
+        print(f"Error deleting login profile for {username}: {e}")
 
     try:
         # Deactivate all active access keys
@@ -156,6 +163,22 @@ def lock_iam_user(username, iam_client):
                 print(f"Deactivated access key {key['AccessKeyId']} for user {username}")
     except Exception as e:
         print(f"Error deactivating access keys for {username}: {e}")
+
+    # Neither step above invalidates credentials the attacker may already be
+    # using in an open session — e.g. temporary STS credentials issued before
+    # this playbook ran. IAM evaluates policies on every single request, so
+    # attaching an explicit-deny policy closes that gap: it blocks all
+    # further calls under this identity immediately, regardless of which
+    # credentials are presented.
+    if IAM_QUARANTINE_POLICY_ARN:
+        try:
+            iam_client.attach_user_policy(
+                UserName=username,
+                PolicyArn=IAM_QUARANTINE_POLICY_ARN
+            )
+            print(f"Attached quarantine policy to IAM user: {username}")
+        except Exception as e:
+            print(f"Error attaching quarantine policy for {username}: {e}")
 
 def block_ip_with_waf(ip_address, waf_ip_set_id, scope):
     """Adds an IP address to an AWS WAF IP Set."""
@@ -256,7 +279,7 @@ def lambda_handler(event, context):
         description=(
             f"Automated response triggered for user {username}.\n"
             f"Source IP: {source_ip}\nLocation: {location}\n\n"
-            "Actions taken: IAM user locked, access keys deactivated, source IP added to WAF blocklist."
+            "Actions taken: IAM console access removed, access keys deactivated, quarantine policy attached, source IP added to WAF blocklist."
         )
     )
 
@@ -268,7 +291,7 @@ def lambda_handler(event, context):
 
 #### 3. Deploying the Function with Least Privilege (IaC with Terraform)
 
-The Lambda's own execution role shouldn't hold `iam:UpdateLoginProfile` or `iam:UpdateAccessKey` directly — those live on the role referenced by `IAM_USER_LOCK_ROLE_ARN`, which `assume_role()` picks up specifically so the account-locking privilege can be scoped down, audited, and rotated independently of the function itself. The execution role only needs permission to assume that role, plus enough WAF and logging access to do its own job.
+The Lambda's own execution role shouldn't hold `iam:DeleteLoginProfile`, `iam:UpdateAccessKey`, or `iam:AttachUserPolicy` directly — those live on the role referenced by `IAM_USER_LOCK_ROLE_ARN`, which `assume_role()` picks up specifically so the account-quarantine privilege can be scoped down, audited, and rotated independently of the function itself. The execution role only needs permission to assume that role, plus enough WAF and logging access to do its own job.
 
 ```terraform
 # main.tf (continued)
@@ -321,7 +344,8 @@ resource "aws_lambda_function" "handle_suspicious_login" {
 
   environment {
     variables = {
-      IAM_USER_LOCK_ROLE_ARN = var.iam_user_lock_role_arn
+      IAM_USER_LOCK_ROLE_ARN     = var.iam_user_lock_role_arn
+      IAM_QUARANTINE_POLICY_ARN = var.iam_quarantine_policy_arn
       WAF_IP_SET_ID           = var.waf_ip_set_id
       WAF_SCOPE                = "REGIONAL"
       SLACK_WEBHOOK_URL        = var.slack_webhook_url

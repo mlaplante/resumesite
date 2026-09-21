@@ -80,46 +80,40 @@ excerpt: "Unlocking Peak Performance With Rust and io_uring
          .as_raw_fd();
  
      let mut buffer = vec![0u8; 1024];
-     let mut read_op = opcode::Read::new(
+ 
+     // Build the read operation, then finalize it into a submission queue entry
+     // with `.build()`. `.user_data()` tags the entry so we can match it back up
+     // with the right completion later (useful once more than one op is in flight).
+     let read_e = opcode::Read::new(
          types::Fd(file_fd),
          buffer.as_mut_ptr(),
          buffer.len() as u32,
-     );
+     )
+     .build()
+     .user_data(0x42);
  
-     // Get the next submission queue entry
-     let sqe = ring.submission().get_entry(|sqe_ptr| {
-         // Construct the read operation.
-         // `read_op` is a builder pattern.
-         // `buf_ring` is used to associate the buffer with the submission.
-         unsafe {
-             // SAFETY: We are providing valid pointers and lengths.
-             // The buffer will outlive the operation.
-             read_op.buf_ring(sqe_ptr);
-         }
-     })?;
- 
-     // Link the buffer to the SQE. This is crucial for io_uring's buffer management.
-     // The `buf_ring` method on `opcode::Read` handles this.
-     // The `sqe_ptr` passed to `get_entry` is where the buffer information is placed.
-     // The `buf_ring` method on `opcode::Read` internally uses `sqe_ptr.buf_user_data`
-     // to store the pointer to the buffer.
- 
-     // Submit the operation to the kernel.
-     // The `0` signifies that we are not using I/O event polling.
-     // The `squeue::SqeFlags::empty()` means no special flags.
-     ring.submit()?;
+     // Push the built entry onto the submission queue. This is unsafe because the
+     // kernel will read from `buffer` after this call returns, so the buffer must
+     // stay alive and untouched until the matching completion arrives.
+     unsafe {
+         ring.submission()
+             .push(&read_e)
+             .expect("submission queue is full");
+     }
  
      println!("Submitted read operation. Waiting for completion...");
  
-     // Poll for completion. This is a blocking call in this simple example.
-     // In a real async application, you'd integrate this with your event loop.
+     // Submit the pending entry and block until at least one completion is ready.
+     ring.submit_and_wait(1)?;
+ 
+     // Retrieve the completion event from the kernel.
      let cqe = ring.completion().next().expect("Failed to get completion event");
  
-     // Check for errors. `cqe.res()` returns the number of bytes read or an error.
-     if cqe.res() < 0 {
-         eprintln!("Read error: {}", io::Error::from_raw_os_error(-cqe.res()));
+     // Check for errors. `cqe.result()` returns the number of bytes read or an error.
+     if cqe.result() < 0 {
+         eprintln!("Read error: {}", io::Error::from_raw_os_error(-cqe.result()));
      } else {
-         let bytes_read = cqe.res() as usize;
+         let bytes_read = cqe.result() as usize;
          println!("Successfully read {} bytes.", bytes_read);
          // Safely slice the buffer to the number of bytes read.
          let data = &buffer[..bytes_read];
@@ -138,11 +132,11 @@ excerpt: "Unlocking Peak Performance With Rust and io_uring
  1.  **Initialization:** We create an `IoUring` instance with a specified number of entries (32 in this case). This determines the maximum number of operations that can be pending.
  2.  **File Handling:** We open a file for reading. `io_uring` operates on file descriptors (`fd`), so we get the raw file descriptor using `as_raw_fd()`.
  3.  **Buffer Setup:** A byte buffer is prepared. In `io_uring`, you directly provide pointers to your userspace buffers.
- 4.  **Operation Construction:** `opcode::Read::new()` constructs the read operation. It takes the file descriptor, a pointer to the buffer, and the buffer's length.
- 5.  **Submission Queue Entry (SQE):** `ring.submission().get_entry()` provides a mutable pointer to an SQE. We use `read_op.buf_ring(sqe_ptr)` to associate our buffer with this SQE. This is a critical step for `io_uring`'s buffer management, allowing it to directly use our buffer without copying.
- 6.  **Submission:** `ring.submit()` sends the pending operations in the submission queue to the kernel.
- 7.  **Completion Queue (CQE):** `ring.completion().next()` waits for and retrieves a completion event from the kernel. In a real async application, you would integrate this with your event loop, perhaps using `ring.submit_and_wait(1)` or by polling in a non-blocking manner.
- 8.  **Result Handling:** `cqe.res()` contains the result of the operation: either the number of bytes read or a negative error code. We then process the buffer accordingly.
+ 4.  **Operation Construction:** `opcode::Read::new()` constructs the read operation, taking the file descriptor, a pointer to the buffer, and the buffer's length. Calling `.build()` turns that into a submission queue entry, and `.user_data()` tags it with an identifier so you can match this entry to its eventual completion — essential once more than one operation is in flight at a time.
+ 5.  **Submission Queue Entry (SQE):** `ring.submission().push(&read_e)` places the built entry onto the submission queue. This is `unsafe` because the kernel reads directly from `buffer` once the operation is submitted, so the buffer must stay valid and untouched until the matching completion event arrives — there's no copy in either direction.
+ 6.  **Submission:** `ring.submit_and_wait(1)` sends the pending entries in the submission queue to the kernel in a single syscall and blocks until at least one completion is ready.
+ 7.  **Completion Queue (CQE):** `ring.completion().next()` retrieves a completion event from the kernel. In a real async application, you would integrate this with your event loop rather than blocking, driving the ring from a reactor task instead of calling `submit_and_wait` directly.
+ 8.  **Result Handling:** `cqe.result()` contains the result of the operation: either the number of bytes read or a negative error code. We then process the buffer accordingly.
  
  ## Beyond Basic Reads: A Glimpse into Possibilities
  
@@ -157,7 +151,7 @@ excerpt: "Unlocking Peak Performance With Rust and io_uring
  ## Practical Considerations and Best Practices
  
  *   **Buffer Management:** Careful management of buffers is key. Ensure your buffers remain valid for the entire duration of the I/O operation. The `io-uring` crate helps with this by providing mechanisms to register buffers.
- *   **Error Handling:** Always check `cqe.res()` for negative values indicating errors.
+ *   **Error Handling:** Always check `cqe.result()` for negative values indicating errors.
  *   **Polling vs. Waiting:** For high-throughput services, continuously polling `ring.completion()` or using `ring.submit_and_wait(N)` with a small `N` can be more performant than blocking indefinitely. However, this can lead to busy-waiting if completions are infrequent. A balanced approach, often managed by an async runtime, is usually best.
  *   **Ring Size:** Choose a ring size that balances memory usage with the number of in-flight operations your workload actually needs. Undersizing the ring forces `submit()` to block until the kernel drains existing entries, which defeats the point of batching; oversizing it just pins memory you'll never use. Start conservative — 32 to 256 entries is a reasonable range for most services — and tune based on observed queue depth under load.
  *   **`io_uring_enter` Flags:** Beyond basic submission, flags such as `IORING_ENTER_GETEVENTS` let you submit new work and wait for completions in a single system call, which is usually what you want inside a tight event loop rather than issuing separate submit and wait steps.

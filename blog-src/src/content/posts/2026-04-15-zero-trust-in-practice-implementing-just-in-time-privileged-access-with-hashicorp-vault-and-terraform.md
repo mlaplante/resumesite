@@ -53,8 +53,8 @@ resource "vault_aws_secret_backend" "aws" {
 resource "vault_aws_secret_backend_role" "admin" {
   backend         = vault_aws_secret_backend.aws.path
   name            = "admin"
-  credential_type = "iam_user"
-  policy_arns     = ["arn:aws:iam::123456789012:policy/AdminAccess"]
+  credential_type = "assumed_role"
+  role_arns       = ["arn:aws:iam::123456789012:role/VaultAdminAssumable"]
 
   # TTLs (1 hour max)
   default_sts_ttl = 1800
@@ -62,7 +62,9 @@ resource "vault_aws_secret_backend_role" "admin" {
 }
 ```
 
-Now, Vault can issue AWS credentials with the `AdminAccess` policy, valid for up to 1 hour.
+Now, Vault can issue temporary AWS STS credentials by assuming the `VaultAdminAssumable` IAM role, valid for up to 1 hour.
+
+**Why `assumed_role` and not `iam_user`:** it's tempting to reach for `credential_type = "iam_user"` here, since it sounds like the "give me a user's credentials" option. But `default_sts_ttl`/`max_sts_ttl` are only honored when `credential_type` is `assumed_role` or `federation_token` — for `iam_user`, Vault creates a real, permanent IAM access key and those two fields are silently ignored. That key's lifetime is controlled separately, by the AWS secrets engine's lease configuration (`aws/config/lease`), which defaults to 32 days if you don't set it explicitly. For a JIT workflow where the TTL *is* the control, `assumed_role` is the credential type that actually enforces it — Vault calls STS `AssumeRole` and hands back a short-lived, self-expiring session (`access_key`/`secret_key`/`security_token`), which is also why the response in Step 3 below has a `security_token` field and an `ASIA`-prefixed access key: those only show up on STS-issued credentials, not on a permanent IAM user's key pair.
 
 ---
 

@@ -49,7 +49,7 @@ struct event {
 
 BPF_PERF_OUTPUT(events);
 
-int kprobe__sys_execve(struct pt_regs *ctx, const char __user *filename) {
+int syscall__execve(struct pt_regs *ctx, const char __user *filename) {
     struct event data = {};
     data.pid = bpf_get_current_pid_tgid();
     data.tgid = bpf_get_current_pid_tgid() >> 32;
@@ -67,7 +67,14 @@ int kprobe__sys_execve(struct pt_regs *ctx, const char __user *filename) {
 
 # Load the BPF program
 b = BPF(text=bpf_text)
-b.attach_kprobe(event="sys_execve", fn_name="kprobe__sys_execve")
+
+# Don't hardcode "sys_execve": since Linux 4.17 (CONFIG_ARCH_HAS_SYSCALL_WRAPPER,
+# the default on x86_64/arm64), the real symbol is renamed per-syscall-table
+# (e.g. __x64_sys_execve, __arm64_sys_execve) and raw sys_* symbols are often
+# inlined or marked notrace. get_syscall_fnname() resolves the correct,
+# currently-loaded kernel's symbol for you.
+execve_fnname = b.get_syscall_fnname("execve")
+b.attach_kprobe(event=execve_fnname, fn_name="syscall__execve")
 
 print("Monitoring execve system calls... Press Ctrl-C to stop.")
 
@@ -120,9 +127,11 @@ int kprobe__tcp_v4_connect(struct pt_regs *ctx, struct sock *sk) {
     event.pid = bpf_get_current_pid_tgid();
     bpf_get_current_comm(&event.comm, sizeof(event.comm));
 
-    // Get cgroup_id from current task
-    struct task_struct *task = (struct task_struct *)bpf_get_current_task();
-    event.cgroup_id = task->cgroups->dfl_css.cgroup->id; // Simplified access
+    // Get cgroup_id for the calling task's default (v2) cgroup. Use the
+    // dedicated helper rather than walking task_struct->cgroups by hand —
+    // the internal field layout (css_set, cgroup) isn't part of any stable
+    // kernel ABI and shouldn't be hardcoded into a BPF program.
+    event.cgroup_id = bpf_get_current_cgroup_id();
 
     // Read socket info
     event.saddr = sk->__sk_common.skc_rcv_saddr;

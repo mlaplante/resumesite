@@ -84,7 +84,7 @@ After=network-online.target
 [Service]
 Environment=PODMAN_SYSTEMD_UNIT=%n
 Restart=on-failure
-TimeoutStopUSec=70s
+TimeoutStopSec=70
 ExecStartPre=/bin/rm -f %t/%n.cid
 ExecStart=/usr/bin/podman run --cidfile=%t/%n.cid --cgroups=no-conmon --rm --sdnotify=conmon -d --replace --name legacy-db -e POSTGRES_PASSWORD=mysecretpassword postgres:13
 ExecStop=/usr/bin/podman stop --ignore --cidfile=%t/%n.cid
@@ -128,7 +128,7 @@ After=legacy-db.service    # Add this line
 [Service]
 Environment=PODMAN_SYSTEMD_UNIT=%n
 Restart=on-failure
-TimeoutStopUSec=70s
+TimeoutStopSec=70
 ExecStartPre=/bin/rm -f %t/%n.cid
 ExecStart=/usr/bin/podman run --cidfile=%t/%n.cid --cgroups=no-conmon --rm --sdnotify=conmon -d --replace -p 8080:80 --network container:legacy-db --name legacy-app nginx
 ExecStop=/usr/bin/podman stop --ignore --cidfile=%t/%n.cid
@@ -137,7 +137,7 @@ Type=notify
 NotifyAccess=all
 
 [Install]
-WantedBy=multi-u/sr/bin/systemctl enable legacy-app.servicelti-user.target
+WantedBy=multi-user.target
 ```
 
 By adding `Requires=legacy-db.service` and `After=legacy-db.service`, we tell `systemd` that `legacy-app` depends on `legacy-db` and should only start after it.

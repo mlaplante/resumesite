@@ -26,7 +26,6 @@ import (
 	"log"
 	"net/http"
 	"runtime/trace"
-	"sync"
 	"time"
 	"os"
 	"context"

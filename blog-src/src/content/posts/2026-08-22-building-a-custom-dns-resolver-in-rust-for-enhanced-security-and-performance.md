@@ -86,14 +86,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let listen_addr: SocketAddr = LISTEN_ADDR.parse()?;
     let upstream_addr: SocketAddr = UPSTREAM_DNS.parse()?;
 
-    let socket = UdpSocket::bind(listen_addr).await?;
+    // tokio::net::UdpSocket has no try_clone() (unlike std's UdpSocket).
+    // Since every UdpSocket method takes &self, the standard way to share
+    // one across tasks is to wrap it in an Arc and clone the Arc.
+    let socket = Arc::new(UdpSocket::bind(listen_addr).await?);
     println!("Listening for DNS queries on {}", listen_addr);
 
     let cache: DnsCache = Arc::new(RwLock::new(HashMap::new()));
     let (tx, mut rx) = mpsc::channel::<(Vec<u8>, SocketAddr)>(100); // Channel for incoming queries
 
     // Spawn a task to listen for incoming UDP packets
-    let listener_socket = socket.try_clone()?;
+    let listener_socket = Arc::clone(&socket);
     tokio::spawn(async move {
         let mut buf = vec![0; 512]; // Standard DNS UDP packet size
         loop {
@@ -112,7 +115,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Main loop to process queries
     while let Some((packet_data, src_addr)) = rx.recv().await {
         let cache_clone = Arc::clone(&cache);
-        let socket_clone = socket.try_clone()?;
+        let socket_clone = Arc::clone(&socket);
 
         tokio::spawn(async move {
             if let Err(e) = handle_query(
@@ -137,7 +140,7 @@ async fn handle_query(
     src_addr: SocketAddr,
     upstream_addr: SocketAddr,
     cache: DnsCache,
-    socket: UdpSocket,
+    socket: Arc<UdpSocket>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let mut decoder = BinDecoder::new(&packet_data);
     let query_message = Message::read(&mut decoder)?;
@@ -166,9 +169,14 @@ async fn handle_query(
                 // Re-use the cached message, but update its ID to match the current query's ID
                 let mut response = cached_resp.message.clone();
                 response.set_id(query_message.id());
-                let mut encoder = BinEncoder::new();
-                response.emit(&mut encoder)?;
-                socket.send_to(&encoder.as_bytes(), src_addr).await?;
+                // BinEncoder::new() takes the buffer it writes into — it
+                // doesn't allocate or expose one for you via as_bytes().
+                let mut response_bytes = Vec::new();
+                {
+                    let mut encoder = BinEncoder::new(&mut response_bytes);
+                    response.emit(&mut encoder)?;
+                }
+                socket.send_to(&response_bytes, src_addr).await?;
                 return Ok(());
             } else {
                 println!("[{}] Cache MISS (expired) for {}", query_message.id(), query_name);
@@ -222,9 +230,12 @@ async fn handle_query(
     }
 
     // 4. Relay the (now possibly cached) response back to the original client
-    let mut response_encoder = BinEncoder::new();
-    upstream_response.emit(&mut response_encoder)?;
-    socket.send_to(&response_encoder.as_bytes(), src_addr).await?;
+    let mut response_bytes = Vec::new();
+    {
+        let mut response_encoder = BinEncoder::new(&mut response_bytes);
+        upstream_response.emit(&mut response_encoder)?;
+    }
+    socket.send_to(&response_bytes, src_addr).await?;
 
     Ok(())
 }
@@ -241,9 +252,12 @@ async fn send_error_response(
     error_message.set_op_code(OpCode::Query);
     error_message.set_response_code(response_code);
 
-    let mut encoder = BinEncoder::new();
-    error_message.emit(&mut encoder)?;
-    socket.send_to(&encoder.as_bytes(), src_addr).await?;
+    let mut error_bytes = Vec::new();
+    {
+        let mut encoder = BinEncoder::new(&mut error_bytes);
+        error_message.emit(&mut encoder)?;
+    }
+    socket.send_to(&error_bytes, src_addr).await?;
 
     Ok(())
 }

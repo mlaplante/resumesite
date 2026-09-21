@@ -52,7 +52,7 @@ spec:
             message:
               type: string
   targets:
-    - target: admission.k88s.gatekeeper.sh
+    - target: admission.k8s.gatekeeper.sh
       rego: |
         package k8saisensitivitycheck
 
@@ -69,8 +69,8 @@ spec:
           volume := input.review.object.spec.volumes[i]
           volume.persistentVolumeClaim {
             pvc_name := volume.persistentVolumeClaim.claimName
-            # Query the PVC directly
-            pvc := data.kubernetes.persistentvolumeclaims[input.review.namespace][pvc_name]
+            # Query the PVC from Gatekeeper's replicated resource cache
+            pvc := data.inventory.namespace[input.review.namespace]["v1"]["PersistentVolumeClaim"][pvc_name]
             pvc_labels := pvc.metadata.labels
             pvc_sensitivity := pvc_labels["ai.example.com/sensitivity"]
 
@@ -79,6 +79,22 @@ spec:
             msg := sprintf("Pod '%v' processing high-sensitivity AI data is attempting to use PVC '%v' which is not marked for high-sensitivity. PVC sensitivity: %v", [input.review.object.metadata.name, pvc_name, pvc_sensitivity])
           }
         }
+```
+
+That `data.inventory` lookup only works once you've told Gatekeeper to replicate `PersistentVolumeClaim` objects into its cache — referencing a resource kind from Rego doesn't happen automatically. You do that with a `Config` resource in the `gatekeeper-system` namespace:
+
+```yaml
+apiVersion: config.gatekeeper.sh/v1alpha1
+kind: Config
+metadata:
+  name: config
+  namespace: "gatekeeper-system"
+spec:
+  sync:
+    syncOnly:
+      - group: ""
+        version: "v1"
+        kind: "PersistentVolumeClaim"
 ```
 
 This template, when instantiated as a `K8sAiSensitivityCheck` constraint, would prevent pods from being scheduled if they violate the sensitivity rule, providing a strong data governance control.

@@ -43,6 +43,7 @@ Let's write a simple C program to monitor `/etc/passwd` for modifications.
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <unistd.h> // For read(), close()
 #include <sys/inotify.h>
 #include <limits.h> // For PATH_MAX
 
@@ -129,7 +130,7 @@ Once running, try modifying `/etc/passwd` (e.g., `sudo nano /etc/passwd` and sav
 
 1.  **Event Buffering:** Events are buffered in the kernel. If your application doesn't `read()` them fast enough, the buffer can overflow, leading to lost events. The kernel provides `IN_Q_OVERFLOW` event to notify you of this. Design your event processing to be quick or offload heavy tasks to separate threads/processes.
 2.  **Recursive Monitoring:** `inotify` does not natively support recursive directory monitoring. To monitor a directory and all its subdirectories, you must explicitly add watches for each subdirectory. Tools like `inotify-tools` (specifically `inotifywait` and `inotifywatch`) or libraries like `libinotifytools` handle this complexity for you.
-3.  **Permissions:** The user running the `inotify` application needs appropriate read permissions on the monitored files/directories to add watches and receive events. To monitor `/etc/passwd`, you typically need `root` privileges.
+3.  **Permissions:** The user running the `inotify` application needs appropriate read permissions on the monitored files/directories to add watches and receive events. `/etc/passwd` itself is world-readable (mode `644`) by design, so watching it doesn't require `root` — any unprivileged user can add a watch and see the events. (The sensitive data — password hashes — lives in `/etc/shadow`, which *is* root-only, precisely so `/etc/passwd` can stay world-readable.) Root privileges only come into play if you're monitoring a path an unprivileged user can't read in the first place.
 4.  **`sysctl` Limits:** There are kernel limits on the number of `inotify` instances, watches, and user event queue size. These can be adjusted via `sysctl`:
     *   `fs.inotify.max_user_instances`: Maximum number of `inotify` instances per user.
     *   `fs.inotify.max_user_watches`: Maximum number of watches per user.

@@ -34,18 +34,20 @@ Here's a step-by-step breakdown and code snippets illustrating the RP's perspect
 
     ```typescript
     // Server-side (simplified for illustration)
-    import { generateChallenge, generateRegistrationOptions } from '@simplewebauthn/server';
+    import { generateRegistrationOptions } from '@simplewebauthn/server';
 
     const userId = 'user-123';
     const userName = 'alice@example.com';
-    const challenge = generateChallenge(); // Cryptographically secure random bytes
 
-    const options = generateRegistrationOptions({
+    // generateRegistrationOptions() is async — it does its own cryptographically
+    // secure challenge generation internally, so you don't need to build one
+    // yourself. userID must be raw bytes (Uint8Array), not a string, so we
+    // encode our internal user id before passing it in.
+    const options = await generateRegistrationOptions({
         rpName: 'My Secure App',
         rpID: 'myapp.com', // Must match origin
-        userID: userId,
+        userID: new TextEncoder().encode(userId),
         userName: userName,
-        challenge: challenge,
         timeout: 60000,
         attestationType: 'none', // Or 'direct' for stricter attestation
         authenticatorSelection: {
@@ -56,8 +58,8 @@ Here's a step-by-step breakdown and code snippets illustrating the RP's perspect
         supportedAlgorithmIDs: [-7, -257], // ES256, RS256
     });
 
-    // Store challenge in session for later verification
-    req.session.challenge = challenge;
+    // Store the server-generated challenge in session for later verification
+    req.session.challenge = options.challenge;
     res.json(options);
     ```
 
@@ -120,7 +122,7 @@ Here's a step-by-step breakdown and code snippets illustrating the RP's perspect
     *   **Challenge Verification:** Ensures the `challenge` in the attestation response matches the one issued by the server.
     *   **Origin Verification:** Confirms the origin matches the RP's `rpID`.
     *   **Attestation Statement Verification (Optional but Recommended):** If `attestationType` was set to 'direct', the server verifies the authenticator's attestation certificate chain. This provides cryptographic proof that the authenticator is a genuine FIDO device (e.g., a real YubiKey). For 'none' attestation, this step is skipped, trading some trust for simplicity.
-    *   **Credential ID and Public Key Storage:** If all checks pass, the server stores the `credentialId` and the `publicKey` associated with the user.
+    *   **Credential ID and Public Key Storage:** If all checks pass, the server stores the credential's `id` and `publicKey` associated with the user.
 
     ```typescript
     // Server-side (simplified for illustration)
@@ -142,13 +144,15 @@ Here's a step-by-step breakdown and code snippets illustrating the RP's perspect
             const { verified, registrationInfo } = verification;
 
             if (verified && registrationInfo) {
-                const { credentialID, credentialPublicKey, counter } = registrationInfo;
-                // Store credentialID (Base64URL), credentialPublicKey (Base64URL),
+                // registrationInfo.credential holds id (already Base64URL-encoded),
+                // publicKey (raw bytes — encode before storing as text), and counter.
+                const { id: credentialID, publicKey: credentialPublicKey, counter } = registrationInfo.credential;
+                // Store credentialID, base64url-encoded credentialPublicKey,
                 // and counter (number) in your database, linked to the user.
                 // Example:
                 // await db.saveCredential({
                 //     userId: 'user-123',
-                //     credentialId: base64url.encode(credentialID),
+                //     credentialId: credentialID,
                 //     publicKey: base64url.encode(credentialPublicKey),
                 //     counter: counter,
                 //     transports: credential.response.transports, // Useful for future assertions
@@ -175,15 +179,16 @@ Assertion is the process where a user proves their identity using a previously r
 
     ```typescript
     // Server-side (simplified for illustration)
-    import { generateChallenge, generateAuthenticationOptions } from '@simplewebauthn/server';
+    import { generateAuthenticationOptions } from '@simplewebauthn/server';
 
     const userId = 'user-123';
     // Fetch registered credentials for the user from your database
     const userCredentials = await db.getCredentialsByUserId(userId);
 
-    const options = generateAuthenticationOptions({
+    // generateAuthenticationOptions() is async and generates its own challenge —
+    // we don't need to (and can't) build one separately.
+    const options = await generateAuthenticationOptions({
         rpID: 'myapp.com',
-        challenge: generateChallenge(),
         allowCredentials: userCredentials.map(cred => ({
             id: cred.credentialId, // Base64URL encoded
             type: 'public-key',
@@ -259,9 +264,11 @@ Assertion is the process where a user proves their identity using a previously r
                 expectedChallenge: expectedChallenge,
                 expectedOrigin: 'https://myapp.com',
                 expectedRPID: 'myapp.com',
-                authenticator: {
-                    credentialID: storedCredential.credentialId,
-                    credentialPublicKey: storedCredential.publicKey,
+                credential: {
+                    id: storedCredential.credentialId,
+                    // publicKey was stored base64url-encoded at registration time;
+                    // decode it back to raw bytes for verification.
+                    publicKey: Buffer.from(storedCredential.publicKey, 'base64url'),
                     counter: storedCredential.counter,
                 },
                 requireUserVerification: false,

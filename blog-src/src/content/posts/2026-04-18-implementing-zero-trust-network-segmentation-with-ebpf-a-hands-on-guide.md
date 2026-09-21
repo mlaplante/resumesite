@@ -59,6 +59,7 @@ We'll start with a basic eBPF program that only allows traffic between whitelist
 // Allow only traffic from allowed IPs
 #include <linux/bpf.h>
 #include <linux/in.h>
+#include <bpf/bpf_endian.h>
 
 #define ALLOWED_IP1 0xC0A80101 // 192.168.1.1
 #define ALLOWED_IP2 0xC0A80102 // 192.168.1.2
@@ -71,12 +72,12 @@ int zero_trust_segmentation(struct xdp_md *ctx) {
 
     // Check for IPv4
     if ((void*)(eth + 1) > data_end) return XDP_PASS;
-    if (eth->h_proto == htons(ETH_P_IP)) {
+    if (eth->h_proto == bpf_htons(ETH_P_IP)) {
         struct iphdr *ip = (struct iphdr *)(eth + 1);
         if ((void*)(ip + 1) > data_end) return XDP_PASS;
 
         // Check if source IP is allowed
-        if (ip->saddr == htonl(ALLOWED_IP1) || ip->saddr == htonl(ALLOWED_IP2)) {
+        if (ip->saddr == bpf_htonl(ALLOWED_IP1) || ip->saddr == bpf_htonl(ALLOWED_IP2)) {
             return XDP_PASS;
         } else {
             return XDP_DROP;
@@ -87,6 +88,8 @@ int zero_trust_segmentation(struct xdp_md *ctx) {
 ```
 
 This filter inspects each incoming packet and only allows traffic from two whitelisted IPs. All other traffic is dropped—implementing a basic Zero Trust principle.
+
+Note the `bpf_htons`/`bpf_htonl` calls instead of the libc `htons`/`htonl` you'd use in normal userspace C. BPF programs compile to a freestanding target with no libc linked in, so they can't call external library functions — `bpf_htons`/`bpf_htonl` are libbpf macros (from `bpf_endian.h`) that expand to inline byte-swap instructions instead of a function call.
 
 ---
 
@@ -130,9 +133,19 @@ int zero_trust_segmentation(struct xdp_md *ctx) {
 
 #### Updating Policies Dynamically
 
+Load this version the same way as before, but add `pinmaps` so the `allowed_ips` map gets pinned alongside the program — otherwise there's no path to reach it from the command line later:
+
 ```bash
-sudo bpftool map update pinned /sys/fs/bpf/allowed_ips key 0xC0A80101 value 1
-sudo bpftool map update pinned /sys/fs/bpf/allowed_ips key 0xC0A80102 value 1
+clang -O2 -target bpf -c zero_trust_segmentation.c -o zero_trust_segmentation.o
+sudo bpftool prog load zero_trust_segmentation.o /sys/fs/bpf/zero_trust type xdp pinmaps /sys/fs/bpf/maps
+sudo ip link set dev eth0 xdp obj zero_trust_segmentation.o
+```
+
+`pinmaps` pins every map the program declares — including `allowed_ips` — under `/sys/fs/bpf/maps/`, named after the map itself. From there, you can update it live. `bpftool map update` expects a multi-byte key as individual bytes, not a single combined hex literal — a `__u32` key is four bytes:
+
+```bash
+sudo bpftool map update pinned /sys/fs/bpf/maps/allowed_ips key 0xc0 0xa8 0x01 0x01 value 0x01
+sudo bpftool map update pinned /sys/fs/bpf/maps/allowed_ips key 0xc0 0xa8 0x01 0x02 value 0x01
 ```
 
 Now, your Zero Trust segmentation policy can be updated in real time, without reloading the eBPF program.

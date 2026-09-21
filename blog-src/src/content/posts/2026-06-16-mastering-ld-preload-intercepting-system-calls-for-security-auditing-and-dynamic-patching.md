@@ -120,19 +120,14 @@ Now, run `cat` with `LD_PRELOAD`:
 LD_PRELOAD=./libinterceptor.so cat testfile.txt
 ```
 
-You should see output similar to this:
+You might expect to see every `open()` call made while `cat` and its dependencies load — but you won't, and the reason is worth understanding. The dynamic linker (`ld.so`) opens `/etc/ld.so.cache` and `libc.so.6` itself, using its own internal file-loading code, *before* your preloaded library's symbols are even bound — `ld.so` can't route through a symbol it hasn't finished resolving yet, so those opens never reach your interceptor. Locale files like `locale-archive`, `locale.alias`, and `gconv-modules.cache` are opened afterward by glibc's own internals, but through hidden, non-interposable aliases that deliberately bypass the PLT for exactly this reason. What you *do* see is the one `open()` call that's actually reachable through the normal dynamic symbol table: `cat`'s own request to open `testfile.txt`.
 
 ```
-[LD_PRELOAD] open("/etc/ld.so.cache", flags=80000)
-[LD_PRELOAD] open("/lib/x86_64-linux-gnu/libc.so.6", flags=80000)
-[LD_PRELOAD] open("/usr/lib/locale/locale-archive", flags=80000)
-[LD_PRELOAD] open("/usr/share/locale/locale.alias", flags=80000)
-[LD_PRELOAD] open("/usr/lib/x86_64-linux-gnu/gconv/gconv-modules.cache", flags=80000)
 [LD_PRELOAD] open("testfile.txt", flags=0)
 Hello, LD_PRELOAD!
 ```
 
-Notice how our interceptor logged every call to `open`, including those made by `cat` to load its own dependencies and, finally, to open `testfile.txt`.
+That's a useful — and slightly humbling — first lesson in `LD_PRELOAD` interception: it only ever sees calls that are resolved through the normal PLT/GOT symbol-lookup path. Anything a library — including the dynamic linker and glibc itself — reaches through an internal, non-exported entry point is invisible to you, no matter how central that call is to what the process is actually doing. Don't rely on an `LD_PRELOAD` shim for complete auditing coverage; it shows you what the application asks for through the public API, not everything the process does at the syscall level. For that, reach for `strace` or an eBPF-based tracer instead.
 
 ## Advanced Considerations and Caveats
 
