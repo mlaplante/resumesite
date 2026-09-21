@@ -163,7 +163,6 @@ const KNOWN_TRUNCATED = new Set([
   '2026-06-09-unlocking-peak-performance-with-rust-and-io-uring.md',
   '2026-06-10-from-strace-to-ebpf-advanced-linux-system-call-tracing-for-security-forensics.md',
   '2026-06-11-pxe-ansible-and-bgp-crafting-a-bare-metal-kubernetes-cluster.md',
-  '2026-06-15-demystifying-ioctl-building-custom-device-drivers-for-linux-kernel-interaction.md',
   '2026-06-18-building-a-custom-fido2-authenticator-with-rust-and-webauthn.md',
   '2026-06-19-demystifying-sched-yield-when-and-how-to-use-it-for-optimal-concurrency-in-linux-applications.md',
   '2026-06-20-webassembly-for-serverless-secure-performant-functions-beyond-the-browser.md',
