@@ -473,6 +473,63 @@ export function stripLeadingHeading(content) {
     .replace(/^\s*[^\n]+\r?\n=+\s*\r?\n(?:\s*\r?\n)*/, '');
 }
 
+// Trailing author signature / CTA block, e.g.
+//   ---
+//   **Michael LaPlante**
+//   SVP, Information Security & Operations
+//   15+ Years Engineering Experience
+// These lines legitimately end without sentence punctuation, so they have to be
+// peeled off before the mid-sentence check below or every signed post is a
+// false positive.
+const SIGNATURE_LINE = /^(Michael LaPlante|SVP,|\d+\+\s*Years)/i;
+
+function stripSignature(body) {
+  let text = body.trimEnd();
+  const hr = text.lastIndexOf('\n---');
+  if (hr > 0 && text.length - hr < 400) text = text.slice(0, hr).trimEnd();
+
+  const lines = text.split('\n');
+  while (lines.length) {
+    const line = lines[lines.length - 1].trim();
+    const bare = line.replace(/^[*_`~\s]+/, '').replace(/[*_`~\s]+$/, '');
+    if (line === '' || SIGNATURE_LINE.test(bare)) {
+      lines.pop();
+      continue;
+    }
+    break;
+  }
+  return lines.join('\n').trimEnd();
+}
+
+// A capped LLM returns HTTP 200 with a *partial* body when it hits its output
+// token limit, so a truncated draft is indistinguishable from a good one at the
+// call site. Two signals catch it reliably:
+//   1. an odd number of ``` fence markers — a code block was never closed;
+//   2. the last prose line stops without terminal punctuation — mid-sentence.
+// 65 of the first 190 posts shipped truncated before this guard existed
+// (maxOutputTokens was 2500, and long technical posts ran straight past it).
+// Returns a human-readable reason, or null when the body looks complete.
+export function findTruncation(body) {
+  if (typeof body !== 'string' || !body.trim()) return 'body is empty';
+
+  const fences = (body.match(/^\s*```/gm) || []).length;
+  if (fences % 2 !== 0) {
+    return `unbalanced code fence (${fences} \`\`\` markers — a code block was never closed)`;
+  }
+
+  const text = stripSignature(body);
+  const last = text.split('\n').pop() ?? '';
+  // Headings, closing fences, table rows and blockquotes are all legitimate
+  // final lines that carry no sentence punctuation.
+  if (/^#{1,6}\s/.test(last.trim()) || /^\s*```/.test(last) || /^\s*[|>]/.test(last)) return null;
+
+  const bare = last.replace(/[*_`~\s]+$/, '');
+  if (!/[.!?:;)\]"'’”]$/.test(bare)) {
+    return `body ends mid-sentence: "...${bare.slice(-60)}"`;
+  }
+  return null;
+}
+
 export function makeExcerpt(content) {
   const text = stripTitleDirective(content)
     .replace(/^#.+\n+/, '')
@@ -623,6 +680,16 @@ export async function runGenerator({ argv, providerName, generate, embed, suppor
   const category = fromGit ? 'project-update' : 'thought-leadership';
   const tags = extractTags(content);
   const body = stripLeadingHeading(stripTitleDirective(content));
+
+  // Never publish a half-written post. The provider should already have caught
+  // this via its finish-reason check, but that only sees the API's own signal —
+  // this sees the actual text, so it also catches a model that simply stopped.
+  const truncation = findTruncation(body);
+  if (truncation) {
+    console.error(`Refusing to write truncated post "${title}": ${truncation}`);
+    process.exit(1);
+  }
+
   const excerpt = makeExcerpt(body);
   const frontmatter = buildFrontmatter({ title, date, category, excerpt, tags });
   const fullPost = `${frontmatter}\n\n${body}`;
