@@ -90,7 +90,7 @@ A custom congestion control algorithm is implemented as a loadable kernel module
 2.  **Initialization (`init`):** Called when a new TCP connection is established and this algorithm is chosen.
 3.  **Release (`release`):** Called when the connection closes.
 4.  **Congestion State Machine (`ssthresh`, `cong_avoid`, `set_state`, `cwnd_event`):** These are the core functions that implement the logic for slow start threshold, congestion avoidance, state transitions (e.g., from slow start to congestion avoidance), and reactions to various TCP events (ACKs, losses, RTT changes).
-5.  **Packet Loss Handling (`pkts_acked`, `acked_slice_acked`, `undo_cwnd`):** Logic to respond to detected packet loss.
+5.  **Packet Loss Handling (`pkts_acked`, `undo_cwnd`):** Logic to respond to detected packet loss.
 6.  **Rate Limiting/Pacing (`get_info`):** Provides information about the current sending rate.
 
 ### Simplified Conceptual Example (Pseudo-code for a "Latency-First" Algorithm):
@@ -112,41 +112,56 @@ struct tcp_congestion_ops my_latency_first_algo = {
     // ... other callbacks
 };
 
+// Congestion-control private data doesn't get its own allocator API — every
+// socket already carries a fixed inline scratch area (icsk_ca_priv, 104
+// bytes) reserved for whichever algorithm is active on it. inet_csk_ca()
+// just returns a pointer to that inline storage, cast to your own struct;
+// there's no separate kzalloc/kfree or set/get accessor to call.
+static inline struct latency_first_sock_data *latency_first_priv(struct sock *sk) {
+    return (struct latency_first_sock_data *)inet_csk_ca(sk);
+}
+
 static void my_latency_first_init(struct sock *sk) {
-    // Initialize per-socket data for this algorithm
-    // e.g., store initial RTT, min_rtt, etc.
-    struct latency_first_sock_data *lfsd = kzalloc(sizeof(*lfsd), GFP_KERNEL);
-    if (lfsd) {
-        tcp_set_congestion_data(sk, lfsd);
-        lfsd->min_rtt_us = U64_MAX; // Track minimum RTT
-        // ... more initialization
-    }
+    // Initialize per-socket data for this algorithm directly in place —
+    // the storage already exists on the socket, so there's nothing to
+    // allocate here.
+    struct latency_first_sock_data *lfsd = latency_first_priv(sk);
+    lfsd->min_rtt_us = U64_MAX; // Track minimum RTT
+    // ... more initialization
 }
 
 static void my_latency_first_release(struct sock *sk) {
-    kfree(tcp_get_congestion_data(sk));
+    // Nothing to free: the private data lives inline on the socket and is
+    // torn down along with it.
 }
 
 static void my_latency_first_cong_avoid(struct sock *sk, u32 ack, u32 acked) {
     struct tcp_sock *tp = tcp_sk(sk);
-    struct latency_first_sock_data *lfsd = tcp_get_congestion_data(sk);
+    struct latency_first_sock_data *lfsd = latency_first_priv(sk);
 
-    // Update min_rtt
-    u64 current_rtt_us = tcp_skb_ts(tp->rx_opt.rcv_tsval, tp->rx_opt.rcv_tsecr); // Simplified RTT calc
+    // Update min_rtt. tp->srtt_us is the kernel's own smoothed RTT
+    // estimate, already maintained for us — but it's stored as a
+    // fixed-point value scaled by 8 ("smoothed round trip time << 3 in
+    // usecs", per its declaration in tcp.h), so it has to be shifted back
+    // down to get a real microsecond figure.
+    u64 current_rtt_us = tp->srtt_us >> 3;
     if (current_rtt_us < lfsd->min_rtt_us) {
         lfsd->min_rtt_us = current_rtt_us;
     }
 
-    // Heuristic: If RTT significantly higher than min_rtt, aggressively reduce cwnd
+    // Heuristic: If RTT is significantly higher than min_rtt, aggressively
+    // reduce cwnd. Kernel code has no FPU context by default, so "20%
+    // higher" is integer arithmetic (multiply by 6, divide by 5), not a
+    // floating-point "* 1.2".
     // (This is a simplified example, real algorithms use more robust metrics)
-    if (current_rtt_us > lfsd->min_rtt_us * 1.2) { // 20% increase over minimum
+    if (current_rtt_us > (lfsd->min_rtt_us * 6) / 5) {
         tp->snd_cwnd = max(tp->snd_cwnd / 2, 2U); // Halve cwnd, ensure minimum of 2 segments
         net_warn_ratelimited("Latency-First: RTT spike detected, cwnd reduced to %u\n", tp->snd_cwnd);
     } else {
         // Cautious growth: only increase cwnd by 1 segment every N ACKs
         // (e.g., N = tp->snd_cwnd * 2 or more, much slower than Cubic)
         if (acked >= tp->snd_cwnd * 2) { // Only grow after receiving 2x cwnd ACKs
-            tcp_cong_window_incr(sk, acked); // Increment cwnd by 'acked' segments
+            tp->snd_cwnd++; // Increment cwnd by one segment
         }
     }
 }

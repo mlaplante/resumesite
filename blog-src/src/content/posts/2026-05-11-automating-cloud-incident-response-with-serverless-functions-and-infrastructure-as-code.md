@@ -21,7 +21,7 @@ At the heart of this automation are two powerful paradigms:
 
 Let's walk through a concrete example: automatically isolating a suspicious EC2 instance and creating a forensic snapshot when an alert fires.
 
-**Scenario:** An AWS GuardDuty finding indicates a potential compromise on an EC2 instance (e.g., `UnauthorizedAccess:EC2/MaliciousIPCaller.DNSActivity`).
+**Scenario:** An AWS GuardDuty finding indicates a potential compromise on an EC2 instance (e.g., `UnauthorizedAccess:EC2/MaliciousIPCaller.Custom`).
 
 **Automated Response Steps:**
 
@@ -188,7 +188,7 @@ Resources:
             - 8.0
             - 9.0
           type:
-            - 'UnauthorizedAccess:EC2/MaliciousIPCaller.DNSActivity'
+            - 'UnauthorizedAccess:EC2/MaliciousIPCaller.Custom'
             - 'Backdoor:EC2/C&CActivity.B'
             - 'Trojan:EC2/BlackholeTraffic'
       Targets:

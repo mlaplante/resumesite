@@ -32,7 +32,7 @@ Let's break down how to embed security at each stage:
 
 Before a single line of code or data pipeline is built, security must be a core consideration.
 
-*   **AI-Specific Threat Modeling:** Beyond traditional STRIDE, use frameworks like MITRE ATT&CK for ML to identify threats unique to AI systems.
+*   **AI-Specific Threat Modeling:** Beyond traditional STRIDE, use frameworks like MITRE ATLAS to identify threats unique to AI systems.
     *   *Example:* When designing a fraud detection model, consider how an attacker might poison training data to allow their fraudulent transactions to pass undetected, or craft adversarial inputs to evade the deployed model. Document potential data sources, model types, deployment environments, and their associated risks.
 *   **Secure Architecture Principles:**
     *   **Data Segregation and Minimization:** Only use data essential for training. Implement strict access controls for training data repositories.

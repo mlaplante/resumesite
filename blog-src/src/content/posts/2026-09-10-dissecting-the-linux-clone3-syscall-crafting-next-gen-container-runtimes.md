@@ -18,7 +18,7 @@ Let's briefly recap the journey to `clone3()`.
 
 **`clone()` (and `fork()`)**: The original `clone()` syscall takes a bitmask of flags (`CLONE_NEWPID`, `CLONE_NEWNS`, etc.) and a few pointers (stack, parent_tidptr, child_tidptr, tls). While powerful, its interface is somewhat clunky for complex scenarios. Adding new flags or parameters required careful management to avoid breaking existing ABI. Moreover, the order of arguments was often inconsistent across architectures, leading to portability headaches.
 
-**`clone2()` (never mainlined)**: An attempt to address some of `clone()`'s issues, `clone2()` aimed to use a structure for arguments. While it didn't make it into the mainline kernel, it laid some groundwork for the structured approach that `clone3()` would eventually adopt.
+**`__clone2()` (ia64-only, and it did ship)**: Contrary to a common misconception, `clone2` wasn't an abandoned proposal — `__clone2()` was a real, mainlined interface specific to the IA-64 (Itanium) architecture, present in the kernel and glibc from Linux 2.4 until ia64 support was removed in Linux 6.7. It didn't use a structured argument list at all; it just added a second stack-size parameter alongside the same flat, positional arguments as `clone()`, because ia64's register stack engine needs two separate stacks (a normal stack and a register backing store) instead of one. It's a historical curiosity rather than a design precursor to `clone3()`'s structured approach.
 
 **`clone3()`**: This is where things get interesting. `clone3()` takes a single `struct clone_args` pointer and the size of that structure. This design offers several critical advantages:
 
@@ -29,7 +29,7 @@ Let's briefly recap the journey to `clone3()`.
 
 ## Diving into `struct clone_args`
 
-The heart of `clone3()` is `struct clone_args`. Let's look at a simplified version of its definition (as found in `linux/clone_user.h`):
+The heart of `clone3()` is `struct clone_args`. Let's look at a simplified version of its definition (as found in `linux/sched.h`):
 
 ```c
 struct clone_args {
@@ -41,12 +41,9 @@ struct clone_args {
     __u64 stack;                /* Start of child stack */
     __u64 stack_size;           /* Size of child stack */
     __u64 tls;                  /* TLS for child */
-    __u64 set_tid;              /* Pointer to array of TIDs to set */
-    __u64 set_tid_size;         /* Number of elements in set_tid */
-    __u64 cgroup;               /* File descriptor for cgroup */
-    __u64 io_thread;            /* Not yet implemented (kernel < 6.1) */
-    __u64 sched_thread;         /* Not yet implemented (kernel < 6.1) */
-    __u64 open_how;             /* Flags for open_how */
+    __u64 set_tid;              /* Pointer to array of TIDs to set (since Linux 5.5) */
+    __u64 set_tid_size;         /* Number of elements in set_tid (since Linux 5.5) */
+    __u64 cgroup;               /* File descriptor for target cgroup of child (since Linux 5.7) */
 };
 ```
 
@@ -74,7 +71,7 @@ Let's craft a simplified C example demonstrating how to use `clone3()` to create
 #include <errno.h>
 
 // Define struct clone_args if not available in headers (e.g., older glibc)
-// For modern systems, it should be in <linux/clone_user.h>
+// For modern systems, it should be in <linux/sched.h>
 struct clone_args {
     __u64 flags;
     __u64 pidfd;
@@ -87,9 +84,6 @@ struct clone_args {
     __u64 set_tid;
     __u64 set_tid_size;
     __u64 cgroup;
-    __u64 io_thread;
-    __u64 sched_thread;
-    __u64 open_how;
 };
 
 // Our child process entry point

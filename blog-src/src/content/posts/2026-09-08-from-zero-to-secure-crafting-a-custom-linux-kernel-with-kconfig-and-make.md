@@ -78,7 +78,7 @@ You'll be presented with a text-based menu. Navigate with arrow keys, select wit
     *   `CONFIG_KPROBES`, `CONFIG_JUMP_LABEL`, `CONFIG_FTRACE`: Consider disabling if you don't use dynamic tracing tools. These can be abused by attackers.
 
 2.  **Processor type and features:**
-    *   `CONFIG_PAX_MEMORY_UDEREF`: Enable if available (might be under "Security options" in newer kernels). This helps prevent user-space dereferencing of kernel pointers.
+    *   `CONFIG_X86_SMAP` ("Supervisor Mode Access Prevention", visible once `CONFIG_EXPERT` is enabled): Ensure this is `Y` on hardware that supports it. SMAP is a CPU feature, not a software patch — it stops the kernel itself from being tricked into reading or writing user-space memory, closing off the "ret2usr" class of kernel exploitation. (If you're thinking of `PAX_MEMORY_UDEREF` from grsecurity/PaX hardened kernels — that's a separate, out-of-tree patch set, not something you'll find in a mainline `.config`.)
     *   `CONFIG_HARDENED_USERCOPY`: Enable. Protects against various memory corruption vulnerabilities.
     *   `CONFIG_VMAP_STACK`: Enable. Provides separate memory regions for kernel stacks, improving isolation.
 

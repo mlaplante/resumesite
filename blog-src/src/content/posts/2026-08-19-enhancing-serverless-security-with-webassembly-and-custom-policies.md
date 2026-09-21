@@ -99,12 +99,18 @@ func deniedHttpRequest(caller *wasmtime.Caller, urlPtr, urlLen int32) {
 
 func main() {
 	// 1. Initialize Wasmtime Engine and Store
-	engine := wasmtime.NewEngine()
+	// Epoch-based interruption has to be turned on at the Config level
+	// *before* the Engine is built — creating the Engine directly with
+	// wasmtime.NewEngine() would leave SetEpochDeadline below a no-op.
+	config := wasmtime.NewConfig()
+	config.SetEpochInterruption(true)
+	engine := wasmtime.NewEngineWithConfig(config)
 	store := wasmtime.NewStore(engine)
 
-	// Set a timeout for Wasm execution to prevent infinite loops
-	store.SetEpochDeadline(1) // Trigger epoch every 1 instruction (for demo)
-	store.SetEpochDeadline(10000000) // Set a more realistic deadline for total instructions
+	// Set a timeout for Wasm execution to prevent infinite loops: the guest
+	// is interrupted once the engine's epoch counter advances past this
+	// deadline (see the ticker goroutine below, which calls IncrementEpoch).
+	store.SetEpochDeadline(2)
 
 	// 2. Define our custom policy for this Wasm module
 	// For this example, we'll allow logging but deny network access.
@@ -182,11 +188,13 @@ func main() {
 
 	// In a real scenario, you'd read the processed output from Wasm memory.
 
-	// To demonstrate epoch deadline: advance epoch periodically
+	// To demonstrate epoch deadline: advance epoch periodically.
+	// IncrementEpoch is a method on the Engine, not the Store — the
+	// engine owns the epoch counter that every Store sharing it reads.
 	go func() {
 		for {
 			time.Sleep(10 * time.Millisecond) // Simulate some host processing time
-			store.IncrementEpoch()
+			engine.IncrementEpoch()
 		}
 	}()
 

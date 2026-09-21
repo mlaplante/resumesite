@@ -83,7 +83,7 @@ With this, you can specify `runtimeClassName: kata` in your Kubernetes pod defin
 
 ### gVisor
 
-While Kata uses a full hardware-virtualized VM, gVisor takes a slightly different approach. It implements its own user-space kernel (called a "Sentry") that intercepts system calls from the container and translates them into host kernel calls, enforcing its own security policies. While not strictly HAV for the *entire* kernel, gVisor can also leverage hardware features like EPT/RVI for memory isolation when running in `ptrace` mode (though its primary strength is its Sentry). More recently, gVisor has also explored integration with lightweight VMs.
+While Kata uses a full hardware-virtualized VM, gVisor takes a slightly different approach. It implements its own user-space kernel (called a "Sentry") that intercepts system calls from the container and translates them into host kernel calls, enforcing its own security policies. gVisor actually offers a choice of platforms for that interception: its `ptrace` platform deliberately does *not* use hardware virtualization at all, relying instead on `ptrace`-based syscall trapping, which makes it portable enough to run anywhere `ptrace` works (even inside VMs without nested virtualization) at the cost of higher context-switch overhead. gVisor's separate KVM platform is the one that leverages hardware features like EPT/RVI for memory isolation, trading that portability for better performance on bare-metal hosts (though its primary strength is still its Sentry). More recently, gVisor has also explored integration with lightweight VMs.
 
 ## Actionable Takeaways
 

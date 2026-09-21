@@ -57,7 +57,6 @@ excerpt: "Auditing System Calls With a Custom Linux Kernel Module
  #include <linux/sched.h> // For current->comm
  #include <linux/fs.h>    // For struct file
  #include <linux/path.h>  // For struct path
- #include <linux/dentry.h> // For struct dentry
  
  MODULE_LICENSE("GPL");
  MODULE_AUTHOR("Michael LaPlante");

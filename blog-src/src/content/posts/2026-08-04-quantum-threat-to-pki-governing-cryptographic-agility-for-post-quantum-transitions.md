@@ -60,10 +60,10 @@ You can't protect what you don't know you have. This is arguably the most critic
 
 ```bash
 # Example: Scan for TLS certificates on a range of IPs and ports
-nmap -p 443 --script ssl-cert --script-args "ssl-cert.check-date" <IP_RANGE>
+nmap -p 443 --script ssl-cert <IP_RANGE>
 
 # Example: Check a specific certificate for algorithm details
-openssl x509 -in certificate.crt -text -noout | grep "Public-Key Algorithm"
+openssl x509 -in certificate.crt -text -noout | grep "Public Key Algorithm"
 ```
 
 ### 3. Develop a PQC Migration Roadmap with Phased Implementation

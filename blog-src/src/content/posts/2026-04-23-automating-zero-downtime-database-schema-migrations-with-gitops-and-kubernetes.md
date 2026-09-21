@@ -62,6 +62,18 @@ metadata:
 spec:
   template:
     spec:
+      initContainers:
+      - name: clone-migrations
+        image: alpine/git:2.43.0
+        args:
+        - clone
+        - --depth=1
+        - --branch=main
+        - https://github.com/your-org/app-repo.git
+        - /workspace
+        volumeMounts:
+        - name: migration-scripts
+          mountPath: /workspace
       containers:
       - name: flyway
         image: flyway/flyway:9.0
@@ -81,16 +93,14 @@ spec:
         volumeMounts:
         - name: migration-scripts
           mountPath: /flyway/sql
+          subPath: db/migrations
       volumes:
       - name: migration-scripts
-        gitRepo:
-          repository: "https://github.com/your-org/app-repo.git"
-          revision: "main"
-          directory: "db/migrations"
+        emptyDir: {}
       restartPolicy: Never
 ```
 
-> **Note:** `gitRepo` volume mounts migration scripts directly from your Git repository. For production, use an init container or CI/CD step to clone the repo and package scripts.
+> **Note:** The `gitRepo` volume type that older versions of this example relied on was deprecated back in Kubernetes v1.11 and was removed from the kubelet entirely as of v1.36 — it no longer works on a current cluster. The pattern above (an `initContainer` that clones into a shared `emptyDir`, mounted into the main container via `subPath`) is the standard replacement and is safe to use as-is, not just as a "for production" upgrade.
 
 ### 3. Integrate with GitOps (ArgoCD or Flux)
 

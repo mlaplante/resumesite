@@ -82,12 +82,12 @@ Here's how Cilium (and other eBPF-based solutions) can automate Zero-Trust micro
           egress:
           - toFQDNs:
             - matchPattern: "*.example.com"
-          - toPorts:
+            toPorts:
             - ports:
               - port: "443"
                 protocol: TCP
         ```
-        This policy allows `my-service` pods to initiate outbound TCP connections on port 443 only to fully qualified domain names (FQDNs) ending in `example.com`.
+        `toFQDNs` and `toPorts` have to be keys of the *same* egress rule object for the policy to AND them together. Written as two separate list items (each starting with its own `-`), they'd be evaluated independently: one rule allowing all ports to `*.example.com`, and a second, unrelated rule allowing port 443 to *any* destination — which is a materially more permissive policy than "only to `example.com`". Nested as above, this policy allows `my-service` pods to initiate outbound TCP connections on port 443 only to fully qualified domain names (FQDNs) ending in `example.com`.
 
 4.  **Automatic Policy Recommendation (with tools like Hubble):** Cilium's observability layer, Hubble, also built on eBPF, provides deep insights into network flows. This data can be used to automatically recommend network policies based on observed traffic patterns, simplifying the policy creation process.
 

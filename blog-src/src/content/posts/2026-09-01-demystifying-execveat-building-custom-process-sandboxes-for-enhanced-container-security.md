@@ -91,9 +91,11 @@ int main(int argc, char *argv[]) {
     // We allow specific paths, everything else will be caught by the default KILL action
     
     // Allow /usr/bin/python3
+    // execveat(dirfd, pathname, argv, envp, flags): dirfd is argument 0,
+    // pathname is argument 1, so the comparisons use SCMP_A0/SCMP_A1.
     rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS_EXECVEAT, 2,
-                          SCMP_A1(SCMP_CMP_EQ, (long)AT_FDCWD), // relative to CWD
-                          SCMP_A2(SCMP_CMP_EQ, (long)"/usr/bin/python3")); // specific path
+                          SCMP_A0(SCMP_CMP_EQ, (long)AT_FDCWD), // relative to CWD
+                          SCMP_A1(SCMP_CMP_EQ, (long)"/usr/bin/python3")); // specific path
     if (rc < 0) {
         perror("seccomp_rule_add (python3)");
         seccomp_release(ctx);
@@ -102,8 +104,8 @@ int main(int argc, char *argv[]) {
 
     // Allow /bin/sh
     rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS_EXECVEAT, 2,
-                          SCMP_A1(SCMP_CMP_EQ, (long)AT_FDCWD),
-                          SCMP_A2(SCMP_CMP_EQ, (long)"/bin/sh"));
+                          SCMP_A0(SCMP_CMP_EQ, (long)AT_FDCWD),
+                          SCMP_A1(SCMP_CMP_EQ, (long)"/bin/sh"));
     if (rc < 0) {
         perror("seccomp_rule_add (sh)");
         seccomp_release(ctx);
@@ -196,11 +198,11 @@ Child process killed by signal 31 (expected for disallowed execveat).
 ### Analysis of the `seccomp` Filter
 
 *   `scmp_filter_ctx ctx = seccomp_init(SCMP_ACT_KILL);`: This sets the default action to `KILL`. Any syscall that doesn't match an explicit `ALLOW` rule will terminate the process. This is a very strong default for sandboxing.
-*   `seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS_EXECVEAT, 2, SCMP_A1(SCMP_CMP_EQ, (long)AT_FDCWD), SCMP_A2(SCMP_CMP_EQ, (long)"/usr/bin/python3"));`: This is the core. It adds a rule that *allows* the `execveat` syscall *only if* the `dirfd` argument equals `AT_FDCWD` and the `pathname` argument matches our expected value. The `SCMP_A1`/`SCMP_A2` macros build `struct scmp_arg_cmp` entries, and the resulting BPF program is what the kernel actually evaluates against the raw `seccomp_data.args[]` array on every `execveat` call.
+*   `seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS_EXECVEAT, 2, SCMP_A0(SCMP_CMP_EQ, (long)AT_FDCWD), SCMP_A1(SCMP_CMP_EQ, (long)"/usr/bin/python3"));`: This is the core. It adds a rule that *allows* the `execveat` syscall *only if* the `dirfd` argument equals `AT_FDCWD` and the `pathname` argument matches our expected value. `SCMP_A0`/`SCMP_A1` refer to `execveat`'s zero-indexed arguments — `dirfd` is argument 0 and `pathname` is argument 1 — and each macro builds a `struct scmp_arg_cmp` entry against that specific argument slot; the resulting BPF program is what the kernel actually evaluates against the raw `seccomp_data.args[]` array on every `execveat` call. Get the index wrong (say, `SCMP_A1`/`SCMP_A2`) and the filter silently compares the wrong arguments — in that case `argv`/`envp` instead of `dirfd`/`pathname` — which passes the demo purely by accident rather than actually restricting execution.
 
 ### The Caveat You Need to Know About
 
-Here's the part that's easy to gloss over in a quick demo like this one: seccomp-bpf can only reason about *scalar* syscall arguments — integers, file descriptors, flags, and raw pointer values. It has no mechanism to dereference a pointer and inspect the memory it points to. When we write `SCMP_A2(SCMP_CMP_EQ, (long)"/usr/bin/python3")`, we're comparing the **address** of that string literal in our own process's memory, not the bytes at that address. Our test program happens to pass because it's comparing its own trusted string literal against itself. It does **not** generalize to filtering an arbitrary caller's `pathname` argument — a compromised process can place any bytes at any address it controls, and the kernel-side BPF filter simply cannot see them.
+Here's the part that's easy to gloss over in a quick demo like this one: seccomp-bpf can only reason about *scalar* syscall arguments — integers, file descriptors, flags, and raw pointer values. It has no mechanism to dereference a pointer and inspect the memory it points to. When we write `SCMP_A1(SCMP_CMP_EQ, (long)"/usr/bin/python3")`, we're comparing the **address** of that string literal in our own process's memory, not the bytes at that address. Our test program happens to pass because it's comparing its own trusted string literal against itself. It does **not** generalize to filtering an arbitrary caller's `pathname` argument — a compromised process can place any bytes at any address it controls, and the kernel-side BPF filter simply cannot see them.
 
 This is the single most common misunderstanding people run into when they first reach for seccomp to do path-based execution control. If you actually need to restrict *which* binaries can run based on their path, you have a few production-grade options:
 

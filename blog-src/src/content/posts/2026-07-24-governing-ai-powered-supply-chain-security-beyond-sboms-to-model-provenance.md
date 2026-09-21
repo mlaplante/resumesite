@@ -90,7 +90,7 @@ Modern MLOps platforms are increasingly incorporating features for tracking mode
 *   **DVC:** Specifically designed for data versioning and managing large datasets, crucial for data provenance.
     ```bash
     dvc add data/training_data.csv
-    git add data/.dvcignore data/training_data.csv.dvc
+    git add data/.gitignore data/training_data.csv.dvc
     git commit -m "Add initial training data"
     ```
     DVC tracks the data file's hash and metadata, enabling reproducibility and versioning of datasets.

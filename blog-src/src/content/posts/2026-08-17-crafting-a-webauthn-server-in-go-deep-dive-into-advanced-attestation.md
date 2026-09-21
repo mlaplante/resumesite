@@ -47,11 +47,8 @@ package main
 import (
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/go-webauthn/webauthn/webauthn"
-	"github.com/go-webauthn/webauthn/webauthn/attestation"
-	"github.com/go-webauthn/webauthn/webauthn/metadata"
 )
 
 var webAuthn *webauthn.WebAuthn
@@ -60,22 +57,18 @@ var userStore = map[string]*User{} // A simple in-memory store for demonstration
 func main() {
 	var err error
 	webAuthn, err = webauthn.New(&webauthn.Config{
-		RPDisplayName: "My Awesome WebAuthn App", // Display Name for your site
-		RPID:          "localhost",                // Relying Party ID
-		RPOrigin:      "http://localhost:8080",    // Relying Party Origin
-		// A URL to an image file that is a square icon for your RP
-		// RPIcon: "https://example.com/logo.png",
+		RPDisplayName: "My Awesome WebAuthn App",        // Display Name for your site
+		RPID:          "localhost",                      // Relying Party ID
+		RPOrigins:     []string{"http://localhost:8080"}, // Relying Party Origins (a slice, not a single string)
 	})
 	if err != nil {
 		log.Fatalf("failed to create webauthn instance: %v", err)
 	}
 
-	// For production, consider using a metadata service for authenticator attestation root CAs
-	// metadataService, err := metadata.NewService(&metadata.Config{})
-	// if err != nil {
-	// 	log.Fatalf("failed to create metadata service: %v", err)
-	// }
-	// webAuthn.Set       (metadataService)
+	// For production, cross-reference the AAGUID on each registration
+	// against the FIDO Alliance's Metadata Service (MDS) rather than
+	// trusting attestation validity alone — see "Metadata Service (MDS)"
+	// below.
 
 	http.HandleFunc("/register/begin", beginRegistration)
 	http.HandleFunc("/register/finish", finishRegistration)
@@ -93,11 +86,11 @@ type User struct {
 	CurrentChallenge []byte
 }
 
-func (u *User) WebAuthnID() []byte { return u.ID }
-func (u *User) WebAuthnName() string { return u.Name }
-func func(u *User) WebAuthnDisplayName() string { return u.Name }
+func (u *User) WebAuthnID() []byte                          { return u.ID }
+func (u *User) WebAuthnName() string                        { return u.Name }
+func (u *User) WebAuthnDisplayName() string                 { return u.Name }
 func (u *User) WebAuthnCredentials() []webauthn.Credential { return u.Credentials }
-func (u *User) WebAuthnIcon() string { return "" }
+func (u *User) WebAuthnIcon() string                        { return "" }
 ```
 
 ## Advanced Attestation Validation
@@ -106,9 +99,17 @@ The `webauthn` library handles much of the attestation parsing and basic validat
 
 Let's look at how we can manually inspect and validate different attestation formats. This typically happens within the `finishRegistration` handler after the `webAuthn.FinishRegistration` call.
 
-The `webauthn.Credential` object returned by `FinishRegistration` contains the parsed attestation statement.
+The `webauthn.Credential` object returned by `FinishRegistration` does *not* hand you a parsed, per-format attestation statement. What it actually exposes is narrower:
+
+*   `credential.AttestationType` — a string classifying trust (e.g. `"basic_full"`).
+*   `credential.AttestationFormat` — a string naming the format used, exactly as defined by the spec (`"packed"`, `"fido-u2f"`, `"android-key"`, `"none"`, and so on).
+*   `credential.Attestation.Object` — the **raw, still-CBOR-encoded** attestation object. This is where the certificate chain and signature actually live; the library doesn't unpack them into typed Go structs for you.
+
+So "deeper inspection" means decoding `credential.Attestation.Object` yourself. The WebAuthn spec fixes the top-level CBOR map's keys (`fmt`, `attStmt`, `authData`), and `attStmt` is itself a format-specific map — for `packed`, `fido-u2f`, and `android-key` it holds `x5c` (the certificate chain, leaf first) and `sig`. A CBOR library like `github.com/fxamacker/cbor/v2` (already in our `go.mod`) can decode that into a generic map without needing per-format Go types:
 
 ```go
+// (imports "github.com/fxamacker/cbor/v2" as cbor, alongside the handler's other imports)
+
 // Inside finishRegistration handler, after successful finish
 credential, err := webAuthn.FinishRegistration(user, session, response)
 if err != nil {
@@ -116,65 +117,46 @@ if err != nil {
     return
 }
 
-log.Printf("Attestation Type: %s", credential.AttestationType)
+log.Printf("Attestation Format: %s (Type: %s)", credential.AttestationFormat, credential.AttestationType)
 
-switch credential.AttestationType {
-case attestation.TypePacked:
+switch credential.AttestationFormat {
+case "packed":
     log.Println("Handling Packed Attestation")
-    // The library handles most of this. For deeper inspection:
-    // Access credential.AttestationStatement
-    // This will be a *attestation.PackedAttestationStatement
-    if packedStmt, ok := credential.AttestationStatement.(*attestation.PackedAttestationStatement); ok {
-        log.Printf("Packed Attestation Format: %s", packedStmt.Format)
-        if packedStmt.X5C != nil {
-            log.Printf("Packed Attestation has X5C chain with %d certificates", len(packedStmt.X5C))
-            // You can manually inspect packedStmt.X5C[0] for the attestation certificate
-            // and validate its chain against trusted root CAs.
-            // For example, using x509.Verify or a custom verifier.
-        } else if packedStmt.ECDAAKeyID != nil {
+    // Decode the raw attestation object to reach the certificate chain.
+    var obj map[string]interface{}
+    if err := cbor.Unmarshal(credential.Attestation.Object, &obj); err != nil {
+        log.Printf("failed to decode attestation object: %v", err)
+        break
+    }
+    if attStmt, ok := obj["attStmt"].(map[string]interface{}); ok {
+        if _, hasX5C := attStmt["x5c"]; hasX5C {
+            log.Println("Packed Attestation has an X5C certificate chain")
+            // attStmt["x5c"] is the chain (leaf first) and attStmt["sig"]
+            // is the signature to verify against it, e.g. with x509.Verify.
+        } else if _, hasECDAA := attStmt["ecdaaKeyId"]; hasECDAA {
             log.Println("Packed Attestation uses ECDAA")
             // ECDAA is more complex and typically involves a trusted third-party service.
         } else {
-            log.Println("Packed Attestation uses self-attestation (no X5C/ECDAAKeyID)")
+            log.Println("Packed Attestation uses self-attestation (no x5c/ecdaaKeyId)")
         }
     }
-case attestation.TypeFIDO_U2F:
+case "fido-u2f":
     log.Println("Handling FIDO U2F Attestation")
-    if u2fStmt, ok := credential.AttestationStatement.(*attestation.FidoU2FAttestationStatement); ok {
-        log.Printf("FIDO U2F Attestation has X5C chain with %d certificates", len(u2fStmt.X5C))
-        // Similar to packed, inspect u2fStmt.X5C[0]
-        // U2F attestation certificates are typically self-signed or issued by a FIDO Alliance root.
-    }
-case attestation.TypeAndroidKey:
+    // Same shape as packed: decode attStmt["x5c"] for the certificate chain.
+    // U2F attestation certificates are typically self-signed or issued by a FIDO Alliance root.
+case "android-key":
     log.Println("Handling Android Key Attestation")
-    if androidKeyStmt, ok := credential.AttestationStatement.(*attestation.AndroidKeyAttestationStatement); ok {
-        log.Printf("Android Key Attestation has X5C chain with %d certificates", len(androidKeyStmt.X5C))
-        // Android Key attestation certificates are issued by Google's attestation root.
-        // The certificate's extension contains the key attestation data.
-        // This is where you would parse the Android Key Attestation Extension (OID 1.3.6.1.4.1.11129.2.1.17)
-        // and validate properties like origin, challenge, and secure hardware.
-        // Example (simplified, requires external library for ASN.1 parsing of extension):
-        /*
-        if len(androidKeyStmt.X5C) > 0 {
-            cert := androidKeyStmt.X5C[0]
-            for _, ext := range cert.Extensions {
-                // OID for Android Key Attestation Extension
-                if ext.Id.Equal(asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 11129, 2, 1, 17}) {
-                    log.Println("Found Android Key Attestation Extension")
-                    // You'd decode ext.Value (ASN.1 DER encoded) here to get the attestation structure
-                    // and verify fields like attestationChallenge, softwareEnforced, teeEnforced.
-                    // This is critical for ensuring the key was generated in secure hardware.
-                }
-            }
-        }
-        */
-    }
-case attestation.TypeNone:
+    // Decode attStmt["x5c"] as above, then walk the leaf certificate's
+    // extensions for the Android Key Attestation Extension
+    // (OID 1.3.6.1.4.1.11129.2.1.17, using encoding/asn1) and verify fields
+    // like attestationChallenge, softwareEnforced, and teeEnforced.
+    // This is critical for confirming the key was generated in secure hardware.
+case "none":
     log.Println("Handling None Attestation (self-attestation)")
     // No attestation statement, only the authenticator's self-signed public key.
     // This offers less security assurance but is allowed by the spec.
 default:
-    log.Printf("Unhandled Attestation Type: %s", credential.AttestationType)
+    log.Printf("Unhandled Attestation Format: %s", credential.AttestationFormat)
 }
 ```
 
@@ -184,7 +166,7 @@ default:
     *   **FIDO Alliance:** For U2F and many FIDO2 authenticators, you'll validate against FIDO Alliance root CAs.
     *   **Google:** For Android Key attestation, you'll validate against Google's attestation root.
     *   **Proprietary:** Some enterprise authenticators might have their own root CAs.
-    *   The `go-webauthn` library can integrate with a `metadata.Service` to automatically fetch and manage these trusted roots.
+    *   Rather than curating this list by hand, cross-reference against the FIDO Alliance's own Metadata Service (MDS3) — see "Metadata Service (MDS)" below.
 2.  **Attestation Statement Specifics:**
     *   **`packed` (X5C):** Verify the X.509 certificate chain. The first certificate is the attestation certificate.
     *   **`packed` (ECDAA):** More complex, involves cryptographic accumulators, usually outsourced to a trusted service.

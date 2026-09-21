@@ -40,7 +40,7 @@ Start with visibility. You can’t secure what you don’t know exists.
 Model threat modeling goes beyond traditional code review. It requires understanding the data, the algorithms, and their context.
 
 **Actionable Takeaway:**  
-- Incorporate AI-specific threat modeling into your sprint cycles. Use frameworks like MITRE ATLAS or OWASP’s Machine Learning Security Checklist.
+- Incorporate AI-specific threat modeling into your sprint cycles. Use frameworks like MITRE ATLAS or the OWASP Machine Learning Security Top 10.
 - Example: Run tabletop exercises simulating adversarial attacks on your fraud detection models.
 
 ---

@@ -47,10 +47,11 @@ excerpt: "Debugging High-Throughput Network Services With Kernel Packet Capture
   ```bash
   sudo tcpdump -i eth0 'host 192.168.1.100 and port 8080'
   ```
- *   **Capture only TCP SYN/ACK packets for a specific connection (useful for connection setup analysis):**
+ *   **Capture only TCP SYN-ACK packets for a specific connection (useful for connection setup analysis):**
   ```bash
-  sudo tcpdump -i eth0 'tcp[tcpflags] & (tcp-syn|tcp-ack) != 0 and host 192.168.1.100 and port 8080'
+  sudo tcpdump -i eth0 'tcp[tcpflags] & (tcp-syn|tcp-ack) == (tcp-syn|tcp-ack) and host 192.168.1.100 and port 8080'
   ```
+  Note the `==` rather than `!= 0`: with `!= 0`, the filter matches any packet with *either* SYN or ACK set — which, since ACK is set on nearly every packet after the handshake, is close to unfiltered traffic. `== (tcp-syn|tcp-ack)` requires *both* bits set, which is what actually isolates the SYN-ACK (the second packet of the three-way handshake).
  *   **Capture traffic on a specific VLAN tag (e.g., VLAN ID 10):**
   ```bash
   sudo tcpdump -i eth0 'vlan 10 and host 192.168.1.100'
@@ -66,7 +67,7 @@ excerpt: "Debugging High-Throughput Network Services With Kernel Packet Capture
   sudo tcpdump -i eth0 -s 0 -w /data/capture_%Y%m%d_%H%M%S.pcap -C 100 -W 5 'host 192.168.1.100 and port 8080'
   ```
   This command captures traffic for host `192.168.1.100` on port `8080`, saves full packets (`-s 0`) to files named with timestamps, rotates to a new file every 100MB (`-C 100`), and keeps a maximum of 5 such files (`-W 5`).
- *   **Offloading:** Ensure NIC offloading features (like checksum offloading) are enabled if you want to see traffic as the NIC *actually* sees it before the kernel corrects it. However, for deep debugging, sometimes disabling offloading can reveal subtle hardware issues. For most debugging, leaving it enabled is fine.
+ *   **Offloading:** Be aware of NIC offloading features like checksum offload, TSO, and GRO — they change what a kernel-level capture actually shows you. With TX checksum offload on, `tcpdump` captures the packet *before* the NIC has computed the real checksum, so you'll see incomplete/placeholder checksums and Wireshark's "incorrect checksum" warnings — a capture artifact, not a real wire error. GRO/LRO can similarly show you large, coalesced segments on receive that were never actually sent as single packets. If you need to see exactly what went out on the wire (e.g. you're debugging a genuine checksum or segmentation issue rather than one this capture artifact could explain), disable offloading (`ethtool -K eth0 tso off gso off gro off`) for the duration of the capture. For most debugging, leaving it enabled is fine — just don't mistake the resulting checksum warnings for a real bug.
  
  ### Analyzing with Wireshark
  

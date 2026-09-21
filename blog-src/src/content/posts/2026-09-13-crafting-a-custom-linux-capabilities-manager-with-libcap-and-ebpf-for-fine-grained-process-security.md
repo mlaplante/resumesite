@@ -72,7 +72,8 @@ int main() {
         return EXIT_FAILURE;
     }
 
-    if (cap_set_flag(caps, CAP_EFFECTIVE, 1, CAP_NET_BIND_SERVICE, CAP_SET) == -1) {
+    cap_value_t cap_list[1] = { CAP_NET_BIND_SERVICE };
+    if (cap_set_flag(caps, CAP_EFFECTIVE, 1, cap_list, CAP_SET) == -1) {
         perror("cap_set_flag (add)");
         cap_free(caps);
         return EXIT_FAILURE;

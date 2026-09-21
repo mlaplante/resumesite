@@ -18,24 +18,24 @@ FIDO2 security keys, such as YubiKeys, offer strong, phishing-resistant authenti
 *   **Tamper-proof:** The key itself enforces security policies, such as user presence (touching the key).
 *   **Phishing resistance:** The FIDO2 protocol cryptographically binds the authentication to the origin, preventing attackers from tricking users into authenticating to malicious sites.
 
-OpenSSH 8.2 introduced support for FIDO2/U2F hardware authenticators, specifically through the `sk-ecdsa@openssh.com` and `sk-ed25519@openssh.com` key types. These are essentially ECDSA and Ed25519 keys where the private key operations are offloaded to a security key.
+OpenSSH 8.2 introduced support for FIDO2/U2F hardware authenticators, specifically through the `ecdsa-sk` and `ed25519-sk` key types (the `-sk` suffix marks a "security key" backed key; on the wire these show up as `sk-ecdsa-sha2-nistp256@openssh.com` and `sk-ssh-ed25519@openssh.com`). These are essentially ECDSA and Ed25519 keys where the private key operations are offloaded to a security key.
 
 ## Generating Your FIDO2 SSH Key
 
 Let's start by generating a new FIDO2-backed SSH key. You'll need an OpenSSH client version 8.2 or newer and a FIDO2-compatible security key.
 
 ```bash
-# Generate an sk-ecdsa key (requires user presence confirmation on the security key)
-ssh-keygen -t sk-ecdsa -f ~/.ssh/id_sk_ecdsa_fido2 -C "michael.laplante@example.com-fido2"
+# Generate an ecdsa-sk key (requires user presence confirmation on the security key)
+ssh-keygen -t ecdsa-sk -f ~/.ssh/id_sk_ecdsa_fido2 -C "michael.laplante@example.com-fido2"
 
 # You will be prompted to touch your security key.
 # It will then ask for an optional passphrase.
 ```
 
-If your security key supports Ed25519, you can also generate an `sk-ed25519` key. The process is identical:
+If your security key supports Ed25519, you can also generate an `ed25519-sk` key. The process is identical:
 
 ```bash
-ssh-keygen -t sk-ed25519 -f ~/.ssh/id_sk_ed25519_fido2 -C "michael.laplante@example.com-fido2-ed25519"
+ssh-keygen -t ed25519-sk -f ~/.ssh/id_sk_ed25519_fido2 -C "michael.laplante@example.com-fido2-ed25519"
 ```
 
 After generation, you'll have two files: `id_sk_ecdsa_fido2` (the private key stub) and `id_sk_ecdsa_fido2.pub` (the public key). The private key stub doesn't contain the actual private key material; it's a pointer that tells `ssh-agent` and `ssh` how to interact with your security key.
@@ -115,11 +115,15 @@ PasswordAuthentication no
 # Ensure PubkeyAuthentication is enabled
 PubkeyAuthentication yes
 
-# Optional: Restrict which agent keys can be forwarded (OpenSSH 8.9+)
-# This is a powerful feature to limit exposure of specific keys.
-# See 'man sshd_config' for AgentForwardingAllowGroups, AgentForwardingDenyGroups
-# For example, to only allow agent forwarding for 'my_fido2_key_comment':
-# AgentForwardingAllowGroups my_fido2_key_comment
+# Optional: Restrict agent forwarding to a specific group of users.
+# sshd_config has no per-key forwarding control — the granularity it offers
+# is per-connection, via AllowAgentForwarding (default: yes) combined with
+# a Match block. For example, to deny agent forwarding to everyone except
+# members of the 'fido2-admins' group:
+AllowAgentForwarding no
+
+Match Group fido2-admins
+    AllowAgentForwarding yes
 ```
 
 **Important Note on Agent Forwarding and `sk-` keys:**

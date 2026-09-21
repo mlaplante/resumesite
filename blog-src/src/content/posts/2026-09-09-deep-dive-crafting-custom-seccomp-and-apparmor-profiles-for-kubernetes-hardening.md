@@ -24,7 +24,7 @@ Consider a simple web server. Does it need to make `mknod` system calls? Or acce
 
 ### Step 1: Baseline and Observation
 
-The first step is to understand what syscalls your application *actually* needs. This can be challenging. Tools like `strace` or `falco` can help, but for a running Kubernetes pod, a more practical approach is often to start with a permissive profile and observe failures, or use a tool like `scmp_sysgen` (from libseccomp-tools) to generate a baseline.
+The first step is to understand what syscalls your application *actually* needs. This can be challenging. Tools like `strace` or `falco` can help, but for a running Kubernetes pod, a more practical approach is often to start with a permissive profile, run the workload under representative load while capturing the syscalls it actually makes (`strace -c`, or a tracer that runs inside the container's namespace), and build your allow-list from that observed set instead of guessing.
 
 Let's assume we have a simple Nginx container. We know it needs basic network operations, file reading, and process management.
 
@@ -168,8 +168,6 @@ profile nginx-profile flags=(attach_disconnected,mediate_deleted) {
   # Deny all other file writes
   deny /** w,
   deny /** a,
-  deny /** C,
-  deny /** U,
 
   # Deny access to sensitive directories
   deny /boot/** rwk,
@@ -205,7 +203,7 @@ Unlike `seccomp` profiles, which the Kubelet reads directly, AppArmor profiles m
     sudo aa-status | grep nginx-profile
     ```
 
-3.  **Reference it from the Pod spec.** As of Kubernetes 1.30, AppArmor is a stable, first-class field on the security context:
+3.  **Reference it from the Pod spec.** Kubernetes 1.30 moved AppArmor from an annotation to a proper field on the security context (still beta and behind a feature gate at that point); it graduated to stable/GA in 1.31, with the feature gate removed:
 
     ```yaml
     apiVersion: apps/v1

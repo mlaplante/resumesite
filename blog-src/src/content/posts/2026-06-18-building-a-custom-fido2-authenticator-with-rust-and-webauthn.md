@@ -54,12 +54,17 @@ Add necessary dependencies to `Cargo.toml`. We'll need cryptographic primitives,
 [dependencies]
 # For cryptographic operations (e.g., ECDSA, SHA256)
 p256 = { version = "0.11", features = ["ecdsa"] }
+# p256's own "ecdsa" feature only pulls in sign/verify from ecdsa-core, not DER
+# encoding. Depending on `ecdsa` directly with its "der" feature turns that on
+# crate-wide via Cargo's feature unification, which is what gets us
+# `Signature::to_der()` later.
+ecdsa = { version = "0.14", features = ["der"] }
 sha2 = "0.10"
 rand_core = { version = "0.6", features = ["std"] }
 base64 = "0.21"
 
 # For CBOR serialization (CTAP2 uses CBOR)
-cbor = "0.5" # A simple CBOR library
+ciborium = "0.2" # actively maintained; the older `cbor` crate is deprecated
 
 # For byte manipulation
 byteorder = "1.4"
@@ -72,13 +77,12 @@ tokio = { version = "1", features = ["full"] } # Or just standard library networ
 
 ### 1. Key Management
 
-Our authenticator needs to generate and store key pairs. For FIDO2, ECDSA with the P-256 curve (secp256r1) is common.
+Our authenticator needs to generate and store key pairs. For FIDO2, ECDSA with the P-256 curve (secp256r1) is common. `p256::ecdsa::SigningKey` and `VerifyingKey` are already P-256-specific type aliases (they wrap the generic `ecdsa` crate types with the curve baked in), so we use them bare — no `<NistP256>` needed or accepted.
 
 ```rust
 // src/key_management.rs
 use p256::ecdsa::{SigningKey, VerifyingKey, Signature, signature::Signer};
 use p256::elliptic_curve::SecretKey;
-use p256::NistP256;
 use rand_core::OsRng;
 use sha2::{Sha256, Digest};
 
@@ -87,8 +91,8 @@ pub struct Credential {
     pub rp_id: String,
     pub user_id: Vec<u8>,
     pub credential_id: Vec<u8>,
-    pub signing_key: SigningKey<NistP256>,
-    pub verifying_key: VerifyingKey<NistP256>,
+    pub signing_key: SigningKey,
+    pub verifying_key: VerifyingKey,
     pub counter: u32,
 }
 
@@ -126,16 +130,19 @@ Let's define a simplified `Authenticator` struct that holds our credentials.
 ```rust
 // src/authenticator.rs
 use std::collections::HashMap;
-use crate::key_management::{Credential, self};
+use crate::key_management::Credential;
+use p256::ecdsa::{SigningKey, VerifyingKey};
+use rand_core::OsRng;
 use sha2::{Sha256, Digest};
 use byteorder::{BigEndian, WriteBytesExt};
+use ciborium::value::Value;
 
 pub struct Authenticator {
     credentials: HashMap<Vec<u8>, Credential>, // Map credential_id to Credential
     // Other authenticator state (e.g., AAGUID, attestation key)
     aaguid: [u8; 16],
-    attestation_signing_key: SigningKey<NistP256>,
-    attestation_verifying_key: VerifyingKey<NistP256>,
+    attestation_signing_key: SigningKey,
+    attestation_verifying_key: VerifyingKey,
 }
 
 impl Authenticator {
@@ -158,7 +165,7 @@ impl Authenticator {
         rp_id: &str,
         user_id: &[u8],
         client_data_hash: &[u8],
-    ) -> Result<cbor::Value, String> {
+    ) -> Result<Value, String> {
         // In a real scenario, credential_id would be random or derived
         let credential_id = Sha256::digest([rp_id.as_bytes(), user_id].concat()).to_vec();
 
@@ -188,29 +195,32 @@ impl Authenticator {
         auth_data.extend_from_slice(&credential_id);
 
         // COSE Public Key (simplified example, real COSE is more complex)
-        // Representing P-256 public key as a map with specific keys
-        let cose_key = cbor::Value::Map(vec![
-            (cbor::Value::Integer(1), cbor::Value::Integer(2)), // kty: EC2
-            (cbor::Value::Integer(3), cbor::Value::Integer(-7)), // alg: ES256
-            (cbor::Value::Integer(-1), cbor::Value::Integer(1)), // crv: P-256
-            (cbor::Value::Integer(-2), cbor::Value::Bytes(public_key_bytes[1..33].to_vec())), // x-coordinate
-            (cbor::Value::Integer(-3), cbor::Value::Bytes(public_key_bytes[33..65].to_vec())), // y-coordinate
-        ].into_iter().collect());
-        let cose_key_bytes = cbor::to_vec(&cose_key).unwrap();
+        // Representing P-256 public key as a map with specific keys. `Value::Integer`
+        // wraps ciborium's own `Integer` type rather than a bare i64, hence the
+        // `.into()` on each literal below.
+        let cose_key = Value::Map(vec![
+            (Value::Integer(1i64.into()), Value::Integer(2i64.into())), // kty: EC2
+            (Value::Integer(3i64.into()), Value::Integer((-7i64).into())), // alg: ES256
+            (Value::Integer((-1i64).into()), Value::Integer(1i64.into())), // crv: P-256
+            (Value::Integer((-2i64).into()), Value::Bytes(public_key_bytes[1..33].to_vec())), // x-coordinate
+            (Value::Integer((-3i64).into()), Value::Bytes(public_key_bytes[33..65].to_vec())), // y-coordinate
+        ]);
+        let mut cose_key_bytes = Vec::new();
+        ciborium::into_writer(&cose_key, &mut cose_key_bytes).unwrap();
         auth_data.extend_from_slice(&cose_key_bytes);
 
         // Attestation Statement (basic self-attestation for this example)
         let attestation_object_bytes = [auth_data.as_slice(), client_data_hash].concat();
         let attestation_signature = self.attestation_signing_key.sign(&attestation_object_bytes);
 
-        let att_fmt = cbor::Value::Text("none".to_string()); // For self-attestation
-        let att_stmt = cbor::Value::Map(vec![].into_iter().collect()); // Empty for 'none' format
+        let att_fmt = Value::Text("none".to_string()); // For self-attestation
+        let att_stmt = Value::Map(vec![]); // Empty for 'none' format
 
-        let response_map = cbor::Value::Map(vec![
-            (cbor::Value::Text("fmt".to_string()), att_fmt),
-            (cbor::Value::Text("authData".to_string()), cbor::Value::Bytes(auth_data)),
-            (cbor::Value::Text("attStmt".to_string()), att_stmt),
-        ].into_iter().collect());
+        let response_map = Value::Map(vec![
+            (Value::Text("fmt".to_string()), att_fmt),
+            (Value::Text("authData".to_string()), Value::Bytes(auth_data)),
+            (Value::Text("attStmt".to_string()), att_stmt),
+        ]);
 
         Ok(response_map)
     }
@@ -221,7 +231,7 @@ impl Authenticator {
         rp_id: &str,
         client_data_hash: &[u8],
         allowed_credential_ids: &[Vec<u8>],
-    ) -> Result<cbor::Value, String> {
+    ) -> Result<Value, String> {
         // Find the first credential that both belongs to this RP and is in the
         // allow-list the browser sent us.
         let credential_id = allowed_credential_ids
@@ -252,11 +262,11 @@ impl Authenticator {
         // Unlike the `fmt`/`authData`/`attStmt` map above (simplified with string
         // keys for readability), a real authenticatorGetAssertion response uses
         // integer CBOR map keys: 0x01 credential, 0x02 authData, 0x03 signature.
-        let response_map = cbor::Value::Map(vec![
-            (cbor::Value::Integer(1), cbor::Value::Bytes(credential_id.clone())),
-            (cbor::Value::Integer(2), cbor::Value::Bytes(auth_data)),
-            (cbor::Value::Integer(3), cbor::Value::Bytes(signature_der)),
-        ].into_iter().collect());
+        let response_map = Value::Map(vec![
+            (Value::Integer(1i64.into()), Value::Bytes(credential_id.clone())),
+            (Value::Integer(2i64.into()), Value::Bytes(auth_data)),
+            (Value::Integer(3i64.into()), Value::Bytes(signature_der)),
+        ]);
 
         Ok(response_map)
     }
@@ -273,6 +283,7 @@ mod authenticator;
 mod key_management;
 
 use authenticator::Authenticator;
+use ciborium::value::Value;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
 
@@ -294,7 +305,8 @@ async fn main() -> std::io::Result<()> {
         }
 
         let command = buf[0];
-        let payload: cbor::Value = cbor::from_slice(&buf[1..n]).expect("invalid CBOR payload");
+        let payload: Value = ciborium::from_reader(std::io::Cursor::new(&buf[1..n]))
+            .expect("invalid CBOR payload");
 
         // In a real transport, fields like rpId, userId, and clientDataHash are
         // pulled out of the request's CBOR map by key. We elide that parsing
@@ -318,7 +330,7 @@ async fn main() -> std::io::Result<()> {
         let response_bytes = match result {
             Ok(value) => {
                 let mut out = vec![0x00];
-                out.extend(cbor::to_vec(&value).unwrap());
+                ciborium::into_writer(&value, &mut out).unwrap();
                 out
             }
             Err(_) => vec![0x01], // CTAP1_ERR_INVALID_COMMAND, simplified

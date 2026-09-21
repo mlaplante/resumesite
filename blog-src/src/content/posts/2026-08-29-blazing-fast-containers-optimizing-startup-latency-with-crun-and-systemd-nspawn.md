@@ -138,7 +138,7 @@ This `crun`/`systemd-nspawn` (or more specifically, `systemd-nspawn` for direct 
 2.  **Benchmark your application:** Measure the actual startup latency of your containers with your current setup.
 3.  **Experiment with `systemd-nspawn`:** For performance-critical, single-process applications, try packaging your application into a minimal rootfs and launching it with `nspawn`.
     *   **Tip:** Use `systemd-nspawn --register=no` if you don't want `nspawn` to register the container with `machinectl`, further reducing overhead.
-    *   **Tip:** For even tighter resource control, explore `nspawn`'s `--cpu-set`, `--memory`, and other resource limit options.
+    *   **Tip:** For even tighter resource control, explore `nspawn`'s `--cpu-affinity=` option and its `--property=` flag, which passes cgroup unit properties like `--property=CPUQuota=25%` or `--property=MemoryMax=512M` straight through to the scope unit `nspawn` creates.
 4.  **Consider `crun` for OCI compatibility:** If you still need OCI image compatibility but want a faster runtime than `runc`, integrate `crun` into your existing `containerd` or custom OCI workflow. You can configure `containerd` to use `crun` as its default OCI runtime.
 
 By understanding the underlying mechanisms of containerization and choosing the right tools for the job, you can significantly optimize your application's performance and resource utilization. Sometimes, the simplest, most direct path to the kernel is the fastest.

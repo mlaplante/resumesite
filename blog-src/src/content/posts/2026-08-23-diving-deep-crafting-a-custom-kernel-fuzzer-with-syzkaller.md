@@ -166,7 +166,7 @@ open$mydevice(file const['/dev/mydevice'], flags flags[open_flags], mode const[0
 type mydevice_fd fd[open$mydevice]
 
 # Define the IOCTL command
-const MY_IOCTL_SET_VALUE = 0xC0046B00 // _IOW('k', 0, int) -> 0xC0046B00
+const MY_IOCTL_SET_VALUE = 0x40046B00 // _IOW('k', 0, sizeof(int)): dir=WRITE(1)<<30 | size=4<<16 | type='k'(0x6B)<<8 | nr=0
 
 # Describe the custom IOCTL call
 # ioctl$MYDEVICE takes a file descriptor of type mydevice_fd

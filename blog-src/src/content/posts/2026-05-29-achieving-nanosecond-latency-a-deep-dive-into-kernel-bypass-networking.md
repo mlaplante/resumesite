@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
 ```
 **Takeaway:** DPDK gives you granular control over packet reception and transmission, allowing for highly optimized custom network stacks. However, it requires significant development effort and understanding of low-level networking.
 
-### 2. Solarflare OpenOnload / EFVI (Enhanced Function Virtualization Interface)
+### 2. Solarflare OpenOnload / EFVI (EtherFabric Virtual Interface)
 
 Solarflare (now part of Xilinx/AMD) NICs have long been leaders in low-latency networking. Their OpenOnload stack provides a transparent kernel-bypass solution that can accelerate existing socket applications without modification.
 
@@ -124,7 +124,7 @@ Solarflare (now part of Xilinx/AMD) NICs have long been leaders in low-latency n
 
 *   **LD_PRELOAD:** OpenOnload uses `LD_PRELOAD` to intercept standard socket API calls (`socket`, `bind`, `connect`, `send`, `recv`, etc.).
 *   **Direct Hardware Access:** For supported NICs, OpenOnload routes these calls directly to the NIC hardware, bypassing the kernel's TCP/IP stack.
-*   **EFVI:** The Enhanced Function Virtualization Interface (EFVI) is a lower-level API provided by Solarflare that allows applications to directly access NIC receive and transmit rings, similar to DPDK but specific to Solarflare hardware.
+*   **EFVI:** The EtherFabric Virtual Interface (EFVI) is a lower-level API provided by Solarflare that allows applications to directly access NIC receive and transmit rings, similar to DPDK but specific to Solarflare hardware.
 
 **Practical Example (Using OpenOnload):**
 

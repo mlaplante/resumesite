@@ -84,12 +84,14 @@ Here's a simplified `configuration.nix` for a basic server:
   # Enable the Nomad client service
   services.nomad = {
     enable = true;
-    client.enable = true;
-    # Configure the Nomad client to connect to your Nomad servers
+    # The nixpkgs services.nomad module has no client.enable option — client
+    # mode is a setting inside Nomad's own configuration, passed through
+    # via the module's freeform `settings` attribute.
     settings = {
       data_dir = "/var/lib/nomad";
       client = {
-        servers = [ "192.168.1.10:4647", "192.168.1.11:4647" ]; # Replace with your Nomad server IPs
+        enabled = true; # This is the real switch for client mode (Nomad's `client.enabled`)
+        servers = [ "192.168.1.10:4647" "192.168.1.11:4647" ]; # Replace with your Nomad server IPs — Nix lists are space-separated, not comma-separated
         network_interface = "eth0"; # Or your specific interface
       };
       # Optional: ACL token for client registration

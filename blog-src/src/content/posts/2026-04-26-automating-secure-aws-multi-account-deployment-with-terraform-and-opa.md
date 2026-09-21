@@ -97,18 +97,38 @@ resource "aws_cloudtrail" "main" {
 
 resource "aws_s3_bucket" "cloudtrail_logs" {
   bucket = "my-app-prod-${var.account_id}-cloudtrail-logs"
-  acl    = "log-delivery-write" # Specific ACL for CloudTrail
   policy = data.aws_iam_policy_document.cloudtrail_bucket_policy.json
+}
 
-  versioning {
-    enabled = true
+# acl, versioning, and server_side_encryption_configuration were deprecated
+# on aws_s3_bucket in provider v4.0 and are unconfigurable there since v5.0.
+# Each is its own resource now:
+
+resource "aws_s3_bucket_ownership_controls" "cloudtrail_logs" {
+  bucket = aws_s3_bucket.cloudtrail_logs.id
+  rule {
+    object_ownership = "BucketOwnerPreferred" # Required before a canned ACL can be applied
   }
+}
 
-  server_side_encryption_configuration {
-    rule {
-      apply_server_side_encryption_by_default {
-        sse_algorithm = "AES256"
-      }
+resource "aws_s3_bucket_acl" "cloudtrail_logs" {
+  depends_on = [aws_s3_bucket_ownership_controls.cloudtrail_logs]
+  bucket     = aws_s3_bucket.cloudtrail_logs.id
+  acl        = "log-delivery-write" # Specific ACL for CloudTrail
+}
+
+resource "aws_s3_bucket_versioning" "cloudtrail_logs" {
+  bucket = aws_s3_bucket.cloudtrail_logs.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "cloudtrail_logs" {
+  bucket = aws_s3_bucket.cloudtrail_logs.id
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
     }
   }
 }
@@ -155,19 +175,23 @@ data "aws_vpcs" "all_vpcs" {
 resource "aws_s3_bucket" "vpc_flow_log_bucket" {
   bucket = "my-app-prod-${var.account_id}-vpc-flow-logs"
 
-  versioning {
-    enabled = true
-  }
+  # Add appropriate bucket policy for flow logs
+}
 
-  server_side_encryption_configuration {
-    rule {
-      apply_server_side_encryption_by_default {
-        sse_algorithm = "AES256"
-      }
+resource "aws_s3_bucket_versioning" "vpc_flow_log_bucket" {
+  bucket = aws_s3_bucket.vpc_flow_log_bucket.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "vpc_flow_log_bucket" {
+  bucket = aws_s3_bucket.vpc_flow_log_bucket.id
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
     }
   }
-
-  # Add appropriate bucket policy for flow logs
 }
 ```
 
@@ -194,7 +218,9 @@ Create a file `policy/s3_no_public_access.rego`:
 ```rego
 package terraform.aws.s3
 
-deny[msg] {
+import rego.v1
+
+deny contains msg if {
   # Find S3 bucket resources in the Terraform plan
   resource := input.resource_changes[_]
   resource.type == "aws_s3_bucket"
@@ -207,7 +233,7 @@ deny[msg] {
   msg := sprintf("S3 bucket '%s' has a public ACL set to '%s'. Public access is not allowed.", [resource.change.after.bucket, acl])
 }
 
-deny[msg] {
+deny contains msg if {
   # Find S3 bucket public access block resources in the Terraform plan
   resource := input.resource_changes[_]
   resource.type == "aws_s3_bucket_public_access_block"
@@ -225,13 +251,13 @@ deny[msg] {
 }
 
 
-is_public_acl(acl) {
+is_public_acl(acl) if {
   acl == "public-read"
 }
-is_public_acl(acl) {
+is_public_acl(acl) if {
   acl == "public-read-write"
 }
-is_public_acl(acl) {
+is_public_acl(acl) if {
   acl == "website" # Often used for public websites, but still public
 }
 ```
@@ -241,7 +267,9 @@ is_public_acl(acl) {
 ```rego
 package terraform.aws.vpc
 
-deny[msg] {
+import rego.v1
+
+deny contains msg if {
   # Find VPC resources in the Terraform plan
   vpc_resource := input.resource_changes[_]
   vpc_resource.type == "aws_vpc"

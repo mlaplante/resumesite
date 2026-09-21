@@ -51,9 +51,11 @@ Let's walk through a C example demonstrating how to use `memfd_secret` to store 
 #include <fcntl.h>
 #include <errno.h>
 
-// Define the memfd_secret syscall number if not available in headers
+// Define the memfd_secret syscall number if not available in headers.
+// This is the x86_64 number; other architectures assign a different one,
+// so prefer <sys/syscall.h>'s __NR_memfd_secret when your headers have it.
 #ifndef __NR_memfd_secret
-#define __NR_memfd_secret 461 // Check your architecture's syscall table
+#define __NR_memfd_secret 447
 #endif
 
 // Wrapper for the memfd_secret syscall
@@ -62,7 +64,6 @@ static inline int memfd_secret(unsigned int flags) {
 }
 
 #define SECRET_SIZE 64 // Size for our hypothetical key
-#define MFD_SECRET_EXEC 0x01 // Flag for executable secret memory (not used here)
 
 int main() {
     int fd;
@@ -71,10 +72,12 @@ int main() {
 
     printf("Attempting to create a memfd_secret region...\n");
 
-    // 1. Create the memfd_secret file descriptor
-    // MFD_CLOEXEC: close on exec
-    // 0: no special flags for now (like MFD_SECRET_EXEC)
-    fd = memfd_secret(MFD_CLOEXEC);
+    // 1. Create the memfd_secret file descriptor.
+    // memfd_secret() accepts exactly one flag: O_CLOEXEC (close-on-exec).
+    // Unlike memfd_create(), there is no MFD_* flag namespace here, and no
+    // flag for executable secret memory — the kernel rejects any bit other
+    // than O_CLOEXEC with -EINVAL.
+    fd = memfd_secret(O_CLOEXEC);
     if (fd == -1) {
         if (errno == ENOSYS) {
             fprintf(stderr, "ERROR: memfd_secret syscall not available. "

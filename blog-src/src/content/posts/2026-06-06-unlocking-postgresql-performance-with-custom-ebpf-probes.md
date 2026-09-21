@@ -25,7 +25,7 @@ eBPF (extended Berkeley Packet Filter) allows us to execute small, sandboxed pro
 
 One common area of contention in high-transaction PostgreSQL environments is the buffer manager, specifically acquiring and releasing buffer pins. When a backend needs to read a page from disk or memory, it must "pin" that buffer in shared memory to ensure it's not evicted or modified by another process until it's done. Excessive pinning or contention for these pins can lead to significant delays.
 
-Let's target the `BufferGetAndPin` function within PostgreSQL. This function is critical for acquiring a buffer and pinning it. By observing its calls and durations, we can identify if buffer contention is a significant factor.
+Let's target the `ReadBuffer` function within PostgreSQL. This is the public entry point backends call to read a page into a shared buffer — it pins that buffer on the caller's behalf internally (via the buffer manager's static `PinBuffer()` helper, which isn't itself exported, so it's not something a `uprobe` can attach to directly) before returning the `Buffer` ID. By observing `ReadBuffer`'s calls and durations, we can identify if buffer acquisition and pinning is a significant factor in a workload's latency.
 
 ## Setting Up Your Environment
 
@@ -40,7 +40,7 @@ To follow along, you'll need:
 
 ## Crafting Our eBPF Probe
 
-We'll use `uprobe` (user-space probe) to attach to `BufferGetAndPin`. Our eBPF program will record the timestamp when the function is entered and calculate the duration when it exits.
+We'll use `uprobe` (user-space probe) to attach to `ReadBuffer`. Our eBPF program will record the timestamp when the function is entered and calculate the duration when it exits.
 
 Here's a simplified `bpf_program.py` script:
 
@@ -68,17 +68,17 @@ BPF_HASH(start, u64);
 // Define a perf buffer for outputting results
 BPF_PERF_OUTPUT(events);
 
-// Probe entry of BufferGetAndPin
-int buffer_get_and_pin_entry(struct pt_regs *ctx) {
+// Probe entry of ReadBuffer
+int read_buffer_entry(struct pt_regs *ctx) {
     u64 pid_tgid = bpf_get_current_pid_tgid();
     u64 ts = bpf_ktime_get_ns();
     start.update(&pid_tgid, &ts);
     return 0;
 }
 
-// Probe return of BufferGetAndPin
+// Probe return of ReadBuffer
 // We expect the buffer_id to be returned in RAX (x86-64 calling convention)
-int buffer_get_and_pin_return(struct pt_regs *ctx) {
+int read_buffer_return(struct pt_regs *ctx) {
     u64 pid_tgid = bpf_get_current_pid_tgid();
     u64 *tsp = start.lookup(&pid_tgid);
     if (tsp == 0) {
@@ -110,10 +110,10 @@ postgres_path = "/usr/lib/postgresql/14/bin/postgres" # Adjust your version here
 b = BPF(text=bpf_text)
 
 # Attach u(ret)probes
-b.attach_uprobe(name=postgres_path, sym="BufferGetAndPin", fn_name="buffer_get_and_pin_entry")
-b.attach_uretprobe(name=postgres_path, sym="BufferGetAndPin", fn_name="buffer_get_and_pin_return")
+b.attach_uprobe(name=postgres_path, sym="ReadBuffer", fn_name="read_buffer_entry")
+b.attach_uretprobe(name=postgres_path, sym="ReadBuffer", fn_name="read_buffer_return")
 
-print("Tracing BufferGetAndPin... Hit Ctrl-C to stop.")
+print("Tracing ReadBuffer... Hit Ctrl-C to stop.")
 print(f"{'PID':<7} {'BUFFER_ID':<12} {'DURATION_US':<12}")
 
 # Process events
@@ -132,26 +132,26 @@ while True:
 
 ## How the eBPF Script Works
 
-1.  **`BPF_HASH(start, u64);`**: This creates a kernel-space hash map to store the entry timestamp for each `pid_tgid` (process ID + thread group ID). When `BufferGetAndPin` is called, we store `bpf_ktime_get_ns()` in this map.
+1.  **`BPF_HASH(start, u64);`**: This creates a kernel-space hash map to store the entry timestamp for each `pid_tgid` (process ID + thread group ID). When `ReadBuffer` is called, we store `bpf_ktime_get_ns()` in this map.
 2.  **`BPF_PERF_OUTPUT(events);`**: This sets up a perf buffer, which is a high-performance way for kernel-space eBPF programs to send data to user-space.
-3.  **`buffer_get_and_pin_entry`**: This function is attached as a `uprobe` to the entry point of `BufferGetAndPin`. It records the current nanosecond timestamp.
-4.  **`buffer_get_and_pin_return`**: This function is attached as a `uretprobe` to the return point of `BufferGetAndPin`.
+3.  **`read_buffer_entry`**: This function is attached as a `uprobe` to the entry point of `ReadBuffer`. It records the current nanosecond timestamp.
+4.  **`read_buffer_return`**: This function is attached as a `uretprobe` to the return point of `ReadBuffer`.
     *   It retrieves the entry timestamp from the `start` hash map.
     *   Calculates the `duration_ns`.
-    *   `PT_REGS_RC(ctx)`: This macro is crucial. It extracts the return value of the probed function. For x86-64, return values are typically in the `RAX` register. `BufferGetAndPin` returns the `Buffer` ID on success, which is exactly what we want.
+    *   `PT_REGS_RC(ctx)`: This macro is crucial. It extracts the return value of the probed function. For x86-64, return values are typically in the `RAX` register. `ReadBuffer` returns the `Buffer` ID on success, which is exactly what we want.
     *   It then populates a `Data` struct and sends it to user-space via `events.perf_submit`.
 5.  **Python User-Space:** The Python script loads the C code, attaches the probes, and then continuously polls the `perf_buffer` to print the collected events.
 
 ## Running and Interpreting
 
-1.  Save the script as `buffer_pin_trace.py`.
-2.  Make it executable: `chmod +x buffer_pin_trace.py`.
-3.  Run it: `sudo ./buffer_pin_trace.py`.
+1.  Save the script as `read_buffer_trace.py`.
+2.  Make it executable: `chmod +x read_buffer_trace.py`.
+3.  Run it: `sudo ./read_buffer_trace.py`.
 
 Now, perform some operations on your PostgreSQL database – run a few queries, especially those that involve reading many pages. You should start seeing output like this:
 
 ```
-Tracing BufferGetAndPin... Hit Ctrl-C to stop.
+Tracing ReadBuffer... Hit Ctrl-C to stop.
 PID     BUFFER_ID    DURATION_US
 2456    1            12.34
 2456    2            8.12
@@ -162,13 +162,13 @@ PID     BUFFER_ID    DURATION_US
 
 **What to look for:**
 
-*   **High `DURATION_US`:** If you see consistently high durations for `BufferGetAndPin` calls, especially for frequently accessed buffers (`BUFFER_ID`), this is a strong indicator of contention.
+*   **High `DURATION_US`:** If you see consistently high durations for `ReadBuffer` calls, especially for frequently accessed buffers (`BUFFER_ID`), this is a strong indicator of contention.
 *   **Correlation with `PID`:** Do certain PIDs (PostgreSQL backend processes) consistently show higher durations? This could point to specific queries or sessions causing the contention.
 *   **Specific `BUFFER_ID`s:** While `BUFFER_ID` isn't directly the `relfilenode` or `block_number`, it's an internal shared buffer identifier. If a few IDs frequently appear with high durations, it suggests contention on those specific shared buffers. You can then correlate this with `pg_buffercache` or `pg_stat_statements` to understand which relations are occupying those buffers.
 
 ## Actionable Takeaways
 
-Once you've identified high contention on `BufferGetAndPin`, here are some steps you can take:
+Once you've identified high contention on `ReadBuffer`, here are some steps you can take:
 
 1.  **Optimize Queries:** Review `pg_stat_statements` for queries that perform many sequential scans or touch a large number of blocks. `EXPLAIN ANALYZE` these queries to find opportunities for index improvements, better join strategies, or reducing data touched.
 2.  **Increase `shared_buffers`:** If your system has ample RAM, increasing `shared_buffers` can reduce the need to read from disk, thus reducing the workload on the buffer manager. However, be mindful of over-allocating, as it can lead to other issues.

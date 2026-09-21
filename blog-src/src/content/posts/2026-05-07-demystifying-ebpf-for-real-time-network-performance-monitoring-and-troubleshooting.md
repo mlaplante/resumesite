@@ -108,9 +108,9 @@ Understanding where latency is introduced is crucial. eBPF can measure the time 
 
 For instance, you can instrument functions responsible for packet queuing or processing to measure their execution time. By attaching eBPF programs to `kprobes` (kernel function entry/exit points), you can precisely time operations.
 
-**Example: Measuring Time in `__net_rx_action`**
+**Example: Measuring Time in `net_rx_action`**
 
-`__net_rx_action` is a core function in the Linux kernel's network receive path. Measuring the time spent here can indicate congestion or processing delays.
+`net_rx_action` (defined in `net/core/dev.c`) is the softirq handler that drives the kernel's network receive path — it's what actually pulls packets off the NIC's receive queue and hands them up the stack. Measuring the time spent here can indicate congestion or processing delays.
 
 ```c
 // ebpf_rx_latency.c
@@ -123,7 +123,7 @@ struct {
     __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
     __uint(max_entries, 1); // One entry per CPU
     __type(key, __u32); // CPU ID (index)
-    __type(value, u64); // Timestamp
+    __type(value, __u64); // Timestamp
 } start_time SEC(".maps");
 
 // Define a map to store latencies
@@ -131,21 +131,21 @@ struct {
     __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
     __uint(max_entries, 1); // One entry per CPU
     __type(key, __u32); // CPU ID (index)
-    __type(value, u64); // Latency in nanoseconds
+    __type(value, __u64); // Latency in nanoseconds
 } rx_latencies SEC(".maps");
 
 // Helper function to get current time
-static inline u64 get_current_time() {
-    u64 ts;
-    // Using BPF_KTIME_GET_NS for monotonic clock
+static inline __u64 get_current_time() {
+    __u64 ts;
+    // Using bpf_ktime_get_ns() for a monotonic clock
     ts = bpf_ktime_get_ns();
     return ts;
 }
 
-SEC("kprobe/__net_rx_action")
+SEC("kprobe/net_rx_action")
 int kprobe_net_rx_action_entry(struct pt_regs *ctx) {
     int cpu_id = bpf_get_smp_processor_id();
-    u64 ts = get_current_time();
+    __u64 ts = get_current_time();
 
     // Store start time
     bpf_map_update_elem(&start_time, &cpu_id, &ts, BPF_ANY);
@@ -153,16 +153,16 @@ int kprobe_net_rx_action_entry(struct pt_regs *ctx) {
     return 0;
 }
 
-SEC("kretprobe/__net_rx_action")
+SEC("kretprobe/net_rx_action")
 int kretprobe_net_rx_action_exit(struct pt_regs *ctx) {
     int cpu_id = bpf_get_smp_processor_id();
-    u64 *start_ts_ptr = bpf_map_lookup_elem(&start_time, &cpu_id);
+    __u64 *start_ts_ptr = bpf_map_lookup_elem(&start_time, &cpu_id);
     if (!start_ts_ptr) {
         return 0; // No start time recorded for this CPU
     }
-    u64 start_ts = *start_ts_ptr;
-    u64 end_ts = get_current_time();
-    u64 latency = end_ts - start_ts;
+    __u64 start_ts = *start_ts_ptr;
+    __u64 end_ts = get_current_time();
+    __u64 latency = end_ts - start_ts;
 
     // Store latency
     bpf_map_update_elem(&rx_latencies, &cpu_id, &latency, BPF_ANY);
@@ -173,7 +173,7 @@ int kretprobe_net_rx_action_exit(struct pt_regs *ctx) {
 char _license[] SEC("license") = "GPL";
 ```
 
-This program attaches to the entry and exit of `__net_rx_action`. It records the entry timestamp per CPU, and upon exit, calculates the duration and stores it in another per-CPU map. A user-space application can then aggregate these latencies to understand the processing time within this critical kernel function.
+This program attaches to the entry and exit of `net_rx_action`. It records the entry timestamp per CPU, and upon exit, calculates the duration and stores it in another per-CPU map. A user-space application can then aggregate these latencies to understand the processing time within this critical kernel function.
 
 #### 3. Flow-Level Monitoring
 
@@ -203,7 +203,7 @@ struct {
     __uint(type, BPF_MAP_TYPE_HASH);
     __uint(max_entries, 10240);
     __type(key, __u32); // Process ID (PID)
-    __type(value, u64); // Timestamp
+    __type(value, __u64); // Timestamp
 } sendmsg_start_time SEC(".maps");
 
 // Define a map to store latencies per PID
@@ -211,13 +211,13 @@ struct {
     __uint(type, BPF_MAP_TYPE_HASH);
     __uint(max_entries, 10240);
     __type(key, __u32); // Process ID (PID)
-    __type(value, u64); // Latency in nanoseconds
+    __type(value, __u64); // Latency in nanoseconds
 } sendmsg_latencies SEC(".maps");
 
 SEC("kprobe/sock_sendmsg")
 int kprobe_sock_sendmsg_entry(struct pt_regs *ctx) {
     __u32 pid = bpf_get_current_pid_tgid() >> 32;
-    u64 ts = bpf_ktime_get_ns();
+    __u64 ts = bpf_ktime_get_ns();
     bpf_map_update_elem(&sendmsg_start_time, &pid, &ts, BPF_ANY);
     return 0;
 }
@@ -225,12 +225,12 @@ int kprobe_sock_sendmsg_entry(struct pt_regs *ctx) {
 SEC("kretprobe/sock_sendmsg")
 int kretprobe_sock_sendmsg_exit(struct pt_regs *ctx) {
     __u32 pid = bpf_get_current_pid_tgid() >> 32;
-    u64 *start_ts = bpf_map_lookup_elem(&sendmsg_start_time, &pid);
+    __u64 *start_ts = bpf_map_lookup_elem(&sendmsg_start_time, &pid);
     if (!start_ts) {
         return 0; // No matching entry event for this PID
     }
 
-    u64 latency = bpf_ktime_get_ns() - *start_ts;
+    __u64 latency = bpf_ktime_get_ns() - *start_ts;
     bpf_map_update_elem(&sendmsg_latencies, &pid, &latency, BPF_ANY);
     bpf_map_delete_elem(&sendmsg_start_time, &pid);
 
@@ -258,4 +258,4 @@ Reach for a custom program only when you need to measure or enforce something no
 
 ## Conclusion
 
-eBPF didn't just give us a faster `tcpdump` — it gave us a fundamentally different vantage point: the ability to ask precise, context-aware questions directly inside the kernel's network path, at line rate, without the overhead of copying every packet to user space. Whether you're counting SYN floods, timing `__net_rx_action`, or tracking `sendmsg` latency per process, the pattern is the same: hook the right point, keep the in-kernel logic minimal, and let user space handle aggregation and presentation. Start with the existing tooling — `bpftrace` and BCC will answer most questions — and reach for custom eBPF programs only when you need a metric nobody's already shipped a tool for.
+eBPF didn't just give us a faster `tcpdump` — it gave us a fundamentally different vantage point: the ability to ask precise, context-aware questions directly inside the kernel's network path, at line rate, without the overhead of copying every packet to user space. Whether you're counting SYN floods, timing `net_rx_action`, or tracking `sendmsg` latency per process, the pattern is the same: hook the right point, keep the in-kernel logic minimal, and let user space handle aggregation and presentation. Start with the existing tooling — `bpftrace` and BCC will answer most questions — and reach for custom eBPF programs only when you need a metric nobody's already shipped a tool for.

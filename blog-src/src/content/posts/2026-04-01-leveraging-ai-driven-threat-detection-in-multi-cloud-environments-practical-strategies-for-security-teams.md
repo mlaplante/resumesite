@@ -46,7 +46,7 @@ But to succeed, AI tools need access to clean, comprehensive data—and must be 
 AI models are only as good as the data they ingest. Start by funneling logs from all cloud platforms into a **centralized SIEM** or data lake. Use normalization tools to translate disparate log formats into a unified schema.
 
 **Actionable Tip:**  
-Leverage open-source tools like [Cloud Security Alliance’s CloudEvents](https://cloudevents.io/) or commercial solutions that support multi-cloud log aggregation.
+Leverage open-source tools like [CNCF’s CloudEvents](https://cloudevents.io/) or commercial solutions that support multi-cloud log aggregation.
 
 ---
 

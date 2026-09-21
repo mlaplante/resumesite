@@ -53,18 +53,12 @@ Let's write a C program that uses `landlock` to enforce this.
 // Landlock system call wrappers (from landlock-tools or manual definitions)
 // These typically come from a header like <linux/landlock.h> but we define them for clarity
 // For a production system, use the official headers or liblandlock.
-#ifndef LANDLOCK_ABI_LAST
-#define LANDLOCK_ABI_LAST 1
-#endif
-
 struct landlock_ruleset_attr {
     __u64 handled_access_fs;
-    __u32 abi;
-    __u32 pad;
 };
 
 enum landlock_rule_type {
-    LANDLOCK_RULE_TYPE_PATH_BENEATH = 1,
+    LANDLOCK_RULE_PATH_BENEATH = 1,
 };
 
 struct landlock_path_beneath_attr {
@@ -132,7 +126,7 @@ static int add_path_rule(int ruleset_fd, const char *path, __u64 access_rights) 
         .parent_fd = fd,
     };
 
-    if (landlock_add_rule(ruleset_fd, LANDLOCK_RULE_TYPE_PATH_BENEATH, &attr, 0)) {
+    if (landlock_add_rule(ruleset_fd, LANDLOCK_RULE_PATH_BENEATH, &attr, 0)) {
         perror("landlock_add_rule");
         close(fd);
         return -1;
@@ -149,7 +143,6 @@ int main() {
                              LANDLOCK_ACCESS_FS_WRITE_FILE |
                              LANDLOCK_ACCESS_FS_READ_DIR |
                              LANDLOCK_ACCESS_FS_MAKE_REG, // For creating new log files
-        .abi = LANDLOCK_ABI_LAST,
     };
 
     int ruleset_fd = landlock_create_ruleset(&attr, sizeof(attr), 0);
@@ -238,7 +231,7 @@ If you need tighter scoping than that, the usual pattern is a two-stage sandbox:
 
 ### Other Things to Know Before Shipping This
 
-*   **Always query the supported ABI at runtime.** Rather than hardcoding `LANDLOCK_ABI_LAST` as this example does for simplicity, call `landlock_create_ruleset(NULL, 0, LANDLOCK_CREATE_RULESET_VERSION)` first. It returns the highest Landlock ABI version the running kernel supports, letting you gracefully degrade `handled_access_fs` on older kernels instead of failing outright or silently requesting access rights the kernel doesn't understand.
+*   **Always query the supported ABI at runtime.** `struct landlock_ruleset_attr` has no version field of its own — ABI negotiation isn't part of the struct at all. Rather than assuming, as this example does for simplicity, that every access right it requests is supported, call `landlock_create_ruleset(NULL, 0, LANDLOCK_CREATE_RULESET_VERSION)` first. It returns the highest Landlock ABI version the running kernel supports, letting you choose which `LANDLOCK_ACCESS_FS_*` bits to set in `handled_access_fs` accordingly — gracefully degrading on older kernels instead of failing outright or silently requesting access rights the kernel doesn't understand.
 *   **Landlock's coverage has grown across ABI versions.** The original ABI 1 (Linux 5.13) covered only filesystem access rights. ABI 2 added `LANDLOCK_ACCESS_FS_REFER` for rename/link semantics, ABI 3 added `LANDLOCK_ACCESS_FS_TRUNCATE`, and ABI 4 (Linux 6.7) added network restrictions — `LANDLOCK_ACCESS_NET_BIND_TCP` and `LANDLOCK_ACCESS_NET_CONNECT_TCP` — so a Landlock-sandboxed process can also be restricted to binding or connecting only on specific TCP ports. If you're targeting a specific access right, check which ABI version introduced it before assuming it's available.
 *   **It composes with `seccomp`, it doesn't replace it.** Landlock reasons about filesystem (and, since ABI 4, network) objects; it says nothing about which syscalls are callable in the first place. A well-hardened process typically pairs a `seccomp` filter that limits the syscall surface with a Landlock ruleset that limits what those syscalls can touch — the same complementary-layers philosophy that applies to `seccomp` and `AppArmor` in a Kubernetes context.
 

@@ -151,8 +151,13 @@ static long my_driver_ioctl(struct file *file, unsigned int cmd, unsigned long a
     if (_IOC_TYPE(cmd) != MY_DRIVER_MAGIC) return -ENOTTY; // Not a TTY, generic error
 
     // Check if the command number is within our defined range
-    // (Optional, but good for robustness)
-    if (_IOC_NR(cmd) > MY_DRIVER_CONFIGURE) return -ENOTTY;
+    // (Optional, but good for robustness). Compare against the *nr* field of
+    // our highest-numbered command, not the raw encoded command itself —
+    // MY_DRIVER_CONFIGURE is a full _IOW(...) value (direction, size, type,
+    // and nr packed together), not a bare nr, so comparing _IOC_NR(cmd)
+    // straight against it would always be false and this check would never
+    // actually reject anything.
+    if (_IOC_NR(cmd) > _IOC_NR(MY_DRIVER_CONFIGURE)) return -ENOTTY;
 
     switch (cmd) {
         case MY_DRIVER_SET_VALUE:
@@ -209,8 +214,13 @@ static int __init my_driver_init(void) {
     }
     printk(KERN_INFO "MyDriver: Registered with major number %d\n", major_number);
 
-    // Register the device class
-    my_driver_class = class_create(THIS_MODULE, CLASS_NAME);
+    // Register the device class.
+    // `class_create()` took a `(struct module *owner, const char *name)` pair
+    // for years, but the `owner` argument was never actually used by the
+    // kernel and was dropped in Linux 6.4 — current kernels take just the
+    // name. If you're building against an older (pre-6.4) kernel tree,
+    // you'll need the two-argument form instead.
+    my_driver_class = class_create(CLASS_NAME);
     if (IS_ERR(my_driver_class)) {
         unregister_chrdev(major_number, DEVICE_NAME);
         printk(KERN_ALERT "MyDriver: Failed to register device class\n");

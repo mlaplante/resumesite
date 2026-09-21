@@ -26,7 +26,7 @@ Before we get into the solution, let's briefly touch upon the challenges of trad
 
 ### Basic `fanotify` Usage
 
-Let's start with a simple C example to demonstrate `fanotify`'s capabilities. This program will monitor a directory for create, modify, and delete events.
+Let's start with a simple C example to demonstrate `fanotify`'s capabilities. This program will monitor a directory for opens, writes, and completed-write-close events — the events available when a fanotify group reports file descriptors directly (the mode we'll also need later for permission events).
 
 ```c
 #include <stdio.h>
@@ -56,9 +56,10 @@ int main(int argc, char *argv[]) {
     // Add a mark for the directory to monitor
     // FAN_MARK_ADD: Add the mark
     // FAN_MARK_MOUNT: Monitor the entire mount point containing the path
-    // FAN_MODIFY | FAN_CREATE | FAN_DELETE | FAN_ATTRIB: Event types
+    // FAN_OPEN | FAN_MODIFY | FAN_CLOSE_WRITE: Event types available in this
+    // fd-reporting mode (FAN_CLASS_CONTENT, no FAN_REPORT_FID — see below)
     if (fanotify_mark(fan_fd, FAN_MARK_ADD | FAN_MARK_MOUNT,
-                      FAN_MODIFY | FAN_CREATE | FAN_DELETE | FAN_ATTRIB | FAN_MOVE,
+                      FAN_OPEN | FAN_MODIFY | FAN_CLOSE_WRITE,
                       AT_FDCWD, argv[1]) == -1) {
         perror("fanotify_mark");
         exit(EXIT_FAILURE);
@@ -96,11 +97,9 @@ int main(int argc, char *argv[]) {
 
             printf("Event on %s (PID: %d): ", path, metadata->pid);
 
-            if (metadata->mask & FAN_CREATE) printf("CREATE ");
-            if (metadata->mask & FAN_MODIFY) printf("MODIFY ");
-            if (metadata->mask & FAN_DELETE) printf("DELETE ");
-            if (metadata->mask & FAN_ATTRIB) printf("ATTRIB ");
-            if (metadata->mask & FAN_MOVE)   printf("MOVE ");
+            if (metadata->mask & FAN_OPEN)        printf("OPEN ");
+            if (metadata->mask & FAN_MODIFY)      printf("MODIFY ");
+            if (metadata->mask & FAN_CLOSE_WRITE) printf("CLOSE_WRITE ");
             printf("\n");
 
             close(metadata->fd); // Close the file descriptor received from fanotify
@@ -119,7 +118,7 @@ gcc -o fanotify_monitor fanotify_monitor.c
 sudo ./fanotify_monitor /etc
 ```
 
-Now, try creating, modifying, or deleting a file in `/etc` (e.g., `sudo touch /etc/testfile`). You'll see real-time events reported by the monitor. This is a significant step towards real-time FIM.
+Now, try writing to a file in `/etc` (e.g., `echo "test" | sudo tee -a /etc/testfile`). You'll see real-time OPEN, MODIFY, and CLOSE_WRITE events reported by the monitor. This is a significant step towards real-time FIM.
 
 ## Elevating Protection with LSMs
 
@@ -234,6 +233,7 @@ In production, you'd wire the `fanotify` alert path into whatever you already us
 *   **Permission events add latency to every matched syscall.** Every `open()` on a monitored path now waits on a round trip to userspace. Scope your `_PERM` marks tightly (specific files or directories, not entire mount points), or you'll measurably slow down the system.
 *   **A crashed or hung listener with active `_PERM` marks can hang the filesystem.** If your process dies while permission events are outstanding, pending opens on marked paths can be left blocked — test this failure mode deliberately before relying on it in production.
 *   **Older kernels have narrower visibility.** Features like `FAN_REPORT_FID` (reporting file handles instead of open file descriptors, useful when you can't safely hold an fd open) were added incrementally across kernel versions — check what your target kernel actually supports before designing around a specific flag.
+*   **You can't get create/delete/rename/attribute events in the fd-reporting mode used above.** `FAN_CREATE`, `FAN_DELETE`, `FAN_ATTRIB`, and `FAN_MOVE` (the directory-entry events, added in Linux 5.1) only work on a group initialized with `FAN_REPORT_FID`, and `FAN_REPORT_FID` cannot be combined with `FAN_CLASS_CONTENT` or `FAN_CLASS_PRE_CONTENT` — the kernel rejects the combination outright. That also means the two modes report events differently: fd-reporting mode (what our example above uses) hands you an open file descriptor in `metadata->fd`, which is what makes the `readlinkat(metadata->fd, "", ...)` trick work. `FAN_REPORT_FID` mode instead hands you a file handle in an attached info record, and resolving that back to a path or opening the file means using `open_by_handle_at()` against an fd on the same mount (and requires `CAP_DAC_READ_SEARCH`). In practice this means a single fanotify group can give you either permission-blocking content events (`FAN_OPEN_PERM`/`FAN_ACCESS_PERM`, fd-reporting) or directory-entry visibility (`FAN_CREATE`/`FAN_DELETE`/`FAN_MOVE`/`FAN_ATTRIB`, FID-reporting) — not both at once. A production FIM daemon typically runs two separate fanotify groups: one in `FAN_CLASS_CONTENT` mode for the alerting-and-optionally-blocking path shown above, and a second in `FAN_CLASS_NOTIF | FAN_REPORT_FID` mode purely to catch creates, deletes, renames, and attribute changes.
 
 ## Conclusion
 

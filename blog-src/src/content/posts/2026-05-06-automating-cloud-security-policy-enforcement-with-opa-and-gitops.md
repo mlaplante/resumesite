@@ -95,8 +95,12 @@ Here's how we can integrate them:
     terraform plan -out=tfplan
     terraform show -json tfplan > $TF_PLAN_FILE
     
-    # Evaluate with OPA
-    opa eval --data $OPA_POLICY_DIR --input $TF_PLAN_FILE "data.terraform.allow"
+    # Evaluate with OPA. Note the query targets the "deny" rule (a partial
+    # set), not "allow": "allow" is a default-false boolean, so it always
+    # has a *defined* value (true or false) and "opa eval"'s exit code
+    # alone can't tell you which. "deny" is only non-empty when a
+    # violation fires, so --fail-defined gives us a real pass/fail gate.
+    opa eval --fail-defined --data $OPA_POLICY_DIR --input $TF_PLAN_FILE "data.s3_encryption.deny"
     
     if [ $? -ne 0 ]; then
         echo "OPA policy violation detected in Terraform plan. Commit aborted."
@@ -108,7 +112,7 @@ Here's how we can integrate them:
 
 *   **Integration Point:** Build/test stages of your CI/CD pipeline.
 *   **Mechanism:** After a pull request is opened or merged, the CI pipeline generates an IaC plan (e.g., `terraform plan`) and then feeds this plan as input to OPA.
-*   **Benefit:** Ensures that all proposed changes conform to policies before deployment. This can be a blocking step, preventing non-compliant deployments.
+*   **Benefit:** Ensures that all proposed changes conform to policies before deployment. This can be a blocking step, preventing non-compliant deployments — but only if the `opa eval` invocation is actually wired to fail the job. By default, `opa eval` exits `0` regardless of whether the evaluated rule is `true`, `false`, or undefined; you have to opt into a real exit code with `--fail` (non-zero on an undefined/empty result) or `--fail-defined` (non-zero on a defined/non-empty result). For a `deny` partial-set rule like the one above, `--fail-defined` is the one you want — it flips to a failing exit code the moment `deny` produces any message.
 
     ```yaml
     # Example GitLab CI/CD stage
@@ -118,7 +122,7 @@ Here's how we can integrate them:
         - terraform init
         - terraform plan -out=tfplan
         - terraform show -json tfplan > tfplan.json
-        - opa eval --data ./opa_policies --input tfplan.json "data.terraform.allow"
+        - opa eval --fail-defined --data ./opa_policies --input tfplan.json "data.s3_encryption.deny"
       allow_failure: false # Make this a blocking step
     ```
 
@@ -140,7 +144,7 @@ Here's how we can integrate them:
           names:
             kind: K8sAWSBucketEncryption
       targets:
-        - target: admission.k8s.aws.com # Or a custom target for cloud resources managed via Crossplane
+        - target: admission.k8s.gatekeeper.sh # Gatekeeper's admission target is a fixed string, not a per-resource or per-cloud value
           rego: |
             package k8sawsbucketencryption
             
