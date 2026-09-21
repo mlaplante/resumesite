@@ -128,4 +128,19 @@ Let's consider a practical example where `tcpdump` is invaluable. You're using a
 
 1.  `frontend` (Node A: `10.42.0.5`) tries to reach `backend` (Node B: `10.42.1.10`).
 2.  `ss` on `frontend` pod shows `SYN_SENT`.
-3.  `tcpdump -i any host 10.42.0.5 and host 10.4
+3.  `tcpdump -i any host 10.42.0.5 and host 10.42.1.10 and port 8080` on `node-a`'s host interface shows the `SYN` packet leaving fine — the pod's local stack and CNI are doing their job.
+4.  The same `tcpdump` filter run on `node-b`'s host interface, outside any pod namespace, shows *nothing* arriving. The packet leaves `node-a` but never reaches `node-b` at all — so the problem isn't `iptables` or the pod's virtual interface on either side, it's the path between the two hosts.
+5.  Since the CNI is overlay-based, the actual inter-node traffic isn't the pod's TCP packets directly — it's encapsulated (VXLAN for Flannel, IP-in-IP or WireGuard for Calico). Re-running `tcpdump` filtered on the encapsulation port instead of the application port tells the real story:
+    ```bash
+    # Flannel's default VXLAN port
+    sudo tcpdump -i eth0 -nn udp port 8472 -c 50
+    ```
+    If you see outbound VXLAN packets on `node-a` but nothing inbound on `node-b`, the encapsulated traffic is being dropped somewhere between the hosts — most often a cloud provider security group or on-prem firewall rule that allows the Kubernetes API and node ports but was never opened for the CNI's overlay UDP port. This is a common gap: the cluster's east-west traffic depends on a port that has nothing to do with any application and is easy to miss when writing firewall rules by hand.
+
+## Putting It All Together
+
+The methodology scales down from "the cluster is broken" to a specific dropped packet: start with `ss` inside the pod's namespace to confirm what the application actually attempted, use `tcpdump` at each host's main interface to bisect where the packet stops appearing, and when the trail goes cold between two nodes, check the CNI's actual transport — its overlay port, its interface name, its own diagnostic tooling (`calicoctl node status`, `flanneld` logs, the `flannel.1` or `cni0` interface counters) — because that's the layer `kubectl` has no visibility into at all.
+
+## Wrapping Up
+
+`kubectl` tells you what Kubernetes thinks is true; `ss` and `tcpdump` tell you what the kernel actually did with the packets. When those two disagree, the kernel is right every time. Keep the escalation path simple — socket state first, packet capture second, CNI-specific transport last — and you'll consistently turn "the network is flaky" tickets into a specific host, interface, or firewall rule to fix.

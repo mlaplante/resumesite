@@ -155,4 +155,42 @@ cat /etc/hosts
 ```
 This should work normally, as our eBPF program only intercepts `/etc/shadow`.
 
-To see the `bpf_printk`
+To see the `bpf_printk` output from our program, tail the shared trace pipe in a separate terminal while you run the tests above:
+
+```bash
+sudo cat /sys/kernel/debug/tracing/trace_pipe
+```
+
+You should see a line logged for every blocked attempt at `/etc/shadow`, including the PID that made it.
+
+### Cleaning Up
+
+Once you're done, detach and remove the program so it doesn't keep intercepting syscalls on a system you're no longer actively testing on:
+
+```bash
+sudo bpftool link detach id <LINK_ID>
+sudo rm /sys/fs/bpf/openat_blocker
+```
+
+Forgetting this step is a common source of confusion in eBPF demos — a pinned program under `/sys/fs/bpf` survives reboots on many systems and will keep silently enforcing a rule you've forgotten about.
+
+## A Note on `kprobes` vs. the BPF LSM for Enforcement
+
+Everything above works, and it's a great way to learn how syscall interception functions under the hood. But there's an important caveat for anything beyond a demo: `kprobes` attach to internal kernel function names and offsets, which are **not a stable ABI**. A kernel upgrade can rename, inline, or restructure `sys_openat` entirely, silently breaking (or worse, subtly misbehaving) any `kprobe`-based enforcement you've shipped.
+
+For actual runtime *enforcement* — as opposed to observability and debugging — the Linux kernel provides a purpose-built mechanism: the **BPF LSM** (`BPF_PROG_TYPE_LSM`). Instead of hooking an internal function by name, you attach to a stable Linux Security Module hook, such as `file_open`, which is explicitly designed to be an enforcement point and is guaranteed to be called at the right place in the security-relevant code path:
+
+```c
+SEC("lsm/file_open")
+int BPF_PROG(restrict_shadow_open, struct file *file) {
+    // Compare file->f_path against the target path using bpf_d_path()
+    // and return a negative errno to deny the open, or 0 to allow it.
+    return 0;
+}
+```
+
+The BPF LSM requires the kernel to be built with `CONFIG_BPF_LSM=y` and `bpf` listed in `/sys/kernel/security/lsm`, but in exchange you get a hook that's explicitly meant for exactly this use case, rather than one you're borrowing for a purpose it wasn't designed for.
+
+## Conclusion
+
+eBPF gives you a genuinely safe way to observe and, with the right hook, enforce policy deep inside the kernel without the crash risk of a hand-rolled kernel module or the overhead of `ptrace`. `kprobes` are the right tool for investigating and prototyping — they let you attach to almost anything, instantly, with no kernel changes — but for production enforcement, reach for the BPF LSM or a stable tracepoint instead, since your security control shouldn't be one kernel minor version away from silently going dark.

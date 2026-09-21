@@ -226,4 +226,115 @@ def lambda_handler(event, context):
             sns_client.publish(
                 TopicArn=SNS_TOPIC_ARN,
                 Subject=f"Automated Remediation FAILED: S3 Public Access for {bucket_name}",
-                
+                Message=error_message
+            )
+
+        return {
+            'statusCode': 500,
+            'body': json.dumps({'message': error_message})
+        }
+```
+
+### Step 4: Deploying the Lambda and Wiring Up Permissions
+
+Code alone doesn't run itself. We need an execution role scoped to exactly what this function does — reading and writing bucket policies, publishing to our SNS topic, and writing its own logs — plus the EventBridge target and the permission that lets EventBridge invoke it.
+
+```terraform
+# main.tf (continued)
+
+resource "aws_iam_role" "remediate_s3_public_access_role" {
+  name = "remediate-s3-public-access-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "lambda.amazonaws.com" }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "remediate_s3_public_access_policy" {
+  name = "remediate-s3-public-access-policy"
+  role = aws_iam_role.remediate_s3_public_access_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["s3:GetBucketPolicy", "s3:PutBucketPolicy", "s3:DeleteBucketPolicy"]
+        Resource = "*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["sns:Publish"]
+        Resource = aws_sns_topic.security_alerts.arn
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
+        Resource = "arn:aws:logs:*:*:*"
+      }
+    ]
+  })
+}
+
+resource "aws_sns_topic" "security_alerts" {
+  name = "security-alerts"
+}
+
+resource "aws_lambda_function" "remediate_s3_public_access" {
+  function_name = "remediate-s3-public-access"
+  role          = aws_iam_role.remediate_s3_public_access_role.arn
+  handler       = "lambda_function.lambda_handler"
+  runtime       = "python3.12"
+  filename      = "remediate_s3_public_access.zip"
+  timeout       = 30
+
+  environment {
+    variables = {
+      SNS_TOPIC_ARN = aws_sns_topic.security_alerts.arn
+    }
+  }
+}
+
+resource "aws_cloudwatch_event_rule" "s3_public_access_noncompliance" {
+  name = "s3-public-access-noncompliance"
+
+  event_pattern = jsonencode({
+    source        = ["aws.config"]
+    "detail-type" = ["Config Rules Compliance Change"]
+    detail = {
+      messageType    = ["ComplianceChangeNotification"]
+      configRuleName = ["s3-bucket-public-read-prohibited", "s3-bucket-public-write-prohibited"]
+      newEvaluationResult = {
+        complianceType = ["NON_COMPLIANT"]
+        resourceType   = ["AWS::S3::Bucket"]
+      }
+    }
+  })
+}
+
+resource "aws_cloudwatch_event_target" "invoke_remediation_lambda" {
+  rule = aws_cloudwatch_event_rule.s3_public_access_noncompliance.name
+  arn  = aws_lambda_function.remediate_s3_public_access.arn
+}
+
+resource "aws_lambda_permission" "allow_eventbridge" {
+  statement_id  = "AllowExecutionFromEventBridge"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.remediate_s3_public_access.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.s3_public_access_noncompliance.arn
+}
+```
+
+Note the `aws_lambda_permission` resource — it's easy to forget, and without it EventBridge's attempt to invoke the function fails silently from the console's perspective (you'll see it in CloudTrail as an `AccessDenied`, not as an obvious error in the Lambda console). Scope the IAM policy as tightly as you can; `s3:PutBucketPolicy` on `"*"` is a reasonable start for a proof of concept, but in production you'd constrain `Resource` to the bucket ARNs your Config rules actually cover, or add a condition on the bucket's tags.
+
+**Actionable Takeaway:** Test your remediation Lambda against a deliberately misconfigured bucket in a sandbox account before trusting it in production. An auto-remediation function is powerful — it's also the kind of thing you want to be very sure about before it starts making changes on its own.
+
+## Conclusion
+
+Automating incident response doesn't mean removing humans from the loop entirely — it means reserving human judgment for the decisions that actually need it. Config, EventBridge, and Lambda let you close the gap between "misconfiguration exists" and "misconfiguration is fixed" from minutes to seconds, without anyone getting paged for a problem the system already solved. Start with your highest-confidence, lowest-risk remediations — public S3 buckets are a great first target — and expand the playbook as you build trust in the automation.

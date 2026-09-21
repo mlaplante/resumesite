@@ -206,4 +206,28 @@ fn submit_write(ring: &IoUring, client_fd: OwnedFd, buffer: Vec<u8>, len: usize,
     Ok(())
 }
 
-static mut NEXT_
+// A simple monotonically increasing counter for `user_data`, which io_uring
+// uses to correlate a CQE back to the SQE (and OpState) that produced it.
+// `static mut` is best avoided even in a single-threaded event loop like this
+// one; an `AtomicU64` costs nothing here and sidesteps the unsafe entirely.
+use std::sync::atomic::{AtomicU64, Ordering};
+
+static NEXT_USER_DATA: AtomicU64 = AtomicU64::new(0);
+
+fn get_next_user_data() -> u64 {
+    NEXT_USER_DATA.fetch_add(1, Ordering::Relaxed)
+}
+```
+
+## Security Considerations for `io_uring` in Production
+
+`io_uring`'s performance comes from letting user space and the kernel share memory and skip most of the syscall boundary — which is exactly why it deserves extra scrutiny before you put it on an attack surface that faces untrusted input.
+
+*   **Kernel Attack Surface:** `io_uring` is a large, fast-moving part of the kernel, and it has had a disproportionate share of local privilege-escalation CVEs since it landed. Several distributions and container platforms now ship it disabled or gated by default for this reason — Google restricted it in Android and ChromeOS, and a number of Linux distributions expose a `kernel.io_uring_disabled` sysctl that can restrict `io_uring_setup()` to privileged callers or turn it off system-wide. Check your target platform's default before assuming `io_uring` is available to an unprivileged service.
+*   **Validate Before You Trust the Ring:** Because SQEs and CQEs live in memory shared with the kernel, treat every field you read out of a CQE (`result()`, `user_data()`) as untrusted input, the same as you would a syscall return value. Our `state_idx` lookup already guards against a stale or unexpected `user_data`, but a production implementation should also cap `QUEUE_DEPTH` sensibly and never trust `res` as a length without bounds-checking it against the buffer that was submitted.
+*   **Registered Buffers and Files:** Beyond raw performance, `IORING_REGISTER_BUFFERS` (via `Submitter::register_buffers`) and `IORING_REGISTER_FILES` let you pre-register a fixed, known set of buffers and file descriptors with the kernel. This isn't just an optimization — it also narrows what a compromised SQE can reference, since fixed-file and fixed-buffer operations index into a table you control rather than accepting an arbitrary fd or pointer at submission time.
+*   **Drop Privileges After Setup:** If your service needs elevated privileges only to call `io_uring_setup()` (on kernels where that's gated), drop them immediately afterward. The ring, once created, doesn't need the privilege that created it.
+
+## Conclusion
+
+`io_uring` earns its reputation for speed by trading the syscall-per-operation model for shared ring buffers, and for a Rust network service, the `io-uring` crate lets you get most of that benefit without hand-rolling raw syscalls. But the same shared-memory design that makes it fast also makes it worth treating as part of your trust boundary: validate what comes back through the completion queue, prefer registered buffers and files where you can, and know your target kernel's stance on `io_uring` before you build a service that depends on it being available.

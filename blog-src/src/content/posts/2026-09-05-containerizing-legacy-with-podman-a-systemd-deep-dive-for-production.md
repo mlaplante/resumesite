@@ -186,4 +186,32 @@ Hardcoding secrets in the `systemd` unit file is a bad practice.
 **Actionable Takeaway:**
 *   **Systemd EnvironmentFile:** Use `EnvironmentFile=/path/to/my/secrets.env` in the `[Service]` section of your unit file. This file should contain `KEY=VALUE` pairs. Ensure proper permissions (`600`) on this file.
 *   **Podman Secrets:** For more robust secret management, leverage Podman's secret capabilities (though this adds complexity).
-*   **Host-mounted Volumes:** Mount a volume containing a configuration file with
+*   **Host-mounted Volumes:** Mount a volume containing a configuration file with restrictive permissions (`600`, owned by the service account) and have your application read secrets from that file at startup rather than from the environment at all — environment variables are visible to anyone who can read `/proc/<pid>/environ` on the host, which is a lower bar than you'd like for anything sensitive.
+
+### 3. Prefer Quadlet for New Deployments
+
+Everything above works, and `podman generate systemd --new` is still perfectly valid, but if you're setting this up today it's worth knowing that Podman 4.4+ ships a better answer: **Quadlet**. Instead of running a container by hand and generating a unit file from its runtime state, you write a declarative `.container` file directly:
+
+```ini
+# /etc/containers/systemd/legacy-db.container
+[Unit]
+Description=Legacy PostgreSQL database
+
+[Container]
+Image=docker.io/library/postgres:13
+ContainerName=legacy-db
+Environment=POSTGRES_PASSWORD=mysecretpassword
+Secret=legacy-db-password,type=env,target=POSTGRES_PASSWORD
+
+[Service]
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Drop this file in `/etc/containers/systemd/` (or `~/.config/containers/systemd/` for rootless), and `systemd`'s generator machinery translates it into a transient unit at boot — no `ExecStartPre`/`ExecStart`/`ExecStop` boilerplate to maintain by hand, and no risk of the unit file drifting out of sync with `podman inspect` because there's no intermediate "generate from a running container" step at all. The `.container` file *is* the source of truth, which makes it a much better fit for infrastructure-as-code workflows and GitOps-style deployment than a generated unit ever was. Quadlet also has first-class support for `.volume`, `.network`, `.pod`, and `.kube` unit types, so multi-container legacy stacks can be described declaratively end to end.
+
+## Conclusion
+
+`podman generate systemd` remains a solid, well-understood path for bringing legacy, stateful applications under proper init-system management — automatic startup, ordered dependencies, restart policies, and rootless operation all come essentially for free once you've wired up the unit files correctly. For new work, though, evaluate Quadlet first: it collapses the "run a container, then generate a unit from it" workflow into a single declarative file that's easier to review, version, and reason about. Either way, the underlying lesson holds: `systemd` isn't something to work around when containerizing legacy workloads, it's the integration point that makes them production-grade.

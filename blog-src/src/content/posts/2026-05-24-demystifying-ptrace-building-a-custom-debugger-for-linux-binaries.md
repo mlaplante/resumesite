@@ -185,4 +185,18 @@ In the `target` terminal, you'll notice it paused when the debugger attached and
 
 *   **`PTRACE_ATTACH`**: This is how our debugger "hooks" into the running process. When successful, it sends a `SIGSTOP` to the tracee, pausing its execution.
 *   **`waitpid`**: The debugger then calls `waitpid` to wait for the tracee to stop. `WIFSTOPPED(status)` confirms it stopped due to a signal, and `WSTOPSIG(status)` tells us which signal (`SIGSTOP` in this case).
-*   **`PTRACE_PEEKDATA`**: This request allows us to read a word (typically `sizeof(long)`) from the tracee's memory at the specified address. We successfully read our `0xDEADBEEF`! Note that
+*   **`PTRACE_PEEKDATA`**: This request allows us to read a word (typically `sizeof(long)`) from the tracee's memory at the specified address. We successfully read our `0xDEADBEEF`! Note that `ptrace` returns the read value directly for `PEEKTEXT`/`PEEKDATA` rather than writing it through the `data` pointer, and because `-1` is itself a valid data value, you must clear `errno` before the call and check it afterward to distinguish a genuine error from a word that legitimately happens to be `0xFFFFFFFFFFFFFFFF`, exactly the pattern used above.
+*   **`PTRACE_GETREGS`**: Populates a `struct user_regs_struct` with the tracee's current register state. On x86_64 this is how we read `rip` (the instruction pointer) and `rsp` (the stack pointer), the same values GDB shows you in its `info registers` output. Setting registers works the same way in reverse, with `PTRACE_SETREGS`.
+*   **`PTRACE_DETACH`**: Cleanly disconnects the tracer from the tracee and resumes its execution from wherever it was stopped. If you forget to detach, or your debugger crashes without doing so, the tracee stays stopped indefinitely; `PTRACE_DETACH` or killing the tracer are the only ways out.
+
+## Where to Go From Here
+
+What we've built is deliberately minimal: attach, read memory, read registers, detach. A real debugger built on this foundation would add:
+
+*   **Breakpoints:** Implemented by using `PTRACE_PEEKTEXT` to save the original instruction byte, then `PTRACE_POKETEXT` to overwrite it with an `INT3` (`0xCC`) trap instruction. When the tracee hits it, the kernel delivers `SIGTRAP`, and the tracer restores the original byte, rolls the instruction pointer back by one, and single-steps past it before reinserting the breakpoint.
+*   **Single-Stepping:** `PTRACE_SINGLESTEP` runs exactly one instruction before stopping the tracee again, which is how "step" commands in GDB work under the hood.
+*   **Dynamic Address Resolution:** Instead of hardcoding an address, parse `/proc/<pid>/maps` to find the tracee's memory layout, or read symbol information from the binary itself with a library like `libelf`.
+
+## Conclusion
+
+`ptrace` is the primitive that makes Linux debugging possible, and once you've used it directly, attaching, reading raw memory words, and inspecting registers by hand, the abstractions GDB builds on top of it stop feeling like magic. It's also worth remembering that `ptrace` isn't just a debugging tool: it's the same mechanism sandboxes and system call tracers rely on, so understanding it pays off well beyond writing your own debugger.

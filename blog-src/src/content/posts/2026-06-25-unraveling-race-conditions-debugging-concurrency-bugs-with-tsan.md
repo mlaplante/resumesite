@@ -202,4 +202,20 @@ Again, compile and run with TSan. No data race warnings, and the correct final v
 While TSan is excellent for C/C++, other languages and environments have their own tools:
 
 *   **Java:** The Java Memory Model (JMM) defines how threads interact with memory. Tools like the Concurrency Utilities (e.g., `java.util.concurrent.atomic` classes, `synchronized` keyword, `ReentrantLock`) are crucial for building correct concurrent applications. Dynamic analysis tools are less common, but static analysis tools can sometimes detect potential issues.
-*   **Go:** Go's built-in race detector is incredibly powerful
+*   **Go:** Go's built-in race detector is incredibly powerful and, unlike TSan for C/C++, requires no separate tool to install — it ships in the standard toolchain. Just add the `-race` flag: `go build -race`, `go test -race`, or `go run -race`. Under the hood it uses the same ThreadSanitizer runtime as C/C++, which is why the diagnostic output will look familiar if you've already used TSan.
+*   **Rust:** The ownership and borrowing rules eliminate most data races at compile time for safe code — the type system simply won't let two threads hold a mutable reference to the same data without going through a synchronization primitive like `Mutex` or `Arc`. That guarantee stops at the boundary of `unsafe` blocks, though, where tools like Miri (an interpreter that can catch certain classes of undefined behavior, including some data races, in `unsafe` code) still matter.
+*   **Python:** CPython's GIL (Global Interpreter Lock) prevents classic data races on individual object references, but it doesn't protect compound operations like `x += 1` on a shared object, and it disappears entirely in free-threaded builds (PEP 703), where race conditions are back on the table in the normal sense.
+
+## Practical Tips for Using TSan Effectively
+
+*   **Enable it early, not after a production incident.** Data races are far cheaper to fix during development than to reconstruct from a postmortem. Wire `-fsanitize=thread` into your CI test suite for any concurrent code, even if it slows the build down.
+*   **Expect a real performance and memory cost.** TSan-instrumented binaries typically run several times slower and use noticeably more memory than uninstrumented ones. Never ship it in production — reserve it for dedicated CI jobs and local debugging.
+*   **A clean TSan run isn't proof of correctness.** TSan can only report races that actually occur during a given execution. A race that depends on a rare interleaving might not surface on every run — running race-prone tests repeatedly, or under load, improves your odds of catching it.
+*   **Use suppression files sparingly.** TSan supports suppressions for known false positives, often in third-party libraries you can't instrument. Treat every suppression as debt to revisit, not a permanent fix.
+*   **Don't expect to combine it with AddressSanitizer in the same binary.** TSan and ASan are generally mutually exclusive; if you want both memory-safety and race-detection coverage, build separate sanitized binaries for each.
+
+## Conclusion
+
+Race conditions are exactly the kind of bug traditional debugging is worst at catching — the act of pausing execution at a breakpoint can change the timing enough to make the race disappear. That's why dynamic detectors like ThreadSanitizer earn their keep: instead of relying on you to reproduce a rare timing window by hand, they instrument every relevant memory access and catch the conflict directly, with a full stack trace pointing at both sides.
+
+If you're writing concurrent code in C, C++, or Go, running your test suite under TSan should be as routine as running it under a memory sanitizer. It's one of the highest-leverage tools available for turning a "flaky test that fails once a week" into "bug with an exact line number," and that trade is almost always worth the performance cost during testing.

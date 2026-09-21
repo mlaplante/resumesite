@@ -214,4 +214,26 @@ int main() {
 
 **Important Considerations for `seccomp`:**
 
-*   **Complexity:** Crafting a correct and secure `seccomp` filter is challenging
+*   **Complexity:** Crafting a correct and secure `seccomp` filter by hand, as shown above, is challenging and error-prone — a single wrong jump offset either fails open, allowing a dangerous syscall through, or fails closed, killing the process on a syscall it actually needed. In production code, reach for `libseccomp` instead of hand-assembled BPF:
+
+    ```c
+    #include <seccomp.h>
+
+    scmp_filter_ctx ctx = seccomp_init(SCMP_ACT_KILL); // default-deny everything
+    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(read), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(write), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(close), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(fstat), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(exit_group), 0);
+    seccomp_load(ctx);
+    seccomp_release(ctx);
+    ```
+
+    `libseccomp` lets you allow syscalls by name, add per-argument conditions with `seccomp_rule_add`'s comparator arguments (for example, restricting `write` to only the memfd's specific file descriptor), and target the right syscall table for your architecture — all without touching raw BPF opcodes.
+*   **Ordering Matters:** Apply the `seccomp` filter only *after* you've created the `memfd`, written the sensitive data, and finished any setup that needs broader syscall access. Once loaded, a filter is irrevocable for the life of the process — you can only stack more restrictive filters on top of it, never loosen what's already there.
+*   **Pair It with `PR_SET_NO_NEW_PRIVS`:** Call `prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)` before loading the filter. This stops the process, and anything it later `execve`s, from regaining privileges through a setuid binary, closing off a common seccomp bypass.
+*   **Test Exhaustively:** Enumerate every syscall your code path actually needs, including the ones libc issues on your behalf — `mmap` and `brk` for `malloc`, `rt_sigaction`, `futex` for threading — before locking the filter down. Running the unrestricted binary under `strace -f` is the fastest way to build an accurate allowlist.
+
+## Conclusion
+
+Combining `memfd_create` with a tightly scoped `seccomp` filter gives you a memory region that never touches disk and a process that, even if fully compromised, has almost nothing left to do. Neither primitive is a silver bullet by itself: `memfd_create` won't stop a co-resident process with `ptrace` privileges, and `seccomp` won't save you from a syscall you forgot to deny. Together, though, they meaningfully shrink the blast radius of a process handling keys, tokens, or other sensitive data in memory — and for that class of problem, the added complexity is worth it.

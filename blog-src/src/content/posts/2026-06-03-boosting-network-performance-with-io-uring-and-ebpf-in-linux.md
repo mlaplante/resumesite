@@ -181,4 +181,53 @@ This allows for intelligent, high-performance routing *before* the data even ent
 #include <linux/if_ether.h>
 #include <linux/ip.h>
 #include <linux/tcp.h>
-#include <bpf/bpf
+#include <bpf/bpf_helpers.h>
+#include <bpf/bpf_endian.h>
+
+struct {
+    __uint(type, BPF_MAP_TYPE_XSKMAP);
+    __uint(max_entries, 64);
+    __type(key, __u32);
+    __type(value, __u32);
+} xsks_map SEC(".maps");
+
+SEC("xdp")
+int xdp_route_to_worker(struct xdp_md *ctx) {
+    void *data_end = (void *)(long)ctx->data_end;
+    void *data = (void *)(long)ctx->data;
+
+    struct ethhdr *eth = data;
+    if ((void *)(eth + 1) > data_end)
+        return XDP_PASS; // Malformed packet, let the normal stack handle it
+
+    if (eth->h_proto != bpf_htons(ETH_P_IP))
+        return XDP_PASS; // Not IPv4, ignore for this example
+
+    struct iphdr *ip = (void *)(eth + 1);
+    if ((void *)(ip + 1) > data_end)
+        return XDP_PASS;
+
+    if (ip->protocol != IPPROTO_TCP)
+        return XDP_PASS;
+
+    struct tcphdr *tcp = (void *)ip + (ip->ihl * 4);
+    if ((void *)(tcp + 1) > data_end)
+        return XDP_PASS;
+
+    // A simple hash of the source port picks which worker queue gets this
+    // flow. A production implementation would use consistent hashing or
+    // inspect application-layer data to make a smarter decision.
+    __u32 worker = bpf_ntohs(tcp->source) % 64;
+
+    return bpf_redirect_map(&xsks_map, worker, XDP_PASS);
+}
+```
+This simplified example demonstrates the shape of the decision: parse just enough of the packet to make a routing choice, then hand it off via `bpf_redirect_map()` to the AF_XDP socket registered for that worker in `xsks_map`. Every branch above includes an explicit bounds check against `data_end` — the BPF verifier rejects any XDP program that doesn't prove it can't read past the end of the packet buffer, so these checks aren't optional defensive programming, they're a hard requirement for the program to load at all.
+
+## The Combined Payoff
+
+Put together, `io_uring` and eBPF attack different halves of the same problem. `io_uring` minimizes the cost of moving data between the kernel and an application that has already decided it wants that data. eBPF minimizes the cost of *deciding* which application, socket, or core should get it in the first place — and lets you make that decision without ever leaving kernel space. Neither technology depends on the other, but a high-throughput network service that only adopts one of them is leaving performance on the table.
+
+## Conclusion
+
+`io_uring` and eBPF represent two of the most significant advances in Linux I/O and networking in recent years, and they solve complementary problems: one collapses the syscall overhead of moving data, the other lets you make routing and filtering decisions before that data ever reaches user space. Adopting either requires care — `io_uring`'s buffer lifetime rules and eBPF's verifier constraints both demand more upfront design than the APIs they're replacing. But for teams operating at the throughput and latency envelope where microseconds show up on a P&L statement, that upfront investment consistently pays for itself.

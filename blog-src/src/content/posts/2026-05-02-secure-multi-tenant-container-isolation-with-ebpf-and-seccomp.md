@@ -163,4 +163,53 @@ int bpf_openat_check(struct openat_args *ctx) {
     // prefixed with a tenant-specific identifier.
     // Or, you could use a `security_inode_permission` hook.
 
-    // For now, let's assume we want to
+    // For now, let's assume this program stays purely observational: a
+    // tracepoint is a read-only hook. `sys_enter_openat` fires before the
+    // kernel has even resolved the path, and the syscall dispatcher never
+    // consults this program's return value — it cannot deny the call. Its
+    // job here is to audit and count suspicious opens, not to block them.
+
+    return 0;
+}
+```
+
+### From Tracepoints to LSM Hooks: Actually Enforcing the Decision
+
+The program above is useful for auditing, but it's the wrong hook for enforcement — a `tracepoint/syscalls/sys_enter_openat` program is a passive observer. If you actually want to deny a file open, you need a hook the kernel consults as part of its access-control decision, not one it merely notifies.
+
+That's what BPF LSM (Linux Security Module) programs are for. Since kernel 5.7, with `CONFIG_BPF_LSM=y`, you can attach an eBPF program directly to an LSM hook like `file_open`, and its return value *is* authoritative — a non-zero (negative errno) return genuinely blocks the operation:
+
+```c
+SEC("lsm/file_open")
+int BPF_PROG(restrict_tenant_file_open, struct file *file) {
+    u64 cgroup_id = bpf_get_current_cgroup_id();
+    u64 *allowed_root_inode = bpf_map_lookup_elem(&tenant_roots, &cgroup_id);
+    if (!allowed_root_inode) {
+        return 0; // No policy configured for this tenant — allow
+    }
+
+    // Unlike the tracepoint case, `file` here is a fully resolved
+    // struct file *, so file->f_path.dentry and its ancestor dentries are
+    // safe to walk with BPF_CORE_READ — no manual path resolution required.
+    // A production implementation walks file->f_path.dentry->d_parent up to
+    // the mount root, compares each inode against the tenant's allowed root,
+    // and returns -EPERM the moment it finds a mismatch.
+
+    return 0;
+}
+```
+
+**Actionable Takeaway:** Reserve syscall tracepoints for observability — they're cheap and give you a rich audit trail, but they can't say no. Reserve LSM-based eBPF programs for enforcement — they're the hook the kernel actually checks before it acts. Most production setups use both together: the tracepoint feeds your logging pipeline, the LSM hook makes the call.
+
+## Combining Seccomp and eBPF in Practice
+
+The most effective multi-tenant isolation strategy uses both layers together, each doing what it's best at:
+
+*   **Seccomp** handles the coarse, static filtering. The syscalls a typical web application never needs — `mount`, `reboot`, `ptrace`, `setns`, `init_module` — are blocked outright, with zero per-call eBPF overhead.
+*   **eBPF**, via LSM hooks, handles the syscalls that are legitimate in general but need to be constrained by context — `openat` restricted to a tenant's directory tree, `connect` restricted to approved destination ranges, `execve` restricted to an allow-list of binaries.
+
+This division of labor keeps the hot path fast — most syscalls never touch an eBPF program at all — while still giving you dynamic, context-aware control exactly where you need it.
+
+## Conclusion
+
+Namespaces and cgroups isolate what a container *has access to*; Seccomp and eBPF isolate what it's *allowed to do* with that access. For multi-tenant platforms, that second layer isn't optional — it's the difference between a compromised tenant container failing loudly at the syscall boundary and one quietly working its way toward the host kernel. Start with a minimal Seccomp profile generated from real application behavior, then layer in eBPF LSM hooks for the specific syscalls where "allowed in general, denied in this context" actually matters.

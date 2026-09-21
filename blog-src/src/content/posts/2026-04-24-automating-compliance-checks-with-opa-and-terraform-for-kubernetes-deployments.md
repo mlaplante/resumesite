@@ -264,4 +264,60 @@ Changes to Outputs:
       {
         "code" = ""
         "detail" = tostring(null)
-        "message" = "Container 'non-compliant-container' in deployment 'non-compliant-app' must not run as root. Set runAsNonRoot to true or runAsUser > 10
+        "message" = "Container 'non-compliant-container' in deployment 'non-compliant-app' must not run as root. Set runAsNonRoot to true or runAsUser > 1000."
+      },
+      {
+        "code" = ""
+        "detail" = tostring(null)
+        "message" = "Container 'non-compliant-container' in deployment 'non-compliant-app' is missing CPU limits."
+      },
+      {
+        "code" = ""
+        "detail" = tostring(null)
+        "message" = "Container 'non-compliant-container' in deployment 'non-compliant-app' is missing memory limits."
+      },
+      {
+        "code" = ""
+        "detail" = tostring(null)
+        "message" = "Container 'non-compliant-container' in deployment 'non-compliant-app' is missing CPU requests."
+      },
+      {
+        "code" = ""
+        "detail" = tostring(null)
+        "message" = "Container 'non-compliant-container' in deployment 'non-compliant-app' is missing memory requests."
+      },
+      {
+        "code" = ""
+        "detail" = tostring(null)
+        "message" = "Container 'non-compliant-container' in deployment 'non-compliant-app' uses an unapproved image registry 'nginx:latest'. Allowed registries: {\"gcr.io/my-project\", \"mycompany.azurecr.io\"}"
+      },
+    ]
+```
+
+As expected, `compliant_app` contributes no entries to `policy_violations` — its `run_as_non_root` is `true`, its resource requests and limits are all set, and `mycompany.azurecr.io` is on the approved registry list. `non_compliant_app` trips every rule we wrote: it runs as root by default, defines no resource limits or requests, and pulls from the unapproved `nginx:latest` image.
+
+### Step 4: Failing the Pipeline on Violations
+
+Notice that `terraform plan` doesn't stop on its own just because `policy_violations` came back non-empty — a populated data source output doesn't block anything by itself. You need to turn that output into an actual gate. Two practical ways to do it:
+
+1.  **CI-level gate.** After `terraform plan -out=tfplan`, run `terraform show -json tfplan | jq '.values.outputs.policy_violations.value'` in your pipeline and fail the build step if the array isn't empty. This keeps the enforcement logic in CI, outside of Terraform state, and is the simplest option to reason about.
+2.  **`precondition` blocks.** Since Terraform 1.2, you can attach a `lifecycle { precondition { ... } }` block directly to a resource, referencing the OPA data source, so `terraform apply` refuses to proceed:
+
+```terraform
+resource "kubernetes_deployment" "compliant_app" {
+  # ... configuration as above ...
+
+  lifecycle {
+    precondition {
+      condition     = length(data.opa_policy_check.kubernetes_deployments_check.violations) == 0
+      error_message = "OPA policy violations detected — see the policy_violations output for details."
+    }
+  }
+}
+```
+
+Either approach turns a passive report into a hard stop: a non-compliant manifest fails the build with a specific, actionable message, long before `kubectl apply` ever touches the cluster.
+
+## Conclusion
+
+Shifting compliance checks left, from a runtime admission controller to the Terraform plan stage, means a team finds out about a policy violation in the same pull request that introduced it, not three deploys later during an audit. Rego is expressive enough to cover the vast majority of Kubernetes hardening requirements, and pairing it with Terraform's plan-time evaluation turns "write a compliant manifest" from a code-review checklist item into an automated, enforced gate. Start with a handful of high-value policies — no root, mandatory resource limits, approved registries — and grow the policy set as your team's requirements mature.

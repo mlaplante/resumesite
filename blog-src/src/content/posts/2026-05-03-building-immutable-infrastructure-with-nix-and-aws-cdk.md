@@ -221,4 +221,53 @@ jobs:
           echo "Generated AMI ID: $SIMULATED_AMI_ID"
           echo "ami_id=$SIMULATED_AMI_ID" >> $GITHUB_OUTPUT
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+
+      - name: Persist AMI ID for the deploy job
+        run: echo "${{ steps.ami_build.outputs.ami_id }}" > ami_id.txt
+
+      - name: Upload AMI ID artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ami-id
+          path: ami_id.txt
+
+  deploy-cdk-stack:
+    needs: build-nix-ami
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download AMI ID artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ami-id
+
+      - name: Deploy CDK stack
+        run: |
+          export AMI_ID=$(cat ami_id.txt)
+          npx cdk deploy --require-approval never
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+```
+
+Two jobs, cleanly separated: `build-nix-ami` produces an immutable artifact and hands off its ID via a workflow artifact (no job-level `outputs:` gymnastics required), and `deploy-cdk-stack` consumes it. In `bin/my-app.ts`, you'd swap the hardcoded `AMI_ID` placeholder for `process.env.AMI_ID ?? (() => { throw new Error('AMI_ID not set'); })()` — fail loudly if the pipeline didn't hand you an image to deploy, rather than silently deploying whatever AMI happened to be hardcoded last.
+
+**Actionable Takeaway:** Never let a human type an AMI ID into a deploy command. The moment that value is manually entered, you've reintroduced the exact configuration drift and human error that immutable infrastructure was supposed to eliminate. Let the pipeline be the only thing that ever sets it.
+
+## Conclusion
+
+Nix and AWS CDK solve two different halves of the same problem. Nix gives you a bit-for-bit reproducible definition of everything inside the instance — OS, packages, configuration, application code — while CDK gives you a version-controlled, type-checked definition of everything around it — networking, security groups, scaling policies. Neither tool is trying to do the other's job, which is exactly why they compose so well. Wire them together with a pipeline that treats the AMI ID as data, not as something a person remembers to update, and you get infrastructure that's not just declarative on paper but genuinely immutable in practice: every deploy starts from a known-good image, and every rollback is just deploying the previous one.

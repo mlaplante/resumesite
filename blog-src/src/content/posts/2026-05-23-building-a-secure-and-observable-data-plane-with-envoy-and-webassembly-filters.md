@@ -218,15 +218,66 @@ static_resources:
               "@type": type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog
               path: "/dev/stdout"
               format: |
-                [%START_TIME%] "%REQ(:METHOD)% %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)% %PROTOCOL%" %RESPONSE_CODE% %RESPONSE_FLAGS% %BYTES_RECEIVED% %BYTES_SENT% %DURATION% "%REQ(X-FORWARDED-FOR)%" "%REQ(USER-AGENT)%" "%REQ(X-REQUEST-ID)%" "%VS(filter_state:client_id)%" "%RESP(X-RESPONSE-CLIENT-ID)%"
-                %FILTER_STATE(client_id)%
-                %UNESCAPED_REQ(X-API-KEY)%
-                %REQ(X-API-KEY)%
-                %RESP(X-API-KEY)%
-                %REQ(:AUTHORITY)%
-                %RESP(X-CLIENT-ID)%
-                %REQ(X-CLIENT-ID)%
-                %REQ(X-CLIENT-ID)%
-                %RESP(X-CLIENT-ID)%
-                %REQ(X-CLIENT-ID)%
-                %RESP(X-
+                [%START_TIME%] "%REQ(:METHOD)% %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)% %PROTOCOL%" %RESPONSE_CODE% %RESPONSE_FLAGS% %BYTES_RECEIVED% %BYTES_SENT% %DURATION% "%REQ(X-FORWARDED-FOR)%" "%REQ(USER-AGENT)%" "%REQ(X-REQUEST-ID)%" client_id=%FILTER_STATE(client_id)%
+  clusters:
+  - name: service_api
+    connect_timeout: 5s
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: service_api
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: api-backend.internal
+                port_value: 8081
+  - name: service_default
+    connect_timeout: 5s
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: service_default
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: default-backend.internal
+                port_value: 8080
+```
+
+Notice what's deliberately *not* in that log format: `%REQ(X-API-KEY)%`. Even though it would be trivial to add, logging a raw secret to `/dev/stdout` defeats the purpose of validating it in the first place, and access logs frequently end up shipped to less-trusted log aggregation systems than the service itself. Instead, we expose only the derived `client_id` we stashed in filter state during `on_http_request_headers`, using the `%FILTER_STATE(KEY)%` command operator, which Envoy's access logger reads directly from the filter state saved on the stream. That gives us attribution without ever writing the credential itself to disk.
+
+### Step 3: Running and Verifying
+
+With `envoy.yaml` in place and the compiled `.wasm` module sitting alongside it, start Envoy:
+
+```bash
+envoy -c envoy.yaml
+```
+
+A request without a key gets rejected before it ever reaches `service_api`:
+
+```bash
+curl -i http://localhost:8080/api/v1/orders
+# HTTP/1.1 401 Unauthorized
+# {"error": "Unauthorized: Missing API Key"}
+```
+
+A request with the correct key passes through, and the access log line shows the derived client ID that the Wasm filter attached to the stream:
+
+```bash
+export API_KEY="super-secret-api-key-123"   # the demo value from the filter above
+curl -i -H "X-API-Key: $API_KEY" http://localhost:8080/api/v1/orders
+# HTTP/1.1 200 OK
+```
+
+```
+[2026-05-23T14:02:11.123Z] "GET /api/v1/orders HTTP/1.1" 200 - 0 512 4 "-" "curl/8.4.0" "req-id-abc123" client_id=123
+```
+
+## Conclusion
+
+Pushing authentication and enrichment logic into a Wasm filter, rather than bolting it onto each upstream service, gives you a single, consistently enforced control point for the entire data plane, without patching and recompiling Envoy itself. The sandboxed execution model means a bug in your filter can't take Envoy down the way a native C++ filter crash could, and the same `.wasm` module can be rolled out or rolled back independently of the proxy's own release cycle. Keep secrets out of your access logs, keep your filter logic narrowly scoped to one concern at a time, and you get a data plane that's both defensible from a security standpoint and genuinely observable when something goes wrong.

@@ -217,4 +217,123 @@ def create_jira_ticket(summary, description):
         response = requests.post(f"{JIRA_API_URL}/rest/api/2/issue", data=json.dumps(payload), headers=headers)
         response.raise_for_status()
         print(f"Jira ticket created successfully: {response.json().get('key')}")
-    except requests.exceptions.RequestException
+    except requests.exceptions.RequestException as e:
+        print(f"Error creating Jira ticket: {e}")
+
+def lambda_handler(event, context):
+    """Entry point triggered by the EventBridge rule."""
+    print(f"Received event: {json.dumps(event)}")
+
+    detail = event.get('detail', {})
+    username = detail.get('username')
+    source_ip = detail.get('source_ip')
+    location = detail.get('location', 'unknown location')
+
+    if not username or not source_ip:
+        print("Event missing required fields (username/source_ip); skipping automated response.")
+        return {
+            'statusCode': 400,
+            'body': json.dumps({'message': 'Malformed alert payload'})
+        }
+
+    # 1. Lock the IAM user
+    iam_client = assume_role(IAM_USER_LOCK_ROLE_ARN) if IAM_USER_LOCK_ROLE_ARN else boto3.client('iam')
+    lock_iam_user(username, iam_client)
+
+    # 2. Block the source IP at the edge
+    if WAF_IP_SET_ID:
+        block_ip_with_waf(source_ip, WAF_IP_SET_ID, WAF_SCOPE)
+
+    # 3. Notify the security team
+    send_slack_notification(
+        f":rotating_light: Suspicious login detected for `{username}` from `{source_ip}` "
+        f"({location}). Account locked and source IP blocked automatically."
+    )
+
+    # 4. Open an incident ticket
+    create_jira_ticket(
+        summary=f"Suspicious login: {username} from {source_ip}",
+        description=(
+            f"Automated response triggered for user {username}.\n"
+            f"Source IP: {source_ip}\nLocation: {location}\n\n"
+            "Actions taken: IAM user locked, access keys deactivated, source IP added to WAF blocklist."
+        )
+    )
+
+    return {
+        'statusCode': 200,
+        'body': json.dumps({'message': f'Automated response completed for {username}'})
+    }
+```
+
+#### 3. Deploying the Function with Least Privilege (IaC with Terraform)
+
+The Lambda's own execution role shouldn't hold `iam:UpdateLoginProfile` or `iam:UpdateAccessKey` directly — those live on the role referenced by `IAM_USER_LOCK_ROLE_ARN`, which `assume_role()` picks up specifically so the account-locking privilege can be scoped down, audited, and rotated independently of the function itself. The execution role only needs permission to assume that role, plus enough WAF and logging access to do its own job.
+
+```terraform
+# main.tf (continued)
+resource "aws_iam_role" "handle_suspicious_login_role" {
+  name = "handle-suspicious-login-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "lambda.amazonaws.com" }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "handle_suspicious_login_policy" {
+  name = "handle-suspicious-login-policy"
+  role = aws_iam_role.handle_suspicious_login_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = "sts:AssumeRole"
+        Resource = var.iam_user_lock_role_arn
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["wafv2:GetIPSet", "wafv2:UpdateIPSet"]
+        Resource = "*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
+        Resource = "arn:aws:logs:*:*:*"
+      }
+    ]
+  })
+}
+
+resource "aws_lambda_function" "handle_suspicious_login" {
+  function_name = "handleSuspiciousLogin"
+  role          = aws_iam_role.handle_suspicious_login_role.arn
+  handler       = "lambda_function.lambda_handler"
+  runtime       = "python3.12"
+  filename      = "handle_suspicious_login.zip"
+  timeout       = 15
+
+  environment {
+    variables = {
+      IAM_USER_LOCK_ROLE_ARN = var.iam_user_lock_role_arn
+      WAF_IP_SET_ID           = var.waf_ip_set_id
+      WAF_SCOPE                = "REGIONAL"
+      SLACK_WEBHOOK_URL        = var.slack_webhook_url
+      JIRA_API_URL              = var.jira_api_url
+      JIRA_AUTH_TOKEN          = var.jira_auth_token
+    }
+  }
+}
+```
+
+**Actionable Takeaway:** Store `SLACK_WEBHOOK_URL` and `JIRA_AUTH_TOKEN` in AWS Secrets Manager rather than as plain Lambda environment variables, and grant the execution role `secretsmanager:GetSecretValue` scoped to those specific secret ARNs. Environment variables are visible to anyone with read access to the function's configuration; secrets shouldn't be.
+
+## Conclusion
+
+None of these individual actions — locking a user, updating a WAF IP set, posting to Slack — is technically difficult. What automation buys you is the thing manual playbooks can't guarantee: that every one of those steps happens, in order, every time, in the seconds after detection rather than the minutes after an analyst finally gets to the alert. Start by automating the highest-confidence, lowest-risk steps of your existing playbooks — the ones an analyst would do without a second thought — and use the time you get back for the judgment calls that still need a human in the loop.

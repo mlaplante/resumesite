@@ -190,4 +190,32 @@ Create a file named `my_custom_config.json` in your `syzkaller` directory:
 *   **`kernel_obj`**: Path to your *compiled* kernel build directory. This is where Syzkaller finds `vmlinux` for symbolization.
 *   **`kernel_src`**: Path to your kernel *source* directory. Used by `syz-extract` for syscall information.
 *   **`image`**: Path to the guest VM disk image.
-*   **`sshkey`**: Path to an SSH private key for `syz-manager` to connect to the guest. If you didn't set up SSH in the image, you might need to adjust the Syzkaller setup to use a different communication mechanism (e.g., `virtio-vsock` without SSH). For this example, let's assume you've configured SSH in your image with a `sy
+*   **`sshkey`**: Path to an SSH private key for `syz-manager` to connect to the guest. If you didn't set up SSH in the image, you might need to adjust the Syzkaller setup to use a different communication mechanism (e.g., `virtio-vsock` without SSH). For this example, let's assume you've configured SSH in your image with a `syzkaller` user and the matching public key dropped into `~/.ssh/authorized_keys`.
+*   **`syzkaller`**: Path to your Syzkaller checkout — used to locate the `syz-fuzzer` and `syz-executor` binaries that get copied into the guest.
+*   **`procs`**: Number of parallel fuzzing processes to run inside each VM instance.
+*   **`type`**: The virtualization backend Syzkaller should drive — `qemu` here, though `isolated`, `gvisor`, and others are supported for different setups.
+*   **`vm`**: Backend-specific settings. For `qemu`, `count` is how many VM instances run in parallel, `kernel` points at the `bzImage` you built in Step 1, and `cpu`/`mem` size each guest. `cmdline` is appended to the kernel boot arguments, and `qemu_args` passes raw flags straight to QEMU — `-enable-kvm` assumes your host supports hardware virtualization.
+*   **`ignores`**: Crash signatures Syzkaller should log but not treat as new findings — useful for suppressing already-triaged issues so they don't drown out genuinely new crashes.
+*   **`enable_syscalls`**: Restricts fuzzing to this explicit allowlist. This is the highest-leverage tuning knob when targeting a specific subsystem: narrowing the syscall set means Syzkaller spends its mutation budget generating deeper sequences around the calls you actually care about, instead of spreading coverage thin across the rest of the kernel.
+
+## Step 4: Running the Fuzzer and Triaging Crashes
+
+With the config in place, start the manager:
+
+```bash
+./bin/syz-manager -config=my_custom_config.json
+```
+
+`syz-manager` boots the configured number of QEMU VMs, copies `syz-fuzzer` and `syz-executor` into each one over SSH, and begins generating and executing system call sequences. Point a browser at `http://localhost:8000` to watch the corpus grow — you'll see per-syscall coverage, crash counts, and execution throughput update in real time.
+
+When a VM crashes or hangs, `syz-manager` captures the console output, the exact program that triggered it, and saves both under `workdir/crashes/<hash>/`. To confirm a crash is real (not VM flakiness) and get a minimized reproducer, use `syz-repro`:
+
+```bash
+./bin/syz-repro -config=my_custom_config.json workdir/crashes/<hash>/log0
+```
+
+`syz-repro` re-runs the recorded program against a fresh VM instance, retries it to rule out one-off flakes, and then bisects the syscall sequence down to the smallest set of calls that still reproduces the bug — exactly what you'd hand off to whoever owns the affected code.
+
+## Wrapping Up
+
+Getting from a stock Syzkaller checkout to bugs found in your own kernel build is mostly plumbing: the right `CONFIG_KASAN`/`CONFIG_KCOV` options at compile time, a guest image Syzkaller can SSH into, and a `manager.cfg` that points at all of it correctly. None of the individual steps are hard, but skipping one — forgetting `CONFIG_KCOV_INSTRUMENT_ALL`, or leaving `enable_syscalls` wide open when you meant to target one subsystem — is the difference between a fuzzer that finds nothing and one that finds real bugs on day one. Once it's running, `syz-repro` does the tedious work of turning a crash into something you can actually file and fix.

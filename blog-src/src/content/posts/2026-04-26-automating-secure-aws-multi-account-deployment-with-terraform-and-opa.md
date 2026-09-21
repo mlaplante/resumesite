@@ -243,4 +243,42 @@ package terraform.aws.vpc
 
 deny[msg] {
   # Find VPC resources in the Terraform plan
-  vpc_resource := input.resource_
+  vpc_resource := input.resource_changes[_]
+  vpc_resource.type == "aws_vpc"
+  vpc_resource.change.actions[_] == "create"
+
+  # Count flow log resources being created anywhere in the same plan
+  flow_log_count := count([fl |
+    fl := input.resource_changes[_]
+    fl.type == "aws_flow_log"
+    fl.change.actions[_] == "create"
+  ])
+
+  flow_log_count == 0
+
+  msg := sprintf("VPC '%s' is being created without a corresponding aws_flow_log resource in this plan. All VPCs must have flow logs enabled.", [object.get(vpc_resource.change.after.tags, "Name", vpc_resource.address)])
+}
+```
+
+This policy isn't perfect — it can't trace a specific `aws_flow_log` back to the exact VPC it targets, because at plan time the VPC's `id` is still a computed value. But as a plan-wide heuristic, "you're creating a VPC and this plan creates zero flow logs" catches the far more common mistake: someone copies the VPC module without also wiring up logging. Tighten it further once you standardize on a module that always creates both together.
+
+### Step 4: Wiring OPA into Your CI/CD Pipeline
+
+With our policies written, we need to actually run them against every `terraform plan`. `conftest` makes this straightforward — it consumes Terraform's JSON plan output directly, no custom tooling required.
+
+```bash
+# Generate a binary plan, then convert it to JSON for conftest
+terraform plan -out=tfplan.binary
+terraform show -json tfplan.binary > tfplan.json
+
+# Run all Rego policies in the policy/ directory against the plan
+conftest test tfplan.json --policy policy/
+```
+
+`conftest test` exits non-zero if any `deny` rule matches, which is exactly what you want in a CI pipeline: a merge request that would create a public S3 bucket or an un-logged VPC fails the build with the specific `msg` from the offending rule, before `terraform apply` ever runs. Drop this step in right after `terraform plan` in your pipeline (GitHub Actions, GitLab CI, or whatever you're running) and gate the `apply` job on it passing.
+
+**Actionable Takeaway:** Keep your Rego policies in the same repository as your Terraform code, versioned and reviewed like any other code change. As your account baseline evolves, your policies should evolve with it — a new mandatory tag, a new required encryption setting, a newly banned instance type all belong in `policy/`, not in a wiki page someone forgets to update.
+
+## Conclusion
+
+Provisioning a secure multi-account AWS structure isn't a one-time setup task — it's an ongoing discipline, and the only way to sustain that discipline at scale is to make the computer enforce it. Terraform gives you a consistent, auditable way to provision accounts and their baseline resources; OPA gives you a consistent, auditable way to reject the plans that don't meet your bar. Together, they turn "please remember to enable flow logs" into a pipeline that simply won't let you forget.

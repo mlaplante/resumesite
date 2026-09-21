@@ -211,4 +211,55 @@ async fn handle_query(
                 query_name,
                 ttl
             );
-            cache.write
+            cache.write().unwrap().insert(
+                query_name,
+                CachedResponse {
+                    message: upstream_response.clone(),
+                    expires_at,
+                },
+            );
+        }
+    }
+
+    // 4. Relay the (now possibly cached) response back to the original client
+    let mut response_encoder = BinEncoder::new();
+    upstream_response.emit(&mut response_encoder)?;
+    socket.send_to(&response_encoder.as_bytes(), src_addr).await?;
+
+    Ok(())
+}
+
+async fn send_error_response(
+    socket: &UdpSocket,
+    src_addr: SocketAddr,
+    query_id: u16,
+    response_code: ResponseCode,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let mut error_message = Message::new();
+    error_message.set_id(query_id);
+    error_message.set_message_type(MessageType::Response);
+    error_message.set_op_code(OpCode::Query);
+    error_message.set_response_code(response_code);
+
+    let mut encoder = BinEncoder::new();
+    error_message.emit(&mut encoder)?;
+    socket.send_to(&encoder.as_bytes(), src_addr).await?;
+
+    Ok(())
+}
+```
+
+This skeleton covers the request path end-to-end: listen, decode, check cache, forward on a miss, cache the result, and relay it back to the client, with a dedicated error path so a slow or unreachable upstream degrades to `SERVFAIL` instead of leaving the client hanging.
+
+## Beyond the Basics
+
+The structure above is intentionally minimal so the control flow stays legible, but it's the foundation the security features from the "why" section build on:
+
+*   **Filtering** slots in right after `Message::read`: check `query.name()` against a blocklist (a `HashSet<String>` or, for large lists, a compiled `aho-corasick` or bloom-filter-backed matcher) and short-circuit straight to `send_error_response` with `ResponseCode::NXDomain` before ever touching the cache or upstream.
+*   **DoT/DoH enforcement** means replacing the plain `UdpSocket` forward with a TLS-wrapped connection (`tokio-rustls` for DoT) or an HTTPS POST (`reqwest`/`hyper` for DoH) to the upstream, so queries leaving your resolver are never sent in the clear.
+*   **Real TTL handling** matters for correctness, not just performance: parse the minimum TTL across the response's answer records instead of hardcoding 60 seconds, so cached entries expire when the authoritative data says they should.
+*   **Structured logging** of every query (already started with those `println!` calls) is what turns this resolver into a security control instead of just a faster stub — ship it to your SIEM and you have DNS-based exfiltration and beaconing detection for free.
+
+## Wrapping Up
+
+Building your own DNS resolver in Rust isn't about reinventing `bind` or `unbound` — it's about owning the one layer of your infrastructure that sees every outbound connection attempt before it happens. With `tokio` handling concurrency and `trust-dns-proto` handling wire format, the amount of code standing between "no visibility" and "full DNS-level filtering, logging, and encryption enforcement" is smaller than most teams expect. Start with the caching forwarder above, then layer in filtering and DoT/DoH as your threat model demands it.

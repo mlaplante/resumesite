@@ -220,4 +220,133 @@ static std::vector<unsigned char> read_and_decrypt(const std::string& backend_fi
     }
 
     std::vector<unsigned char> tag(EVP_GCM_TLS_TAG_LEN);
-    ifs.read
+    ifs.read(reinterpret_cast<char*>(tag.data()), tag.size());
+
+    std::vector<unsigned char> ciphertext(static_cast<size_t>(file_size) - tag.size());
+    ifs.read(reinterpret_cast<char*>(ciphertext.data()), ciphertext.size());
+
+    return decrypt_data(ciphertext, fs_context->encryption_key, fs_context->fixed_iv, tag);
+}
+
+// Helper to encrypt data and write it (tag-prefixed) to the backend
+static bool encrypt_and_write(const std::string& backend_filepath, const std::vector<unsigned char>& plaintext) {
+    std::vector<unsigned char> tag;
+    std::vector<unsigned char> ciphertext = encrypt_data(plaintext, fs_context->encryption_key, fs_context->fixed_iv, tag);
+
+    std::ofstream ofs(backend_filepath, std::ios::binary | std::ios::trunc);
+    if (!ofs) {
+        std::cerr << "Error opening backend file for write: " << backend_filepath << std::endl;
+        return false;
+    }
+    ofs.write(reinterpret_cast<const char*>(tag.data()), tag.size());
+    ofs.write(reinterpret_cast<const char*>(ciphertext.data()), ciphertext.size());
+    return true;
+}
+
+// FUSE callback: getattr
+static int enc_getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi) {
+    (void)fi;
+    std::string backend_path = get_backend_path(path);
+    if (lstat(backend_path.c_str(), stbuf) == -1)
+        return -errno;
+
+    // The backend file holds tag || ciphertext, which is EVP_GCM_TLS_TAG_LEN
+    // bytes larger than the plaintext. Report the plaintext size so callers
+    // that trust st_size (cp, cat, readers that pre-allocate buffers) don't
+    // read past the end of the decrypted content.
+    if (S_ISREG(stbuf->st_mode) && stbuf->st_size >= EVP_GCM_TLS_TAG_LEN)
+        stbuf->st_size -= EVP_GCM_TLS_TAG_LEN;
+
+    return 0;
+}
+
+// FUSE callback: readdir
+static int enc_readdir(const char* path, void* buf, fuse_fill_dir_t filler,
+                        off_t offset, struct fuse_file_info* fi, enum fuse_readdir_flags flags) {
+    (void)offset; (void)fi; (void)flags;
+    std::string backend_path = get_backend_path(path);
+    DIR* dp = opendir(backend_path.c_str());
+    if (!dp) return -errno;
+
+    filler(buf, ".", NULL, 0, (fuse_fill_dir_flags)0);
+    filler(buf, "..", NULL, 0, (fuse_fill_dir_flags)0);
+
+    struct dirent* de;
+    while ((de = readdir(dp)) != nullptr)
+        filler(buf, de->d_name, NULL, 0, (fuse_fill_dir_flags)0);
+
+    closedir(dp);
+    return 0;
+}
+
+// FUSE callback: open. We defer actual decryption to read(), so open() just
+// verifies the backend file exists and is accessible with the requested flags.
+static int enc_open(const char* path, struct fuse_file_info* fi) {
+    std::string backend_path = get_backend_path(path);
+    int fd = open(backend_path.c_str(), fi->flags);
+    if (fd == -1) return -errno;
+    close(fd);
+    return 0;
+}
+
+// FUSE callback: read. Decrypts the whole backend file, then serves the
+// requested slice. Fine for small files; a production filesystem would
+// chunk encryption per-block to avoid decrypting the whole file on every read.
+static int enc_read(const char* path, char* buf, size_t size, off_t offset, struct fuse_file_info* fi) {
+    (void)fi;
+    std::vector<unsigned char> plaintext = read_and_decrypt(get_backend_path(path));
+    if (offset >= static_cast<off_t>(plaintext.size()))
+        return 0;
+
+    size_t to_copy = std::min(size, plaintext.size() - static_cast<size_t>(offset));
+    memcpy(buf, plaintext.data() + offset, to_copy);
+    return static_cast<int>(to_copy);
+}
+
+// FUSE callback: write. Decrypts the current contents, patches in the new
+// bytes at the given offset, then re-encrypts and rewrites the whole file.
+static int enc_write(const char* path, const char* buf, size_t size, off_t offset, struct fuse_file_info* fi) {
+    (void)fi;
+    std::string backend_path = get_backend_path(path);
+    std::vector<unsigned char> plaintext = read_and_decrypt(backend_path);
+
+    if (static_cast<size_t>(offset) + size > plaintext.size())
+        plaintext.resize(offset + size);
+    memcpy(plaintext.data() + offset, buf, size);
+
+    if (!encrypt_and_write(backend_path, plaintext))
+        return -EIO;
+
+    return static_cast<int>(size);
+}
+
+static struct fuse_operations enc_ops;
+
+int main(int argc, char* argv[]) {
+    fs_context = new EncryptedFS_Context();
+    fs_context->backend_path = "/var/lib/encrypted_fs_backend"; // In production, take this from argv
+    fs_context->encryption_key = generate_random_bytes(32);     // 256-bit key; see note below
+    fs_context->fixed_iv = generate_random_bytes(12);           // 96-bit IV; see note below
+
+    enc_ops.getattr = enc_getattr;
+    enc_ops.open    = enc_open;
+    enc_ops.read    = enc_read;
+    enc_ops.write   = enc_write;
+    enc_ops.readdir = enc_readdir;
+
+    return fuse_main(argc, argv, &enc_ops, nullptr);
+}
+```
+
+**Important Caveat — Fix This Before You Use It:** this implementation reuses `fixed_iv` for every single write, to every file, for the lifetime of the mount. That's a critical flaw, not a simplification. AES-GCM's security guarantees depend entirely on never reusing the same key/IV pair: reuse it twice and you leak the XOR of the two plaintexts, and an attacker who can induce two writes can forge authentication tags for arbitrary ciphertext. A real implementation must generate a fresh, random 96-bit IV for every encryption operation and store it alongside the ciphertext — typically as an `iv || tag || ciphertext` layout on the backend file — rather than pulling it from a single fixed value in the context struct.
+
+## Actionable Takeaways
+
+1.  **Never reuse an IV with GCM.** Generate one per write with `generate_random_bytes(12)` and persist it with the ciphertext; it doesn't need to be secret, just unique per encryption.
+2.  **Chunk large files.** Decrypting and re-encrypting an entire file on every `write()` is fine for a demo, but it's O(file size) per write. A production design encrypts fixed-size blocks independently, addressed by offset, so a single write only touches the blocks it modifies.
+3.  **Derive keys, don't hardcode them.** Use PBKDF2, scrypt, or Argon2 to derive the master key from a passphrase, or source it from a KMS or hardware-backed keystore — never bake it into the binary.
+4.  **Mind the metadata leak.** File sizes, modification times, and directory structure are still visible on the backend filesystem even though contents are encrypted; if that's part of your threat model, you need to pad file sizes or encrypt filenames too.
+
+## Conclusion
+
+FUSE turns "write a filesystem" into "implement a handful of callbacks," which makes it a genuinely practical tool for bolting transparent encryption onto a directory tree without touching the kernel. The version here is a teaching example, not a production filesystem — fix the IV reuse, add per-block chunking, and put real key management behind it before you trust it with anything sensitive. But the architecture — intercept the FUSE operations, delegate storage to a backend directory, encrypt and decrypt at the boundary — scales cleanly from this toy example up to something you'd actually deploy.

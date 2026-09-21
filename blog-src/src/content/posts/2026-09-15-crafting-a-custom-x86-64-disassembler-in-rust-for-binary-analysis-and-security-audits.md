@@ -209,4 +209,8 @@ Once you have even a basic disassembler, its utility for security audits becomes
 *   **Shellcode Analysis:** Disassemble raw shellcode (which often lacks standard ELF/PE headers) to understand its functionality without relying on external tools.
 *   **Custom Gadget Finders:** For ROP (Return-Oriented Programming) exploitation, a custom disassembler can be extended to quickly scan for specific instruction sequences (gadgets) ending in `ret`.
 *   **Identifying Obfuscation:** Look for unusual instruction sequences, self-modifying code patterns, or anti-disassembly tricks.
-*   **Firmware Vulnerability Discovery:** Analyze embedded firmware where traditional debugging tools might be unavailable or difficult to set up. You can pinpoint specific function
+*   **Firmware Vulnerability Discovery:** Analyze embedded firmware where traditional debugging tools might be unavailable or difficult to set up. You can pinpoint specific function prologues, locate cryptographic constant tables, or trace calling conventions even when debug symbols have been stripped entirely.
+
+## Conclusion
+
+Building even a partial x86-64 disassembler is one of the fastest ways to internalize an ISA that most of us only ever consume through a tool's output. The opcode-table-and-ModR/M mechanics shown here don't need to be reinvented for production work — crates like `iced-x86` and `capstone` (the Rust bindings for the Capstone engine) give you a battle-tested, actively maintained decoder to build on, and `yaxpeax-x86` is a solid pure-Rust alternative if you want to avoid a C dependency. What a hand-rolled disassembler buys you is the ability to bolt on exactly the analysis you need — a gadget scanner, a custom IR, a project-specific heuristic — without fighting a general-purpose tool's abstractions. Start small, get `NOP` and `RET` decoding correctly, and grow the opcode table only as far as your actual analysis requires.

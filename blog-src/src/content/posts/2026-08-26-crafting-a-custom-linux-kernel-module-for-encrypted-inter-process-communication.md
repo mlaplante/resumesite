@@ -227,4 +227,107 @@ static int __init secure_ipc_init(void) {
         printk(KERN_ERR "secure_ipc: Failed to allocate character device region: %d\n", ret);
         return ret;
     }
-    printk(
+    printk(KERN_INFO "secure_ipc: Allocated device number major=%d minor=%d\n",
+           MAJOR(dev_num), MINOR(dev_num));
+
+    // 2. Wire up the cdev with our file_operations and register it
+    cdev_init(&secure_ipc_cdev, &secure_ipc_fops);
+    secure_ipc_cdev.owner = THIS_MODULE;
+    ret = cdev_add(&secure_ipc_cdev, dev_num, 1);
+    if (ret < 0) {
+        printk(KERN_ERR "secure_ipc: Failed to add character device: %d\n", ret);
+        unregister_chrdev_region(dev_num, 1);
+        return ret;
+    }
+
+    // 3. Create a device class so udev creates /dev/secure_ipc for us.
+    // Note: class_create() dropped its owner argument in kernel 6.4; on
+    // older kernels it takes (THIS_MODULE, name) instead of just (name).
+    secure_ipc_class = class_create(THIS_MODULE, "secure_ipc_class");
+    if (IS_ERR(secure_ipc_class)) {
+        printk(KERN_ERR "secure_ipc: Failed to create device class\n");
+        cdev_del(&secure_ipc_cdev);
+        unregister_chrdev_region(dev_num, 1);
+        return PTR_ERR(secure_ipc_class);
+    }
+
+    // 4. Create the actual device node under the class
+    {
+        struct device *dev = device_create(secure_ipc_class, NULL, dev_num, NULL, DEVICE_NAME);
+        if (IS_ERR(dev)) {
+            printk(KERN_ERR "secure_ipc: Failed to create device node: %ld\n", PTR_ERR(dev));
+            class_destroy(secure_ipc_class);
+            cdev_del(&secure_ipc_cdev);
+            unregister_chrdev_region(dev_num, 1);
+            return PTR_ERR(dev);
+        }
+    }
+
+    printk(KERN_INFO "secure_ipc: Module loaded, /dev/%s ready.\n", DEVICE_NAME);
+    return 0;
+}
+
+static void __exit secure_ipc_exit(void) {
+    int i;
+
+    device_destroy(secure_ipc_class, dev_num);
+    class_destroy(secure_ipc_class);
+    cdev_del(&secure_ipc_cdev);
+    unregister_chrdev_region(dev_num, 1);
+
+    // Drain and free any messages still sitting in the buffer
+    mutex_lock(&ipc_buffer_mutex);
+    for (i = 0; i < MAX_BUFFER_MSGS; i++) {
+        if (message_buffer[i]) {
+            kfree(message_buffer[i]->data);
+            kfree(message_buffer[i]);
+            message_buffer[i] = NULL;
+        }
+    }
+    mutex_unlock(&ipc_buffer_mutex);
+
+    printk(KERN_INFO "secure_ipc: Module unloaded.\n");
+}
+
+module_init(secure_ipc_init);
+module_exit(secure_ipc_exit);
+
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Michael LaPlante");
+MODULE_DESCRIPTION("A kernel module providing XOR-encrypted IPC over a character device");
+```
+
+## Step 3: Building and Loading the Module
+
+With a standard out-of-tree `Makefile` (`obj-m += secure_ipc.o`, driven by the kernel build system via `make -C /lib/modules/$(uname -r)/build M=$(pwd) modules`), build and load it:
+
+```bash
+make
+sudo insmod secure_ipc.ko
+dmesg | tail -5          # confirm "Module loaded, /dev/secure_ipc ready."
+ls -l /dev/secure_ipc
+```
+
+By default the device node is owned by root with restrictive permissions, which is the correct starting point — grant access explicitly (a `udev` rule or `chmod`/`chgrp` to a dedicated group) rather than opening it up to all users.
+
+## Step 4: Testing the Encrypted Channel
+
+Because the module encrypts on write and decrypts on read, two independent processes can exchange data through `/dev/secure_ipc` without either one seeing the wire format in plaintext at rest in the kernel's message buffer:
+
+```bash
+# Process A: write a message (gets XOR-encrypted before being buffered)
+echo -n "attack at dawn" | sudo tee /dev/secure_ipc > /dev/null
+
+# Process B: read it back (gets decrypted on the way out)
+sudo cat /dev/secure_ipc
+```
+
+Watch `dmesg` while you do this — you'll see the "Wrote N bytes (encrypted) to buffer" and "Read N bytes (decrypted) from buffer" log lines confirming the round trip, and if you inspect kernel memory directly (or add a debug `printk` of the raw buffer), the bytes sitting in `message_buffer` never match the plaintext.
+
+## Moving Beyond XOR
+
+The XOR cipher here exists purely to keep the module's mechanics — character device registration, buffering, `copy_to_user`/`copy_from_user` — front and center without a cryptography library obscuring them. It provides no real confidentiality: a single known-plaintext byte recovers the entire key. A production version would replace `xor_crypt()` with the kernel's own crypto API rather than rolling anything by hand — allocate a transform with `crypto_alloc_aead("gcm(aes)", 0, 0)`, derive or load the key through the kernel keyring instead of a `static const char[]`, and encrypt/decrypt through `crypto_aead_encrypt()`/`crypto_aead_decrypt()` with a per-message nonce. That gets you authenticated encryption (tamper detection included) using primitives that have actually been audited, instead of a cipher an attacker can break by inspection.
+
+## Wrapping Up
+
+The mechanics that make this module interesting have nothing to do with the cipher — they're the character device lifecycle, the mutex-guarded ring buffer, and the discipline of never trusting a length or pointer that came from user space. Swap the XOR cipher for `gcm(aes)` via the kernel crypto API and proper key management, and you have the skeleton of a real encrypted-IPC mechanism that keeps plaintext out of any buffer an unprivileged process — or a compromised neighbor in the same buffer — could read.

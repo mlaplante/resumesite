@@ -215,4 +215,41 @@ func processUserData(user *User) *User {
 
 func main() {
 	http.HandleFunc("/users/", getUserDetailsHandler) // Catches /users/{id}/details and other paths
-	http.HandleFunc("/debug/pprof/", http.HandlerFunc(func(
+	// pprof handlers are already registered on the DefaultServeMux via the
+	// blank import of net/http/pprof at the top of this file — no extra
+	// wiring is needed here.
+
+	log.Println("Starting server on :8080 (pprof at /debug/pprof/)")
+	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+```
+
+Now hit the endpoint a few times under load and tail the logs:
+
+```bash
+hey -n 200 -c 10 http://localhost:8080/users/2/details
+```
+
+You'll see output like:
+
+```
+2026/06/04 10:22:01 TRACE: Request for user 2 started.
+2026/06/04 10:22:01 TRACE: User 2 fetched from DB in 51.2ms.
+2026/06/04 10:22:01 TRACE: User 2 data processed in 20.1ms.
+2026/06/04 10:22:01 TRACE: User 2 response marshaled in 0.3ms.
+2026/06/04 10:22:01 TRACE: Request for user 2 completed in 71.8ms.
+```
+
+Line these logs up against the `pprof` output from Step 1, and the picture snaps into focus: `fetchUserFromDB` is exactly where the `github.com/lib/pq.(*conn).exec` cumulative time was going, and the artificial 50ms delay on even-numbered user IDs explains the P99 spike — roughly half of all requests hit that slow path, dragging the tail latency up even though the median stays low.
+
+## Step 3: From Diagnosis to Fix
+
+With both the macro view (`pprof`) and the micro view (custom tracing) pointing at the same function, the fix becomes a scoping exercise rather than a guessing game:
+
+*   **If the query itself is slow:** check for a missing index, or whether the query is doing more work than the endpoint needs (e.g., selecting columns you don't use).
+*   **If it's connection pool contention:** `db.SetMaxOpenConns(10)` is a common self-inflicted bottleneck under load — raise it, but pair the increase with monitoring on your database's own connection limits.
+*   **If it's a genuinely slow downstream dependency:** consider caching, request coalescing, or serving a slightly stale response instead of blocking every request on the same round trip.
+
+## Conclusion
+
+`pprof` tells you where your CPU time is going in aggregate; custom tracing tells you the story of one request end to end. Neither replaces the other — `pprof` is what points you at `fetchUserFromDB` in the first place, and the `TRACE` logs are what confirm exactly which requests are paying the cost and why. Build both into your service from day one, not just when the P99 alert fires; by the time users are complaining, you want the diagnosis to take minutes, not days.

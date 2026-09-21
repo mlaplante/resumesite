@@ -198,4 +198,15 @@ func NewArena() (*Arena, error) {
 	runtime.SetFinalizer(arena, func(a *Arena) {
 		if a.base != nil {
 			fmt.Printf("WARNING: Arena %p being finalized without explicit Free()\n", a.base)
-			a.Free() // Attempt to free
+			a.Free() // Attempt to free the leaked mapping as a last resort
+		}
+	})
+	return arena, nil
+}
+```
+
+Treat this as a safety net, not a strategy. `runtime.SetFinalizer` only runs a finalizer when the Go garbage collector decides the object is unreachable and gets around to running a GC cycle — there's no guarantee of *when* that happens, and finalizers are explicitly not run at all if the process exits via `os.Exit()` or a panic that isn't recovered. It also adds a small amount of GC bookkeeping overhead per `Arena`, which cuts against the entire reason you built a custom allocator in the first place. Use it to catch bugs during development, not as your production cleanup path.
+
+## Conclusion
+
+A bump allocator backed by `mmap` is a small amount of code for a meaningful amount of control: you decide when memory is requested from the OS, how it's laid out, and when it's released, all without asking Go's garbage collector to reason about it. That control comes at the cost of everything the GC normally gives you for free — bounds safety, use-after-free protection, automatic reclamation — so this pattern belongs in the narrow set of hot paths where profiling has actually shown GC pressure or pause times to be the bottleneck, not as a default way to write Go. Reach for `sync.Pool` first for object reuse within GC-managed memory; only drop to `unsafe` and raw `mmap` once you've measured that it's genuinely necessary.

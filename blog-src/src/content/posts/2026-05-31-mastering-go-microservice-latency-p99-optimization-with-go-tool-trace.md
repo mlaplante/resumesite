@@ -246,3 +246,30 @@ func main() {
 		latenciesMutex.Unlock()
 
 		os.Exit(0)
+	}()
+
+	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+```
+
+Run the load test again with `hey`, and this time the server tells you the answer before you even open `go tool trace`:
+
+```
+2026/05/31 09:14:22 P99 latency for 'contended_resource': 100.4ms
+```
+
+That number on its own doesn't explain *why* the resource is contended — but paired with the `go tool trace` view showing which goroutines are blocked waiting on it, you now have both the "what" (a hard ~100ms floor on roughly 10% of requests) and the "where" (the `contended_resource` region) pinned down precisely.
+
+## Step 3: Fixing the Bottleneck
+
+In a real system, `contended_resource` is standing in for something like a mutex-protected cache, a rate limiter, or a connection pool with too few connections. The fix depends on which one it actually is:
+
+*   **Lock contention:** Replace a single coarse-grained mutex with sharding, or swap a `sync.Mutex` for a `sync.RWMutex` if reads dominate writes.
+*   **Pool exhaustion:** Increase pool size or add backpressure so requests fail fast instead of queuing behind a full pool.
+*   **A genuinely slow external dependency:** Add a circuit breaker or a local cache so a slow downstream call doesn't block every goroutine waiting on it.
+
+Re-run the trace after each change and watch the P99 log line trend down. This tight loop — instrument, trace, fix, re-measure — is what turns a vague "our P99 feels high sometimes" complaint into a specific, verifiable fix.
+
+## Conclusion
+
+`go tool trace` gives you the visual, holistic view of where your goroutines are spending their time; targeted custom instrumentation like the P99 tracker above gives you the precise, repeatable number to validate a fix against. Neither replaces the other — use `go tool trace` to find where to look, and cheap in-process metrics to confirm you actually moved the needle. That combination is what closes the gap between "our P99 looks bad in the dashboard" and "here's the exact line of code, and here's proof it's fixed."

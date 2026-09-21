@@ -219,4 +219,39 @@ Building a secure key-value store goes beyond just memory safety.
     // Conceptual application-level encryption
     use aes_gcm::{Aes256Gcm, Key as AesKey, Nonce}; // For AES-256 GCM
     use aes_gcm::aead::{Aead, NewAead};
-    use rand::{rngs::
+    use rand::{rngs::OsRng, RngCore};
+
+    pub fn encrypt_value(key: &AesKey<Aes256Gcm>, plaintext: &[u8]) -> Result<Vec<u8>, aes_gcm::Error> {
+        let cipher = Aes256Gcm::new(key);
+
+        // GCM nonces are 96 bits; never reuse one under the same key.
+        let mut nonce_bytes = [0u8; 12];
+        OsRng.fill_bytes(&mut nonce_bytes);
+        let nonce = Nonce::from_slice(&nonce_bytes);
+
+        let ciphertext = cipher.encrypt(nonce, plaintext)?;
+
+        // Store the nonce alongside the ciphertext so decrypt() can recover it.
+        let mut stored = Vec::with_capacity(nonce_bytes.len() + ciphertext.len());
+        stored.extend_from_slice(&nonce_bytes);
+        stored.extend_from_slice(&ciphertext);
+        Ok(stored)
+    }
+
+    pub fn decrypt_value(key: &AesKey<Aes256Gcm>, stored: &[u8]) -> Result<Vec<u8>, aes_gcm::Error> {
+        if stored.len() < 12 {
+            // Too short to even contain a nonce — treat as corrupt rather than panic.
+            return Err(aes_gcm::Error);
+        }
+        let (nonce_bytes, ciphertext) = stored.split_at(12);
+        let cipher = Aes256Gcm::new(key);
+        let nonce = Nonce::from_slice(nonce_bytes);
+        cipher.decrypt(nonce, ciphertext)
+    }
+    ```
+
+    In practice, `key` should come from a proper key-management service or the kernel keyring rather than being hardcoded, and you'd rotate it independently of compaction — as SSTables get merged over time, re-encrypting under the current key happens naturally as part of that process.
+
+## Wrapping Up
+
+An LSM-tree gives you a write path that's fast by construction — sequential I/O, buffered mutations, background compaction — but "fast" and "secure" aren't the same axis, and it's easy to ship the former without the latter. Checksum everything that touches disk, fsync your WAL like you mean it, and treat encryption as a property of the value, not an afterthought bolted on at the filesystem layer. Rust's ownership model removes an entire class of memory-safety bugs from the equation, which means the remaining work is genuinely about the data structure's integrity guarantees rather than fighting the language.

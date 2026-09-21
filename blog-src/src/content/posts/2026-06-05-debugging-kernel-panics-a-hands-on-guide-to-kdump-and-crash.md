@@ -184,3 +184,29 @@ With the `kernel-debuginfo` installed, `crash` can often even show you the sourc
 crash> dis -l my_bad_driver_function+0x20
 /path/to/my_bad_driver/source.c:123  <-- This line is a direct hit!
 ffffffffa0001234:       mov    (%rdi),%eax
+```
+
+`crash` also lets you inspect register state at the moment of the fault:
+
+```
+crash> bt -f
+...
+#0 [ffff88007a012340] my_bad_driver_function at ffffffffa0001234 [my_bad_driver]
+    ffff88007a012348: 0000000000000000 (rdi)
+    ffff88007a012350: ffff88007a012380 (rbx)
+```
+
+`rdi` is `0x0` at the point of the fault — consistent with the `NULL pointer dereference at 0000000000000008` reported in `log` (the `8` there is the offset of the field the driver tried to read, not the base pointer). That confirms the root cause: `my_bad_driver_function` dereferenced a struct pointer that was never initialized, at source line 123 of `source.c`. From here, the fix belongs in the driver's code — either the caller needs to check for a NULL return before passing the pointer along, or the struct needs to be allocated earlier in the init path.
+
+## Other Useful `crash` Commands for Forensics
+
+Beyond `bt` and `dis`, a few other commands are worth knowing:
+
+*   **`files <pid>`**: Lists open file descriptors for a process, useful for understanding what a crashed or hung process was touching.
+*   **`kmem -i`**: Shows a summary of kernel memory usage at the time of the crash — handy for diagnosing OOM-adjacent panics.
+*   **`irq`**: Displays interrupt handler information, useful when the panic occurred inside an interrupt context.
+*   **`extend`**: Loads `crash` extension modules for filesystem- or subsystem-specific analysis (e.g., `xfs.so` for XFS-specific state).
+
+## Conclusion
+
+A kernel panic without `kdump` is a dead end: you get a reboot and no evidence. With `kdump` configured ahead of time and `crash` in your toolkit, a panic becomes a solvable problem — you get a backtrace, the exact source line, and often the exact register or memory value that triggered the fault. The setup cost is a few minutes and a small memory reservation; the payoff is being able to answer "what happened?" with a citation instead of a guess the next time a box goes down at 3 a.m.

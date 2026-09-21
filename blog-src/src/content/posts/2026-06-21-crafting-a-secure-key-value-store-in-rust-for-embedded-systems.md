@@ -223,4 +223,197 @@ impl<F: Flash> KeyValueStore<F> {
     }
 
     /// Puts a key-value pair into the store.
-    pub fn put(&mut self, key: &[u8], value: &[u8]) -> Result<(), F
+    pub fn put(&mut self, key: &[u8], value: &[u8]) -> Result<(), F::Error> {
+        let entry_len = EntryHeader::SIZE as u32 + key.len() as u32 + value.len() as u32;
+
+        // If this write won't fit before the end of the region, reclaim
+        // space from stale entries first.
+        if self.current_write_ptr + entry_len > self.end_address {
+            self.compact()?;
+        }
+
+        // Mark any existing entry for this key as stale before writing the new one.
+        self.mark_stale_if_present(key)?;
+
+        let mut digest = CRC_ALG.digest();
+        digest.update(key);
+        digest.update(value);
+        let crc32 = digest.finalize();
+
+        let header = EntryHeader::new(key.len() as u16, value.len() as u16, crc32);
+        let header_bytes = unsafe {
+            core::slice::from_raw_parts(
+                &header as *const EntryHeader as *const u8,
+                EntryHeader::SIZE,
+            )
+        };
+
+        let write_addr = self.current_write_ptr;
+        self.flash.write(write_addr, header_bytes)?;
+        self.flash.write(write_addr + EntryHeader::SIZE as u32, key)?;
+        self.flash
+            .write(write_addr + EntryHeader::SIZE as u32 + key.len() as u32, value)?;
+        self.flash.sync()?;
+
+        self.current_write_ptr = write_addr + entry_len;
+        Ok(())
+    }
+
+    /// Marks the most recent live entry for `key`, if any, as stale.
+    fn mark_stale_if_present(&mut self, key: &[u8]) -> Result<(), F::Error> {
+        if let Some((addr, _)) = self.find_latest(key)? {
+            self.flash.write(addr, &[EntryStatus::Stale as u8])?; // status is the header's first byte
+        }
+        Ok(())
+    }
+
+    /// Linear scan for the most recent valid entry matching `key`.
+    ///
+    /// A production implementation would build an in-memory index (e.g. a
+    /// `heapless::FnvIndexMap` on `no_std`) during `initialize()` so lookups
+    /// don't walk the whole log on every call — this is kept simple here to
+    /// show the on-flash layout clearly.
+    fn find_latest(&mut self, key: &[u8]) -> Result<Option<(u32, EntryHeader)>, F::Error> {
+        let mut current_addr = self.start_address;
+        let mut found = None;
+
+        while current_addr < self.current_write_ptr {
+            let mut header_buf = [0u8; EntryHeader::SIZE];
+            self.flash.read(current_addr, &mut header_buf)?;
+            let header = unsafe {
+                core::ptr::read_unaligned(header_buf.as_ptr() as *const EntryHeader)
+            };
+
+            if header.status == EntryStatus::Valid as u8 {
+                let mut key_buf = alloc::vec![0u8; header.key_len as usize];
+                self.flash
+                    .read(current_addr + EntryHeader::SIZE as u32, &mut key_buf)?;
+                if key_buf == key {
+                    found = Some((current_addr, header));
+                }
+            }
+
+            current_addr += EntryHeader::SIZE as u32 + header.key_len as u32 + header.val_len as u32;
+        }
+
+        Ok(found)
+    }
+
+    /// Retrieves the current value for `key`, if present.
+    pub fn get(&mut self, key: &[u8]) -> Result<Option<Vec<u8>>, F::Error> {
+        if let Some((addr, header)) = self.find_latest(key)? {
+            let mut value = alloc::vec![0u8; header.val_len as usize];
+            let value_addr = addr + EntryHeader::SIZE as u32 + header.key_len as u32;
+            self.flash.read(value_addr, &mut value)?;
+            Ok(Some(value))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Reclaims space held by stale entries by rewriting all live entries
+    /// starting from `start_address`, then erasing the space that follows.
+    ///
+    /// This is a simplified "mark and copy" pass. A production
+    /// implementation needs a spare region (or spare blocks) to compact
+    /// into, so a power loss mid-compaction can't leave the store without
+    /// a single valid copy of any entry — erasing a block is destructive,
+    /// and here we erase before every live entry has landed somewhere safe.
+    fn compact(&mut self) -> Result<(), F::Error> {
+        let mut cursor = self.start_address;
+        let mut live: Vec<(Vec<u8>, Vec<u8>)> = Vec::new();
+
+        while cursor < self.current_write_ptr {
+            let mut header_buf = [0u8; EntryHeader::SIZE];
+            self.flash.read(cursor, &mut header_buf)?;
+            let header = unsafe {
+                core::ptr::read_unaligned(header_buf.as_ptr() as *const EntryHeader)
+            };
+
+            if header.status == EntryStatus::Valid as u8 {
+                let mut key = alloc::vec![0u8; header.key_len as usize];
+                let mut value = alloc::vec![0u8; header.val_len as usize];
+                self.flash.read(cursor + EntryHeader::SIZE as u32, &mut key)?;
+                self.flash.read(
+                    cursor + EntryHeader::SIZE as u32 + header.key_len as u32,
+                    &mut value,
+                )?;
+                live.push((key, value));
+            }
+
+            cursor += EntryHeader::SIZE as u32 + header.key_len as u32 + header.val_len as u32;
+        }
+
+        let mut block_addr = self.start_address;
+        while block_addr < self.end_address {
+            self.flash.erase_block(block_addr)?;
+            block_addr += self.flash.block_size();
+        }
+
+        let mut write_cursor = self.start_address;
+        for (key, value) in &live {
+            let mut digest = CRC_ALG.digest();
+            digest.update(key);
+            digest.update(value);
+            let crc32 = digest.finalize();
+            let header = EntryHeader::new(key.len() as u16, value.len() as u16, crc32);
+            let header_bytes = unsafe {
+                core::slice::from_raw_parts(
+                    &header as *const EntryHeader as *const u8,
+                    EntryHeader::SIZE,
+                )
+            };
+            self.flash.write(write_cursor, header_bytes)?;
+            self.flash.write(write_cursor + EntryHeader::SIZE as u32, key)?;
+            self.flash.write(
+                write_cursor + EntryHeader::SIZE as u32 + key.len() as u32,
+                value,
+            )?;
+            write_cursor += EntryHeader::SIZE as u32 + key.len() as u32 + value.len() as u32;
+        }
+
+        self.flash.sync()?;
+        self.current_write_ptr = write_cursor;
+        Ok(())
+    }
+}
+```
+
+**Explanation:**
+
+*   `put` marks any existing entry for the same key as stale (a single in-place byte write flipping `status` from `Valid` to `Stale` — no erase required) and then appends the new entry, keeping the log strictly append-only.
+*   `compact` is the part every append-only design has to earn its keep on: it walks the log, keeps only the entries still marked `Valid`, erases the region, and rewrites just the live data back from the start. Doing this safely against power loss is the hard part — see the caveat in the doc comment above.
+
+### 4. Adding Encryption for Sensitive Values
+
+For values that need confidentiality, not just integrity, encrypt before the bytes ever reach `put`:
+
+```rust
+fn encrypt_value(cipher: &Aes256Gcm, nonce_bytes: &[u8; 12], plaintext: &[u8]) -> alloc::vec::Vec<u8> {
+    let nonce = Nonce::from_slice(nonce_bytes);
+    cipher
+        .encrypt(nonce, plaintext)
+        .expect("encryption failure")
+}
+```
+
+Two details matter more than the call to `encrypt` itself:
+
+*   **Nonce uniqueness is non-negotiable.** AES-GCM's confidentiality and integrity guarantees both collapse if a nonce is ever reused under the same key. On an embedded device without a trustworthy RNG available at boot, a monotonically increasing counter persisted alongside (but separately from) the key is usually a safer choice than hoping the hardware RNG is seeded in time.
+*   **The key can't live in the region it protects.** Store it in the MCU's hardware key storage if the part has one (many Cortex-M and RISC-V parts do), or derive it at boot from a hardware unique ID plus a small key-wrapping step — never as another entry in the same flash region.
+
+## Wear Leveling in Practice
+
+The append-only design already gives you wear leveling within a region for free — writes advance linearly instead of repeatedly hitting the same block. But `compact()` as written always rewrites starting at `start_address`, so the first block in the region absorbs more erase cycles than the rest over the store's lifetime. A straightforward improvement is to alternate the compaction target between two regions, spreading erase cycles across both — the same idea a flash translation layer uses internally, just implemented at the application layer where you actually know which entries are still live.
+
+## Actionable Takeaways
+
+*   Separate integrity (CRC/HMAC) from confidentiality (AES-GCM) as concerns — you often need the former even where you don't need the latter, and GCM's own authentication tag is worth checking independently of your header CRC.
+*   Compaction, and its power-loss failure mode, is the part every append-only KV design underestimates. Design it before you ship, not after the first corrupted-flash bug report.
+*   Keep the `Flash` trait thin. The moment it starts knowing about `EntryHeader` or CRC logic, you've lost the hardware portability that made building a custom store worthwhile in the first place.
+
+## Conclusion
+
+A hand-rolled KV store isn't a project to take on lightly, but for embedded systems with real constraints on memory, flash endurance, and security posture, it's often the only way to get guarantees a general-purpose database can't give you on that hardware. Rust's ownership model doesn't eliminate the hard problems here — power-loss safety and wear leveling are still genuinely hard — but it does eliminate an entire class of memory-corruption bugs that would otherwise be layered on top of them.
+
+Start with the append-only log and integrity checks; they're the foundation everything else depends on. Add encryption and wear-leveling refinements once the core read/write/compact path has survived real power-loss testing on your target hardware, not just in a host-side test harness.

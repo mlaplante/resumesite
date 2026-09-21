@@ -189,4 +189,13 @@ Blindly inserting `sched_yield()` into loops or tight sections of code "just in 
 ## Actionable Takeaways
 
 *   **Understand Its Semantics:** `sched_yield()` moves your thread to the *end of its current priority queue*. It does not sleep the thread.
-*   **Target Real-Time / High-Priority Scenarios:** Its most effective use is often in highly controlled environments with `SCHED_FIFO` or `SCHED_RR` policies where you want cooperative relinquishing of the CPU among threads
+*   **Target Real-Time / High-Priority Scenarios:** Its most effective use is often in highly controlled environments with `SCHED_FIFO` or `SCHED_RR` policies where you want cooperative relinquishing of the CPU among threads of the same priority band — not as a general concurrency tool for ordinary `SCHED_OTHER` threads.
+*   **Never Use It as a Substitute for Real Synchronization:** Mutexes, condition variables, and semaphores exist because they give you deterministic wake-up guarantees. `sched_yield()` gives you none.
+*   **Measure, Don't Guess:** If you think `sched_yield()` will help a hot loop, profile before and after with something like `perf stat` looking at context-switch counts. It's just as likely to add overhead as remove it.
+*   **Check the Scheduling Policy Before You Reach for It:** Under the default `SCHED_OTHER` (CFS) policy on modern Linux, `sched_yield()`'s behavior is intentionally weak — since Linux 2.6.23 it no longer guarantees the yielding thread moves behind *all* other runnable threads, only that it's treated as having exhausted its time slice. Don't rely on it for ordering guarantees outside of `SCHED_FIFO`/`SCHED_RR`.
+
+## Conclusion
+
+`sched_yield()` is a sharp, narrow tool. It has real value in a specific niche — cooperative hand-off between same-priority, real-time-scheduled threads, or as a lighter-weight alternative to a raw spin loop when you have no better synchronization primitive available. Outside that niche, it's rarely the right answer, and reaching for it as a general concurrency fix is usually a sign that a mutex, condition variable, or a proper lock-free algorithm was the tool you actually needed.
+
+Before you add a `sched_yield()` call anywhere in a hot path, ask two questions: what scheduling policy are the threads actually running under, and have you measured the difference? If you can't answer both confidently, you're probably not ready to use it yet.

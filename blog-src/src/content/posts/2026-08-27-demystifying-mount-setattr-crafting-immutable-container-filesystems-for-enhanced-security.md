@@ -185,4 +185,8 @@ This makes it incredibly powerful for security:
     *   **Least Privilege:** Run container processes as non-root users.
     *   **Seccomp Profiles:** Restrict available system calls.
     *   **AppArmor/SELinux:** Add mandatory access control.
-    *   **Read-Only Volumes for Data:** Use separate read-only volumes for configuration or static
+    *   **Read-Only Volumes for Data:** Use separate read-only volumes for configuration or static assets that genuinely need to change between deployments, so you never have to punch a hole in the immutable root to accommodate them.
+
+## Wrapping Up
+
+`mount_setattr`'s real advantage over the classic `mount(2)`/`remount` dance is that it operates per-mount rather than per-superblock, and with `AT_RECURSIVE` it can apply the same attribute atomically across an entire mount tree in one call — no more walking submounts by hand to make sure a `bind` mount underneath didn't stay writable. What actually keeps a container from reversing its own read-only root isn't a sticky bit on the mount; it's dropping `CAP_SYS_ADMIN` (or confining it to a user namespace that doesn't map to the host) before the application process starts, so there's no capability left in the container that a remount could succeed under. Treat `mount_setattr` as the tool that lets a privileged runtime set that state up cleanly and atomically — the immutability itself comes from the capability boundary you build around it, not from the syscall alone.

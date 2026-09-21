@@ -208,4 +208,31 @@ int main() {
         strncat(shared_mem, " - Child's response!", SHARED_MEM_SIZE - strlen(shared_mem) - 1);
         printf("Child process (PID %d): Wrote response to shared memory.\n", getpid());
 
-        munmap(shared_
+        munmap(shared_mem, SHARED_MEM_SIZE);
+        _exit(0); // _exit avoids re-flushing the parent's stdio buffers in the child
+    } else { // Parent process
+        // Write the initial message before the child wakes up from its sleep(1)
+        strncpy(shared_mem, "Hello from parent!", SHARED_MEM_SIZE - 1);
+        shared_mem[SHARED_MEM_SIZE - 1] = '\0';
+        printf("Parent process (PID %d): Wrote message to shared memory.\n", getpid());
+
+        // Wait for the child to read, append its response, and exit
+        int status;
+        waitpid(pid, &status, 0);
+
+        printf("Parent received final shared memory content: \"%s\"\n", shared_mem);
+
+        munmap(shared_mem, SHARED_MEM_SIZE);
+    }
+
+    return 0;
+}
+```
+
+Because the mapping was created with `MAP_ANONYMOUS`, there's no backing file at all — the `-1` file descriptor and `0` offset are ignored, and the kernel hands back a zero-filled page backed purely by swap/RAM. Since it's also `MAP_SHARED`, that same physical memory is visible in both the parent and the forked child, which is why the child's append is visible back in the parent after `waitpid` returns.
+
+One deliberate shortcut in this example is worth calling out: the `sleep(1)` in the child is a hack to avoid a race where it reads the shared memory before the parent has written to it. Real code must never rely on timing like this. For actual synchronization between processes sharing an `mmap` region, reach for a named or unnamed POSIX semaphore (`sem_open` or `sem_init` with `pshared` set), a `pthread_mutex_t` initialized with `PTHREAD_PROCESS_SHARED` and placed inside the shared region itself, or a `futex` if you're comfortable operating at that level.
+
+## Conclusion
+
+`mmap` is one of those system calls that rewards a deeper look: it's the foundation of efficient file I/O, shared memory IPC, and even how the dynamic linker loads your binaries in the first place. The performance case for it is straightforward — fewer copies, fewer syscalls, better cache behavior — but the security case requires the same discipline as any other memory operation: request the least permissive protection and sharing mode your use case allows, be deliberate about what file descriptors you map, always pair `mmap` with `munmap`, and never assume shared memory is synchronized just because it's visible to both sides.

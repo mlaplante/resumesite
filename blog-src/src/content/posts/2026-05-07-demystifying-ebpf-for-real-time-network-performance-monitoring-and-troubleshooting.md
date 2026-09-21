@@ -206,4 +206,56 @@ struct {
     __type(value, u64); // Timestamp
 } sendmsg_start_time SEC(".maps");
 
-// Define a map
+// Define a map to store latencies per PID
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, 10240);
+    __type(key, __u32); // Process ID (PID)
+    __type(value, u64); // Latency in nanoseconds
+} sendmsg_latencies SEC(".maps");
+
+SEC("kprobe/sock_sendmsg")
+int kprobe_sock_sendmsg_entry(struct pt_regs *ctx) {
+    __u32 pid = bpf_get_current_pid_tgid() >> 32;
+    u64 ts = bpf_ktime_get_ns();
+    bpf_map_update_elem(&sendmsg_start_time, &pid, &ts, BPF_ANY);
+    return 0;
+}
+
+SEC("kretprobe/sock_sendmsg")
+int kretprobe_sock_sendmsg_exit(struct pt_regs *ctx) {
+    __u32 pid = bpf_get_current_pid_tgid() >> 32;
+    u64 *start_ts = bpf_map_lookup_elem(&sendmsg_start_time, &pid);
+    if (!start_ts) {
+        return 0; // No matching entry event for this PID
+    }
+
+    u64 latency = bpf_ktime_get_ns() - *start_ts;
+    bpf_map_update_elem(&sendmsg_latencies, &pid, &latency, BPF_ANY);
+    bpf_map_delete_elem(&sendmsg_start_time, &pid);
+
+    return 0;
+}
+
+char _license[] SEC("license") = "GPL";
+```
+
+This program attaches a `kprobe` to `sock_sendmsg`'s entry and a `kretprobe` to its return, timestamping both and storing the delta indexed by PID. A user-space collector polling `sendmsg_latencies` — cross-referencing each PID against `/proc/<pid>/comm`, or capturing the name directly in-kernel with `bpf_get_current_comm()` — can now tell you not just "sendmsg is slow," but "sendmsg is slow for this specific process," which lets you rule the network stack in or out as the actual bottleneck within seconds.
+
+#### 2. Detecting Retransmissions and Resets in Real Time
+
+TCP retransmissions and connection resets are strong signals of an underlying network problem — packet loss, an overloaded receiver, or an MTU mismatch. Rather than waiting for aggregate `netstat -s` counters to tell you *that* it happened, hooking `tcp_retransmit_skb` and `tcp_reset` with kprobes tells you *which* connection, *when*, and lets you correlate that timestamp directly against the latency spikes your application is reporting.
+
+### Choosing Your eBPF Tooling
+
+Writing raw eBPF C and loading it with `libbpf` gives you the most control, but it's not always the fastest path to an answer. Depending on the situation:
+
+*   **`bpftrace`** is the right tool for a one-off question — "which processes are calling `connect()` right now, and to what?" — answered in a single command line, no compile step required.
+*   **BCC (BPF Compiler Collection)** ships a library of ready-made, Python-wrapped tools (`tcplife`, `tcpretrans`, `tcpconnect`) that cover much of what we built by hand above, already hardened against the edge cases you'd otherwise discover the hard way.
+*   **Cilium and Hubble** bring eBPF-based network observability to Kubernetes specifically, giving you flow-level visibility and policy enforcement without writing a single line of BPF C yourself.
+
+Reach for a custom program only when you need to measure or enforce something none of the existing tooling already covers.
+
+## Conclusion
+
+eBPF didn't just give us a faster `tcpdump` — it gave us a fundamentally different vantage point: the ability to ask precise, context-aware questions directly inside the kernel's network path, at line rate, without the overhead of copying every packet to user space. Whether you're counting SYN floods, timing `__net_rx_action`, or tracking `sendmsg` latency per process, the pattern is the same: hook the right point, keep the in-kernel logic minimal, and let user space handle aggregation and presentation. Start with the existing tooling — `bpftrace` and BCC will answer most questions — and reach for custom eBPF programs only when you need a metric nobody's already shipped a tool for.

@@ -197,4 +197,77 @@ fn main() -> Result<()> {
     let mut store = Store::new(&engine, ());
 
     // 2. Load the Wasm module
-    let module = Module::from_file(&engine
+    let module = Module::from_file(
+        &engine,
+        "target/wasm32-wasi/release/wasm_serverless_example.wasm",
+    )?;
+
+    // 3. Instantiate it. This particular module doesn't call any WASI functions
+    //    directly, so an empty import list is enough. If your module does touch
+    //    WASI (files, clocks, env vars), you'd build the instance through a
+    //    `wasmtime_wasi::WasiCtx` and a `Linker` instead of `Instance::new`.
+    let instance = Instance::new(&mut store, &module, &[])?;
+
+    // 4. Get handles to the exported functions and the module's linear memory
+    let memory = instance
+        .get_memory(&mut store, "memory")
+        .expect("failed to find `memory` export");
+    let allocate = instance.get_typed_func::<u32, u32>(&mut store, "allocate")?;
+    let process_data_v2 =
+        instance.get_typed_func::<(u32, u32), u64>(&mut store, "process_data_v2")?;
+    let deallocate = instance.get_typed_func::<(u32, u32), ()>(&mut store, "deallocate")?;
+
+    // 5. Write our input string into the guest's linear memory
+    let input = b"hello from the host";
+    let input_ptr = allocate.call(&mut store, input.len() as u32)?;
+    memory.write(&mut store, input_ptr as usize, input)?;
+
+    // 6. Call the function and decode the packed (len << 32 | ptr) return value
+    let packed = process_data_v2.call(&mut store, (input_ptr, input.len() as u32))?;
+    let result_len = (packed >> 32) as u32;
+    let result_ptr = (packed & 0xFFFF_FFFF) as u32;
+
+    let mut buffer = vec![0u8; result_len as usize];
+    memory.read(&store, result_ptr as usize, &mut buffer)?;
+    println!("Wasm returned: {}", String::from_utf8_lossy(&buffer));
+
+    // 7. Free both allocations inside the guest now that we've copied the data out
+    deallocate.call(&mut store, (input_ptr, input.len() as u32))?;
+    deallocate.call(&mut store, (result_ptr, result_len))?;
+
+    Ok(())
+}
+```
+
+Add Wasmtime to the host application's `Cargo.toml`:
+
+```toml
+[dependencies]
+wasmtime = "24"
+```
+
+Run it with `cargo run --bin host_app`, and you'll see `Wasm returned: PROCESSED: HELLO FROM THE HOST` printed to the console — the entire round trip of allocating guest memory, marshaling a string across the host/Wasm boundary, executing sandboxed logic, and reading the result back.
+
+Notice how much of this example is memory-management plumbing rather than business logic. That's the honest state of raw Wasmtime embedding today: for anything beyond a toy, you'll want a higher-level interface layer — the WebAssembly Component Model and tools like `wit-bindgen` exist specifically to generate this marshaling code instead of hand-rolling pointer/length pairs.
+
+## Where This Is Already in Production
+
+This isn't a hypothetical. Several platforms are running Wasm as their serverless execution layer today:
+
+*   **Fastly Compute** runs customer functions as Wasm modules on top of Wasmtime, using per-request isolation instead of per-request containers or VMs, which is a large part of how it achieves single-digit-millisecond cold starts.
+*   **Fermyon Spin** (and the broader SpinKube project for Kubernetes) packages Wasm modules as deployable serverless "components," with a CLI-driven developer workflow that looks a lot like `spin build && spin deploy`.
+*   **Cloudflare Workers** can execute Wasm modules alongside JavaScript, letting you drop performance-critical logic (image processing, cryptography, codec work) into a Wasm module invoked from a Worker.
+
+## What Wasm Serverless Doesn't Solve (Yet)
+
+It's worth being honest about the rough edges before you bet a platform on this:
+
+*   **The syscall surface is still narrow.** WASI Preview 1, which most production runtimes support today, covers files, clocks, and random numbers — not sockets, not threads. Preview 2 and the Component Model close some of this gap, but tooling and library support are still catching up.
+*   **Native threading is limited.** The Wasm threads proposal exists and is supported by some runtimes, but it's not universally available, and a lot of existing multi-threaded code won't port over unmodified.
+*   **The ecosystem is younger than containers.** Debugging, observability, and package management around Wasm modules are improving fast but don't yet match the maturity of the container tooling most teams already rely on.
+
+## Conclusion
+
+WebAssembly outside the browser isn't a replacement for containers in every scenario — but for latency-sensitive, multi-tenant serverless workloads, it addresses the three things that matter most: startup time, density, and blast radius under compromise. The capability-based sandbox model is a meaningfully stronger security boundary than namespace-and-cgroup isolation, and the cold-start numbers speak for themselves.
+
+If you're building a new serverless platform, or evaluating whether an existing one could run leaner, Wasm is worth a serious look. Start small: pick one latency-critical function, port it to `wasm32-wasi`, and measure the cold-start and memory numbers against your current container baseline before committing further.

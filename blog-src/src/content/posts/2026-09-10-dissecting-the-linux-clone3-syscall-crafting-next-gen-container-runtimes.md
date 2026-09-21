@@ -179,4 +179,35 @@ int main() {
 **To compile and run:**
 
 ```bash
-gcc -o clone3_example clone3_example
+gcc -o clone3_example clone3_example.c
+sudo ./clone3_example
+```
+
+**Expected output (roughly):**
+
+```
+Parent process: Child PID is 12345
+Parent process: PIDFD for child is 3
+Parent: Waiting for child PID 12345 via waitpid...
+Child process (PID 1) inside new namespaces.
+Child process exiting.
+Parent: Child exited with status 0
+```
+
+Notice the child reports its own PID as `1` — that's `CLONE_NEWPID` working as expected. Inside its new PID namespace, the child is the init process, with PID 1 as far as it (and anything it spawns) can observe, even though the parent sees an entirely different, host-namespace PID. You'll also need to run this with elevated privileges: most of the namespace-creation flags here (`CLONE_NEWNET`, `CLONE_NEWNS`, `CLONE_NEWCGROUP`, etc.) require `CAP_SYS_ADMIN` unless they're combined with `CLONE_NEWUSER` to establish a new, unprivileged user namespace first — which is exactly the trick rootless container runtimes like Podman use to let ordinary users create namespaces without root at all.
+
+### Why `pidfd` Is More Than a Convenience
+
+It's worth dwelling on `CLONE_PIDFD` a bit longer, because it fixes a real, exploitable class of bugs. Traditional process supervision with raw PIDs is inherently racy: if a child exits and the kernel recycles its PID before your supervisor gets around to calling `kill()` or `waitpid()`, you can end up signaling or reaping a completely unrelated process that happens to have inherited the same PID. This "PID reuse" race has been the root cause of real privilege-escalation and denial-of-service bugs in process supervisors and container runtimes.
+
+A `pidfd` sidesteps this entirely — it's a stable file descriptor bound to the *specific* process instance, not to a recyclable integer. You can:
+
+*   Send signals safely with `pidfd_send_signal(2)`, which is guaranteed to target the exact process the fd was opened for, even if the PID has since been reused by something else.
+*   Wait for exit asynchronously by adding the `pidfd` to an `epoll(7)` set — it becomes readable (`EPOLLIN`) when the process exits, letting an event-driven runtime supervise dozens or hundreds of container processes without a blocking `waitpid()` call or a `SIGCHLD` handler per child.
+*   Query process state safely via `/proc/self/fdinfo` on the `pidfd`, without the TOCTOU window inherent in looking up `/proc/<pid>` by number.
+
+This is precisely the direction modern, async-first container runtime implementations (and lower-level tools like `crun` and `youki`) have moved — `clone3()` combined with `CLONE_PIDFD` and `CLONE_INTO_CGROUP` lets a runtime create a fully namespaced, cgroup-scoped process and get back a small number of stable, racy-nothing file descriptors to supervise it with, instead of juggling raw PIDs and hoping nothing gets recycled underneath it.
+
+## Conclusion
+
+`clone3()` isn't a flashy syscall, but it's a foundational one for anyone building process isolation at the level container runtimes require. The move from a sprawling, order-sensitive argument list to a single versioned `struct clone_args` buys real extensibility, and features like `CLONE_PIDFD` and `CLONE_INTO_CGROUP` close longstanding races and awkward two-step setup dances that `clone()` never had a clean answer for. If you're building or auditing container tooling, `clone3()` is worth understanding at the syscall level — it's quietly become the primitive that separates a runtime that merely works from one that's actually safe to run untrusted or multi-tenant workloads on.
