@@ -169,4 +169,14 @@ Let's refine our `legacy_httpd` sandboxing using `pivot_root`. This requires a b
 
 ### `pivot_root` Takeaways:
 *   **Stronger Isolation:** Fully detaches the old root, making escapes much harder.
-*   **Complexity:** Requires more careful handling of mount points
+*   **Complexity:** Requires more careful handling of mount points than `chroot` — you need a real mount point (not just a directory) for `new_root`, and you have to correctly unmount and clean up `put_old` afterward or the old filesystem stays reachable.
+*   **Dependencies:** Same requirement as `chroot` — the new root needs its own copies of every binary, library, and config file the application depends on.
+*   **Typically Paired with Namespaces:** `pivot_root` is most effective combined with a mount namespace (`CLONE_NEWNS` via `unshare` or `clone`). Without one, `pivot_root` changes the root for every process sharing that mount namespace, not just the sandboxed application — container runtimes always unshare the mount namespace first for exactly this reason.
+
+## Choosing Between the Two
+
+For a legacy application you just need to keep from seeing (or touching) the rest of the filesystem, `chroot` combined with running as a non-root user gets you most of the practical benefit for a fraction of the setup work. Reach for `pivot_root` when the process might run as root inside the sandbox, when you need genuine assurance that the original root filesystem is unreachable rather than just hidden, or when you're building tooling that behaves like a lightweight container runtime rather than a one-off jail.
+
+## Wrapping Up
+
+Neither primitive is a substitute for the layered isolation a full container runtime provides — namespaces for PID/network/user isolation, cgroups for resource limits, seccomp for syscall filtering. What they give you is a way to sandbox the applications that can't or won't run in that stack, using tools that have been part of Linux for decades and that you can reason about without pulling in a container engine. For legacy workloads, that's often the difference between "we can finally isolate this" and "it stays running unsandboxed because containerizing it isn't worth the effort."

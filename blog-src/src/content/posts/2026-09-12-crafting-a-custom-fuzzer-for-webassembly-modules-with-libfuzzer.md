@@ -175,4 +175,26 @@ Execute the compiled fuzzer, pointing it to your seed corpus:
 ./wasm_fuzzer corpus
 ```
 
-You'll see output from `libFuzzer` indicating its progress, coverage, and any crashes it finds. When a crash is found, `libFuzzer` will
+You'll see output from `libFuzzer` indicating its progress, coverage, and any crashes it finds. When a crash is found, `libFuzzer` will save the crashing input to a file named `crash-<sha1-hash>` in the current directory. You can then reproduce the failure deterministically by running `./wasm_fuzzer crash-<sha1-hash>`, which replays that exact input through `LLVMFuzzerTestOneInput` outside of the fuzzing loop — ideal for attaching a debugger to get a full backtrace alongside ASan's symbolized crash report.
+
+### Triaging and Minimizing Crashes
+
+Once you have a reproducible crash, `libFuzzer` can help shrink it to something manageable:
+
+```bash
+# Minimize a crashing input to the smallest input that still reproduces the crash
+./wasm_fuzzer -minimize_crash=1 -runs=10000 crash-<sha1-hash>
+```
+
+This is invaluable for structured formats like Wasm: a 50KB crashing module full of noise becomes a handful of bytes that isolate the exact malformed section or opcode sequence responsible. Always commit minimized crashers back into your seed corpus (or a dedicated `regressions/` directory) so future fuzzing runs and CI catch the same bug if it's ever reintroduced.
+
+## Actionable Takeaways
+
+1.  **Wire the fuzzer into CI.** Even a short, time-boxed run (`./wasm_fuzzer -max_total_time=300 corpus`) on every PR that touches the parser catches regressions long before they ship.
+2.  **Grow the corpus deliberately.** Periodically run `-merge=1` to fold newly discovered coverage-increasing inputs back into your seed corpus.
+3.  **Add a dictionary.** A `-dict=wasm.dict` file with known Wasm section IDs, opcodes, and magic bytes helps the mutator find structurally valid inputs faster than pure byte-flipping.
+4.  **Consider OSS-Fuzz for long-lived, production runtimes.** If you maintain a real Wasm parser or runtime, Google's OSS-Fuzz project will run this exact style of harness continuously, for free, against a much larger compute budget than a laptop.
+
+## Conclusion
+
+A hand-written `libFuzzer` harness for a Wasm parser is a small investment — a single `LLVMFuzzerTestOneInput` function and a build flag — that pays for itself the first time it finds a null-pointer dereference or an out-of-bounds read your unit tests never would have hit. Coverage-guided, sanitizer-backed fuzzing turns "we tested the happy path" into "we've thrown millions of mutated inputs at this parser and it hasn't crashed," which is a meaningfully stronger claim for anything that parses untrusted binary data. Start with the simplest possible harness, get it running in CI, and let the corpus grow from there.

@@ -198,4 +198,71 @@ int kprobe__cap_set_proc(struct pt_regs *ctx, struct kernel_cap_struct *new_caps
     
     // For demonstration purposes, we'll just log the PID and command.
     // A full implementation would involve reading `struct cred` from `current`
-    // and
+    // and diffing its capability sets against `new_caps`. We'll skip that here
+    // and just emit the event so userspace can see that a change was attempted.
+
+    cap_events.perf_submit(ctx, &event, sizeof(event));
+    return 0;
+}
+```
+
+This gets us visibility, but notice how much of the comment block above is hedging. Kprobes on internal functions like `cap_set_proc` are attached to an unstable, non-ABI-guaranteed symbol — the exact function name and argument layout can change between kernel versions, and a kprobe can only *observe* the call, not safely veto it. For an auditing tool, that's fine. For a manager that needs to actually *enforce* policy, we need something better.
+
+## Enforcing Policy with BPF LSM
+
+This is where the BPF LSM comes in. Since Linux 5.7, with a kernel built with `CONFIG_BPF_LSM=y` and `bpf` included in the `lsm=` boot parameter (alongside whatever LSMs you already stack, such as AppArmor or SELinux), you can load a `BPF_PROG_TYPE_LSM` program that attaches directly to a security hook. Unlike a kprobe, an LSM program's return value participates in the actual security decision — return `0` and the kernel proceeds as normal, return a negative errno and the kernel treats it as a denial.
+
+The hook we want is `capable`, defined in the kernel's LSM hook table and called every time `capable()` or `ns_capable()` checks whether the current task holds a given capability:
+
+```c
+// cap_lsm.bpf.c
+#include "vmlinux.h"
+#include <bpf/bpf_helpers.h>
+#include <bpf/bpf_tracing.h>
+#include <linux/errno.h>
+
+char LICENSE[] SEC("license") = "GPL";
+
+// Per-PID bitmask of capabilities we want to deny, regardless of what the
+// process's own Effective set says.
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, 1024);
+    __type(key, __u32);   // pid
+    __type(value, __u64); // bitmask of denied capabilities (1ULL << CAP_*)
+} denied_caps SEC(".maps");
+
+SEC("lsm/capable")
+int BPF_PROG(restrict_capable, const struct cred *cred,
+             struct user_namespace *ns, int cap, unsigned int opts)
+{
+    __u32 pid = bpf_get_current_pid_tgid() >> 32;
+    __u64 *mask = bpf_map_lookup_elem(&denied_caps, &pid);
+
+    if (mask && (*mask & (1ULL << cap))) {
+        bpf_printk("cap_manager: denying cap %d for pid %d\n", cap, pid);
+        return -EPERM;
+    }
+
+    return 0;
+}
+```
+
+You can confirm this hook is attachable on your kernel before writing a line of code — every BPF-attachable LSM hook has a corresponding `bpf_lsm_<hook>` stub in kernel BTF:
+
+```bash
+sudo bpftool btf dump file /sys/kernel/btf/vmlinux format raw | grep bpf_lsm_capable
+```
+
+Load it with a `libbpf` skeleton (`bpftool gen skeleton`) the same way you'd load any other BPF program, then populate `denied_caps` from userspace using `bpf_map_update_elem()` — for example, denying `CAP_NET_BIND_SERVICE` to a specific PID after your kprobe-based auditor flags it as suspicious. This gives you a genuine two-stage system: the kprobe (or a tracepoint, which is the more stable alternative if one exists for your kernel version) for cheap, continuous auditing, and the LSM hook for hard enforcement when a policy is actually violated.
+
+## Actionable Takeaways
+
+1.  **Don't build enforcement on kprobes.** Use them for auditing and telemetry only. `CONFIG_BPF_LSM` and `SEC("lsm/...")` programs are the supported mechanism for BPF programs that need to influence a security decision.
+2.  **Keep the policy data in a map, not in code.** A hash map keyed by PID (or better, by a cgroup ID for longer-lived policy) lets your userspace controller update policy without reloading the BPF program.
+3.  **Pair this with `CAP_SETPCAP` sparingly.** Your userspace controller process is now a high-value target — it can both read and shape the capability landscape of every other process on the box. Run it with the minimum capabilities it needs, and audit its own behavior too.
+4.  **Test against real kernel versions.** LSM hook availability and BTF layout can shift between kernel releases; pin your CI to the kernel versions you actually deploy on.
+
+## Conclusion
+
+`libcap` gives you the vocabulary to reason about and manipulate capabilities; eBPF — specifically the BPF LSM, not ad hoc kprobes — gives you a supported way to observe and enforce policy around them at runtime. Together they turn capabilities from a static, exec-time grant into a system you can audit continuously and restrict dynamically, without the overhead of a full mandatory access control framework. Start with auditing, prove the policy is correct against real traffic, and only then flip the LSM hook from logging to denying.

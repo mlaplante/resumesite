@@ -185,4 +185,59 @@ profile nginx-profile flags=(attach_disconnected,mediate_deleted) {
 *   `#include <abstractions/...>`: AppArmor provides useful abstractions for common tasks (e.g., `base` for basic filesystem access, `nameservice` for DNS, `web-data` for common web paths).
 *   `network tcp, network udp,`: Allows TCP and UDP network connections.
 *   `deny capability,`: A strong default to deny all Linux capabilities.
-*   `/path/to/file mr,`: `m` for mmap, `r` for read. Other common modes: `w` (write), `a` (append), `x` (execute), `k` (lock
+*   `/path/to/file mr,`: `m` for mmap, `r` for read. Other common modes: `w` (write), `a` (append), `x` (execute), `k` (allow file locking), and `l` (allow creating hard links to the file). Execute permissions also come in transition variants — `ix` (execute and inherit the current profile), `px` (execute under another defined profile), `ux` (execute unconfined) — which matter a lot if your application shells out to helper binaries.
+
+### Step 2: Loading and Deploying the AppArmor Profile
+
+Unlike `seccomp` profiles, which the Kubelet reads directly, AppArmor profiles must be *loaded into the kernel* on each node before a Pod can reference them.
+
+1.  **Load the profile on the node:**
+
+    ```bash
+    sudo apparmor_parser -r /etc/apparmor.d/nginx-profile
+    ```
+
+    In practice you'd ship this via a DaemonSet that mounts the profile from a ConfigMap or hostPath and runs `apparmor_parser` on each node at startup, since there's no first-class Kubernetes object for AppArmor profile distribution the way there is for `seccomp` ConfigMaps mounted into the Kubelet's profile root.
+
+2.  **Verify it loaded:**
+
+    ```bash
+    sudo aa-status | grep nginx-profile
+    ```
+
+3.  **Reference it from the Pod spec.** As of Kubernetes 1.30, AppArmor is a stable, first-class field on the security context:
+
+    ```yaml
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: nginx-apparmor-hardened
+    spec:
+      selector:
+        matchLabels:
+          app: nginx-apparmor
+      template:
+        metadata:
+          labels:
+            app: nginx-apparmor
+        spec:
+          containers:
+          - name: nginx
+            image: nginx:latest
+            ports:
+            - containerPort: 80
+            securityContext:
+              appArmorProfile:
+                type: Localhost
+                localhostProfile: nginx-profile
+    ```
+
+    On older clusters (pre-1.30), the equivalent is the pod annotation `container.apparmor.security.beta.kubernetes.io/<container-name>: localhost/nginx-profile`, set on the Pod's `metadata.annotations`. Either way, the profile name referenced must exactly match the `profile nginx-profile { ... }` name declared in the loaded profile, and the profile must already be loaded on whichever node the scheduler places the Pod on — a common source of confusing `CreateContainerError` failures when a Pod lands on a node the DaemonSet hasn't reached yet.
+
+## Layering Seccomp and AppArmor Together
+
+These two mechanisms aren't competing approaches — they operate at different layers and are meant to be stacked. `seccomp` filters the *syscall interface itself*, blocking entire classes of kernel functionality (like `ptrace`, `mount`, or raw socket creation) regardless of what file or resource is being targeted. `AppArmor` is a Linux Security Module operating at a higher semantic layer, reasoning about *which files, network operations, and capabilities* a confined program can touch, based on path-aware policy the kernel evaluates on each LSM hook. A container with an aggressive `seccomp` profile can still misuse the syscalls it's allowed to call — `AppArmor` closes that gap by constraining what those allowed syscalls can actually act on. Running both, alongside a restrictive Pod `securityContext` (`runAsNonRoot`, `readOnlyRootFilesystem`, `capabilities.drop: ["ALL"]`), gives you defense-in-depth that no single mechanism provides on its own.
+
+## Conclusion
+
+Kubernetes' default `seccomp` and (lack of) `AppArmor` posture is a reasonable baseline, not a hardened one. Building custom profiles is genuinely tedious work — you're iterating against real application behavior, watching for `EPERM`s and denied-access log lines, and tightening incrementally — but the payoff is a meaningfully smaller blast radius if a container is ever compromised. Start from observed behavior rather than guesswork, keep the profiles under version control next to the workloads they protect, and treat `seccomp` and `AppArmor` as complementary layers rather than alternatives to each other.

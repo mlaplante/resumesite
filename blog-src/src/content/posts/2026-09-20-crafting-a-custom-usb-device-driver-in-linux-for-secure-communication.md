@@ -187,4 +187,182 @@ static int custom_usb_probe(struct usb_interface *interface, const struct usb_de
     }
 
     // Allocate read URB
-    
+    dev->read_urb = usb_alloc_urb(0, GFP_KERNEL);
+    if (!dev->read_urb) {
+        printk(KERN_ERR "custom_usb: Failed to allocate read URB\n");
+        goto error;
+    }
+
+    usb_set_intfdata(interface, dev);
+
+    // Register this device with the USB core, which allocates a minor
+    // number and creates /dev/custom_usbN via the class driver.
+    retval = usb_register_dev(interface, &custom_usb_class);
+    if (retval) {
+        printk(KERN_ERR "custom_usb: Not able to get a minor for this device.\n");
+        usb_set_intfdata(interface, NULL);
+        goto error;
+    }
+
+    dev->minor = interface->minor;
+    printk(KERN_INFO "custom_usb: Device now attached to /dev/custom_usb%d\n",
+           interface->minor);
+
+    return 0;
+
+error:
+    if (dev) {
+        if (dev->read_urb)
+            usb_free_urb(dev->read_urb);
+        if (dev->read_buffer)
+            usb_free_coherent(udev, dev->bulk_in_size, dev->read_buffer, dev->read_dma_handle);
+        kfree(dev);
+    }
+    return retval;
+}
+
+// Disconnect function: called when the device is removed
+static void custom_usb_disconnect(struct usb_interface *interface) {
+    struct custom_usb_dev *dev = usb_get_intfdata(interface);
+
+    usb_set_intfdata(interface, NULL);
+    usb_deregister_dev(interface, &custom_usb_class);
+
+    mutex_lock(&dev->io_mutex);
+    usb_kill_urb(dev->read_urb);
+    mutex_unlock(&dev->io_mutex);
+
+    usb_free_urb(dev->read_urb);
+    usb_free_coherent(dev->udev, dev->bulk_in_size, dev->read_buffer, dev->read_dma_handle);
+
+    kfree(dev);
+    printk(KERN_INFO "custom_usb: Device disconnected\n");
+}
+
+// File operations: open
+static int custom_usb_open(struct inode *inode, struct file *file) {
+    struct usb_interface *interface;
+    struct custom_usb_dev *dev;
+    int subminor = iminor(inode);
+
+    interface = usb_find_interface(&custom_usb_driver, subminor);
+    if (!interface)
+        return -ENODEV;
+
+    dev = usb_get_intfdata(interface);
+    if (!dev)
+        return -ENODEV;
+
+    file->private_data = dev;
+    return 0;
+}
+
+static int custom_usb_release(struct inode *inode, struct file *file) {
+    (void)inode;
+    file->private_data = NULL;
+    return 0;
+}
+
+// Read: submit the device's persistent bulk IN URB and block until the
+// completion callback signals that data has arrived (or the transfer failed).
+static ssize_t custom_usb_read(struct file *file, char __user *buf, size_t count, loff_t *ppos) {
+    struct custom_usb_dev *dev = file->private_data;
+    int retval;
+
+    (void)ppos;
+
+    mutex_lock(&dev->io_mutex);
+
+    usb_fill_bulk_urb(dev->read_urb, dev->udev,
+                       usb_rcvbulkpipe(dev->udev, dev->bulk_in_endpoint_addr),
+                       dev->read_buffer, min(count, dev->bulk_in_size),
+                       custom_usb_read_bulk_callback, dev);
+    dev->read_urb->transfer_dma = dev->read_dma_handle;
+    dev->read_urb->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;
+
+    dev->read_data_available = 0;
+    retval = usb_submit_urb(dev->read_urb, GFP_KERNEL);
+    mutex_unlock(&dev->io_mutex);
+    if (retval) {
+        printk(KERN_ERR "custom_usb: Failed to submit read URB: %d\n", retval);
+        return retval;
+    }
+
+    if (wait_event_interruptible(dev->read_wait, dev->read_data_available != 0))
+        return -ERESTARTSYS;
+
+    if (dev->read_data_available < 0)
+        return dev->read_data_available; // Propagate the URB's error status
+
+    if (copy_to_user(buf, dev->read_buffer, dev->read_data_available))
+        return -EFAULT;
+
+    return dev->read_data_available;
+}
+
+// Write: each call allocates its own URB and DMA-safe buffer, matching the
+// one-shot cleanup already performed in custom_usb_write_bulk_callback above.
+static ssize_t custom_usb_write(struct file *file, const char __user *buf, size_t count, loff_t *ppos) {
+    struct custom_usb_dev *dev = file->private_data;
+    struct urb *urb;
+    unsigned char *buffer;
+    size_t to_write = min(count, dev->bulk_out_size);
+    int retval;
+
+    (void)ppos;
+
+    urb = usb_alloc_urb(0, GFP_KERNEL);
+    if (!urb)
+        return -ENOMEM;
+
+    buffer = kmalloc(to_write, GFP_KERNEL);
+    if (!buffer) {
+        usb_free_urb(urb);
+        return -ENOMEM;
+    }
+
+    if (copy_from_user(buffer, buf, to_write)) {
+        kfree(buffer);
+        usb_free_urb(urb);
+        return -EFAULT;
+    }
+
+    usb_fill_bulk_urb(urb, dev->udev,
+                       usb_sndbulkpipe(dev->udev, dev->bulk_out_endpoint_addr),
+                       buffer, to_write,
+                       custom_usb_write_bulk_callback, dev);
+
+    retval = usb_submit_urb(urb, GFP_KERNEL);
+    if (retval) {
+        printk(KERN_ERR "custom_usb: Failed to submit write URB: %d\n", retval);
+        kfree(buffer);
+        usb_free_urb(urb);
+        return retval;
+    }
+
+    return to_write;
+}
+
+static struct usb_driver custom_usb_driver = {
+    .name       = "custom_usb",
+    .probe      = custom_usb_probe,
+    .disconnect = custom_usb_disconnect,
+    .id_table   = custom_usb_table,
+};
+
+module_usb_driver(custom_usb_driver);
+
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Security Engineering");
+MODULE_DESCRIPTION("Custom USB driver for secure peripheral communication");
+```
+
+A few things worth calling out in this design before you'd trust it with production traffic:
+
+*   **Never trust lengths reported by the device.** `urb->actual_length` on completion should always be validated against `dev->bulk_in_size` before it's used to size a `copy_to_user()` — a malicious or malfunctioning device is untrusted input, no different from a network peer.
+*   **Lock down `/dev/custom_usbN` permissions.** By default, device nodes created via `usb_register_dev()` inherit whatever udev rule matches them. Ship a udev rule that restricts the node to a dedicated group rather than leaving it world-readable.
+*   **Consider signing the module.** On a system with Secure Boot and lockdown mode enabled, an unsigned out-of-tree module won't load at all — and even without lockdown, module signing gives you a supply-chain guarantee that the `.ko` running in the kernel is the one you built.
+
+## Conclusion
+
+A kernel-level USB driver is more work than reaching for `libusb`, but for a device that's handling sensitive data — an HSM, a hardware token, a custom sensor — that extra work buys you kernel-enforced exclusive access, tighter integration with the kernel's own security model, and a permission boundary (the device node) that's far easier to lock down than an arbitrary user-space process. Start with the probe/disconnect/URB skeleton shown here, get bulk transfers working reliably in both directions, and only then layer on the access controls and input validation that turn a working driver into a trustworthy one.

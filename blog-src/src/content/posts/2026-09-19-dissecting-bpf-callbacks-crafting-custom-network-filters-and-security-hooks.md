@@ -81,8 +81,8 @@ int egress_filter(struct __sk_buff *skb) {
         // In a real scenario, you'd implement prefix matching.
         if (bpf_map_lookup_elem(&blocked_ips, &dest_ip)) {
             // Log the attempt
-            bpf_printk("BPF: Blocked SSH connection to %x:%d from UID %d\n",
-                       dest_ip, dest_port, skb->uid);
+            bpf_printk("BPF: Blocked SSH connection to %x:%d\n",
+                       dest_ip, dest_port);
             return TC_ACT_SHOT; // Drop the packet
         }
     }
@@ -186,4 +186,10 @@ The power of eBPF extends far beyond network filtering. We can attach BPF progra
 ## Real-World Considerations and Best Practices
 
 *   **Error Handling:** BPF programs run in the kernel and must be extremely robust. Bounds checking (`data + size > data_end`) is paramount to prevent kernel panics.
-*   **Performance:** B
+*   **Performance:** BPF programs execute in the kernel's hot path, so keep them lean. Avoid unbounded loops (the verifier will reject anything it can't prove terminates, even on kernels with bounded-loop support), minimize map lookups per packet or event, and prefer per-CPU map types (`BPF_MAP_TYPE_PERCPU_HASH`, `BPF_MAP_TYPE_PERCPU_ARRAY`) for counters and stats to avoid lock contention across cores.
+*   **Portability:** Raw offsets into kernel structs break across kernel versions. Compile with BTF (`-g`) and use CO-RE (Compile Once – Run Everywhere) field access via `libbpf`'s relocations so the same object file adapts to different kernel struct layouts at load time, instead of shipping a separate build per kernel.
+*   **Privilege and Auditability:** Loading BPF programs is a privileged operation — `kernel.unprivileged_bpf_disabled` blocks unprivileged loads on most hardened systems, and even where it's allowed, network and LSM-adjacent hooks generally require `CAP_BPF` plus `CAP_NET_ADMIN` or `CAP_SYS_ADMIN`. Treat the userspace loader as security-critical code: sign it, audit changes to it, and log what policy it installs, since it's now sitting in the same trust boundary as your kernel.
+
+## Conclusion
+
+BPF callbacks give you a hook point for almost any kernel event worth caring about — packets crossing an interface, a syscall being invoked, a file being opened — with none of the overhead of a full out-of-tree kernel module and none of the fragility of parsing `iptables` output. The tradeoff is that you're now writing code that runs in the kernel, with all the discipline that implies: bounds-check everything, keep the hot path small, and treat your maps as the real source of policy so you can change behavior without reloading a program. Start with a narrow, well-tested hook for the one problem you actually have, and only reach for broader hooks once you've proven the narrow one is safe under real traffic.

@@ -199,4 +199,44 @@ excerpt: "Auditing System Calls With a Custom Linux Kernel Module
  *   **`handler_pre_open` and `handler_pre_write`:** These are our pre-handler functions.
     *   They receive a `struct kprobe *` and `struct pt_regs *`. The `pt_regs` structure contains the system call arguments, passed via CPU registers. On x86_64, arguments are typically passed in `rdi`, `rsi`, `rdx`, `rcx`, `r8`, `r9`.
     *   In `handler_pre_open`:
-        *   We cast `regs->di`
+        *   We cast `regs->di` to a user-space pointer, since on x86_64 the first syscall argument is passed in the `rdi` register, exposed in `pt_regs` as `di`.
+        *   `strncpy_from_user()` safely copies the string from the tracee's user-space memory into a kernel buffer, respecting the user/kernel address space separation; you can never dereference a `__user` pointer directly from kernel code.
+        *   We log the calling process's name (`current->comm`) alongside the filename it's opening.
+    *   In `handler_pre_write`:
+        *   The file descriptor, buffer pointer, and byte count come from `di`, `si`, and `dx` respectively, matching the `write(2)` signature.
+        *   We deliberately don't dereference `buf_user` to log its contents. Copying arbitrary-length, potentially binary user buffers into kernel log output is both risky (you'd need careful bounds checking, and could leak sensitive data into `dmesg`, which is often world-readable) and expensive at high call volumes. Logging the count is usually enough to spot anomalies, like a process suddenly writing gigabytes through a socket it's never used before.
+
+**A note on kernel version drift:** on modern x86_64 kernels (roughly 4.17 and later, with `CONFIG_ARCH_HAS_SYSCALL_WRAPPER` enabled), the symbol you'd actually want to probe is `__x64_sys_open`, not `sys_open`, and the syscall's real arguments are wrapped in an inner `struct pt_regs *` rather than being available directly on the outer `regs` passed to the kprobe handler. In other words, `regs->di` at the kprobe gives you a pointer to *another* `pt_regs`, and you'd need `struct pt_regs *real_regs = (struct pt_regs *)regs->di;` followed by `real_regs->di` to get the actual filename argument. Always check `/proc/kallsyms` for the correct symbol name on your target kernel before wiring up a probe; assuming `sys_open` unconditionally on a newer distribution kernel will register the kprobe successfully but never fire the way you expect.
+
+## Building and Loading the Module
+
+With the source in place, you'll also need a minimal `Makefile`:
+
+```makefile
+obj-m += syscall_auditor.o
+
+all:
+	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
+
+clean:
+	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
+```
+
+Build and load it:
+
+```bash
+make
+sudo insmod syscall_auditor.ko
+dmesg | tail -n 20
+```
+
+You should see the `kprobe ... registered successfully` messages from our `init` function, followed by `open()`/`write()` log lines as processes on the system perform those calls. Unload it with:
+
+```bash
+sudo rmmod syscall_auditor
+dmesg | tail -n 5
+```
+
+## Conclusion
+
+A custom kernel module gives you visibility that userspace tracers can't easily match: no per-event context switch back into a tracing daemon, and no argument format you don't control. That power comes with real risk. A bug in a `pre_handler` runs in kernel context, on the hot path of every `open()` or `write()` on the system, and a crash there can take the whole machine down. Treat this pattern as a scalpel for narrowly scoped, high-value auditing needs, not a replacement for `auditd` or `strace` in the general case, and always validate your kprobe targets against the actual running kernel's symbol table before you trust the data it produces.

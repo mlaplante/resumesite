@@ -77,25 +77,24 @@ struct landlock_path_beneath_attr {
 #define LANDLOCK_ACCESS_FS_WRITE_FILE           (1ULL << 1)
 #define LANDLOCK_ACCESS_FS_READ_FILE            (1ULL << 2)
 #define LANDLOCK_ACCESS_FS_READ_DIR             (1ULL << 3)
-#define LANDLOCK_ACCESS_FS_WRITE_DIR            (1ULL << 4)
+#define LANDLOCK_ACCESS_FS_REMOVE_DIR           (1ULL << 4)
 #define LANDLOCK_ACCESS_FS_REMOVE_FILE          (1ULL << 5)
-#define LANDLOCK_ACCESS_FS_REMOVE_DIR           (1ULL << 6)
-#define LANDLOCK_ACCESS_FS_MAKE_CHAR            (1ULL << 7)
-#define LANDLOCK_ACCESS_FS_MAKE_DIR             (1ULL << 8)
-#define LANDLOCK_ACCESS_FS_MAKE_REG             (1ULL << 9)
-#define LANDLOCK_ACCESS_FS_MAKE_SOCK            (1ULL << 10)
-#define LANDLOCK_ACCESS_FS_MAKE_FIFO            (1ULL << 11)
-#define LANDLOCK_ACCESS_FS_MAKE_BLOCK           (1ULL << 12)
-#define LANDLOCK_ACCESS_FS_MAKE_SYM             (1ULL << 13)
-#define LANDLOCK_ACCESS_FS_REFER_FILES          (1ULL << 14)
-#define LANDLOCK_ACCESS_FS_TRUNCATE             (1ULL << 15)
+#define LANDLOCK_ACCESS_FS_MAKE_CHAR            (1ULL << 6)
+#define LANDLOCK_ACCESS_FS_MAKE_DIR             (1ULL << 7)
+#define LANDLOCK_ACCESS_FS_MAKE_REG             (1ULL << 8)
+#define LANDLOCK_ACCESS_FS_MAKE_SOCK            (1ULL << 9)
+#define LANDLOCK_ACCESS_FS_MAKE_FIFO            (1ULL << 10)
+#define LANDLOCK_ACCESS_FS_MAKE_BLOCK           (1ULL << 11)
+#define LANDLOCK_ACCESS_FS_MAKE_SYM             (1ULL << 12)
+#define LANDLOCK_ACCESS_FS_REFER                (1ULL << 13)
+#define LANDLOCK_ACCESS_FS_TRUNCATE             (1ULL << 14)
+#define LANDLOCK_ACCESS_FS_IOCTL_DEV            (1ULL << 15)
 #define LANDLOCK_ACCESS_FS_ACCESS_MASK          (LANDLOCK_ACCESS_FS_EXECUTE | \
                                                  LANDLOCK_ACCESS_FS_WRITE_FILE | \
                                                  LANDLOCK_ACCESS_FS_READ_FILE | \
                                                  LANDLOCK_ACCESS_FS_READ_DIR | \
-                                                 LANDLOCK_ACCESS_FS_WRITE_DIR | \
-                                                 LANDLOCK_ACCESS_FS_REMOVE_FILE | \
                                                  LANDLOCK_ACCESS_FS_REMOVE_DIR | \
+                                                 LANDLOCK_ACCESS_FS_REMOVE_FILE | \
                                                  LANDLOCK_ACCESS_FS_MAKE_CHAR | \
                                                  LANDLOCK_ACCESS_FS_MAKE_DIR | \
                                                  LANDLOCK_ACCESS_FS_MAKE_REG | \
@@ -103,8 +102,9 @@ struct landlock_path_beneath_attr {
                                                  LANDLOCK_ACCESS_FS_MAKE_FIFO | \
                                                  LANDLOCK_ACCESS_FS_MAKE_BLOCK | \
                                                  LANDLOCK_ACCESS_FS_MAKE_SYM | \
-                                                 LANDLOCK_ACCESS_FS_REFER_FILES | \
-                                                 LANDLOCK_ACCESS_FS_TRUNCATE)
+                                                 LANDLOCK_ACCESS_FS_REFER | \
+                                                 LANDLOCK_ACCESS_FS_TRUNCATE | \
+                                                 LANDLOCK_ACCESS_FS_IOCTL_DEV)
 
 
 static inline int landlock_create_ruleset(const struct landlock_ruleset_attr *attr, size_t size, __u32 flags) {
@@ -173,4 +173,75 @@ int main() {
     // /var/log/output: write files, make new regular files, read directory (for listing)
     if (add_path_rule(ruleset_fd, "/var/log/output", LANDLOCK_ACCESS_FS_WRITE_FILE | LANDLOCK_ACCESS_FS_MAKE_REG | LANDLOCK_ACCESS_FS_READ_DIR) != 0) return EXIT_FAILURE;
 
-    // /tmp: write a specific log file, make new regular file (for log_
+    // /tmp: write a specific log file, make new regular file (for log_processor.log, which doesn't exist yet)
+    if (add_path_rule(ruleset_fd, "/tmp", LANDLOCK_ACCESS_FS_WRITE_FILE | LANDLOCK_ACCESS_FS_MAKE_REG) != 0) return EXIT_FAILURE;
+
+    // 3. Enforce the ruleset on ourselves. From this point on, only what we've
+    // explicitly allowed above (and only the access rights in handled_access_fs)
+    // is permitted — everything else fails with EACCES, for us and any children we fork.
+    if (landlock_restrict_self(ruleset_fd, 0)) {
+        perror("landlock_restrict_self");
+        close(ruleset_fd);
+        return EXIT_FAILURE;
+    }
+    printf("Landlock restrictions applied. Process is now sandboxed.\n");
+    close(ruleset_fd); // The enforced policy lives in the kernel now; the FD is no longer needed.
+
+    // 4. Prove it: one permitted read, one forbidden one.
+    FILE *cfg = fopen("/etc/log_processor/config.json", "r");
+    if (cfg) {
+        printf("OK: read /etc/log_processor/config.json as expected.\n");
+        fclose(cfg);
+    } else {
+        perror("unexpected failure reading config.json");
+    }
+
+    FILE *forbidden = fopen("/etc/passwd", "r");
+    if (forbidden) {
+        printf("UNEXPECTED: read /etc/passwd despite the sandbox!\n");
+        fclose(forbidden);
+    } else {
+        printf("OK: denied reading /etc/passwd (%s), as expected.\n", strerror(errno));
+    }
+
+    return EXIT_SUCCESS;
+}
+```
+
+### Compiling and Testing
+
+```bash
+gcc -o log_processor log_processor.c
+./log_processor
+```
+
+**Expected output (roughly):**
+
+```
+Landlock ruleset created (FD: 3).
+Added rule for '/etc/log_processor' with access 0x6
+Added rule for '/var/log/input' with access 0x6
+Added rule for '/var/log/output' with access 0x302
+Added rule for '/tmp' with access 0x202
+Landlock restrictions applied. Process is now sandboxed.
+OK: read /etc/log_processor/config.json as expected.
+OK: denied reading /etc/passwd (Permission denied), as expected.
+```
+
+Note that none of this required root or a capability grant — `landlock_restrict_self()` is explicitly designed to be callable by unprivileged processes, which is what makes it such a good fit for applications that want to sandbox *themselves* rather than relying on an external, privileged supervisor to do it for them.
+
+### A Caveat Worth Knowing: The `/tmp` Rule's Real Scope
+
+Look closely at the rule we added for `/tmp`. Because `log_processor.log` doesn't exist yet at startup, we can't attach a rule directly to a file that isn't there — `LANDLOCK_ACCESS_FS_MAKE_REG` has to be granted on the *parent directory* that the new file will be created in. The consequence is that our process can actually create or write **any** file directly inside `/tmp`, not just `log_processor.log`. That's broader than the plain-English requirement ("write its own operational logs to `/tmp/log_processor.log`") actually called for.
+
+If you need tighter scoping than that, the usual pattern is a two-stage sandbox: grant `MAKE_REG` on the parent directory long enough to create the file once, then — in a longer-running process — construct a *second*, more restrictive ruleset scoped to the now-existing file's own file descriptor (opened without `O_DIRECTORY`) and call `landlock_restrict_self()` again. Landlock rulesets are strictly additive in restrictiveness across successive calls, so layering a second, narrower `landlock_restrict_self()` on top of the first is a legitimate and common way to ratchet a sandbox down further as a process's needs become known.
+
+### Other Things to Know Before Shipping This
+
+*   **Always query the supported ABI at runtime.** Rather than hardcoding `LANDLOCK_ABI_LAST` as this example does for simplicity, call `landlock_create_ruleset(NULL, 0, LANDLOCK_CREATE_RULESET_VERSION)` first. It returns the highest Landlock ABI version the running kernel supports, letting you gracefully degrade `handled_access_fs` on older kernels instead of failing outright or silently requesting access rights the kernel doesn't understand.
+*   **Landlock's coverage has grown across ABI versions.** The original ABI 1 (Linux 5.13) covered only filesystem access rights. ABI 2 added `LANDLOCK_ACCESS_FS_REFER` for rename/link semantics, ABI 3 added `LANDLOCK_ACCESS_FS_TRUNCATE`, and ABI 4 (Linux 6.7) added network restrictions — `LANDLOCK_ACCESS_NET_BIND_TCP` and `LANDLOCK_ACCESS_NET_CONNECT_TCP` — so a Landlock-sandboxed process can also be restricted to binding or connecting only on specific TCP ports. If you're targeting a specific access right, check which ABI version introduced it before assuming it's available.
+*   **It composes with `seccomp`, it doesn't replace it.** Landlock reasons about filesystem (and, since ABI 4, network) objects; it says nothing about which syscalls are callable in the first place. A well-hardened process typically pairs a `seccomp` filter that limits the syscall surface with a Landlock ruleset that limits what those syscalls can touch — the same complementary-layers philosophy that applies to `seccomp` and `AppArmor` in a Kubernetes context.
+
+## Conclusion
+
+Landlock fills a real gap: it gives an ordinary, unprivileged process the ability to sandbox *itself* down to specific files and directories, with no root, no external supervisor, and no MAC policy to author and load ahead of time. That self-service property is what sets it apart from `AppArmor` and SELinux, which are powerful but require system-level policy management. For applications that process untrusted input, handle sensitive files, or simply want to fail safe if a dependency is compromised, wiring up a Landlock ruleset around your process's actual, minimal filesystem needs is a small amount of code for a meaningful reduction in blast radius.

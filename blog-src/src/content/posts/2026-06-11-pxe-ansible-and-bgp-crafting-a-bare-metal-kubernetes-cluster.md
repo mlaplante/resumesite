@@ -210,4 +210,149 @@ kube_node
     # tasks/kubeadm_init.yml (on control plane)
     - name: Initialize Kubernetes control plane
       ansible.builtin.command: >
-        kubeadm init --pod-network-
+        kubeadm init --pod-network-cidr=192.168.0.0/16
+        --apiserver-advertise-address={{ ansible_host }}
+      register: kubeadm_init_result
+      args:
+        creates: /etc/kubernetes/admin.conf
+
+    - name: Create .kube directory for admin user
+      ansible.builtin.file:
+        path: /home/k8sadmin/.kube
+        state: directory
+        owner: k8sadmin
+        group: k8sadmin
+        mode: '0755'
+
+    - name: Copy admin.conf to user's kube config
+      ansible.builtin.copy:
+        src: /etc/kubernetes/admin.conf
+        dest: /home/k8sadmin/.kube/config
+        remote_src: true
+        owner: k8sadmin
+        group: k8sadmin
+
+    - name: Generate join command for worker nodes
+      ansible.builtin.command: kubeadm token create --print-join-command
+      register: join_command
+    ```
+
+    We're deliberately choosing the `192.168.0.0/16` pod CIDR here because it's the default Calico expects out of the box, and Calico is the CNI we're installing next — it's the plugin that will let us do native BGP peering later instead of bolting on an overlay.
+
+5.  **`05-cni-install.yml` (Control Plane Only)**:
+    *   Apply the Calico manifest so pods can actually reach each other across nodes.
+    *   Wait for all system pods to report `Running`.
+
+    ```yaml
+    # tasks/install_cni.yml
+    - name: Download Calico manifest
+      ansible.builtin.get_url:
+        url: https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/calico.yaml
+        dest: /home/k8sadmin/calico.yaml
+
+    - name: Apply Calico manifest
+      ansible.builtin.command: kubectl apply -f /home/k8sadmin/calico.yaml
+      environment:
+        KUBECONFIG: /home/k8sadmin/.kube/config
+
+    - name: Wait for Calico pods to be ready
+      ansible.builtin.command: kubectl -n calico-system wait --for=condition=Ready pods --all --timeout=300s
+      environment:
+        KUBECONFIG: /home/k8sadmin/.kube/config
+    ```
+
+6.  **`06-join-workers.yml` (Worker Nodes Only)**:
+    *   Run the `kubeadm join` command captured from the control plane, using `hostvars` to pull it across the play.
+
+    ```yaml
+    # tasks/join_workers.yml
+    - name: Join worker to the cluster
+      ansible.builtin.command: "{{ hostvars['k8s-master-01'].join_command.stdout }}"
+      args:
+        creates: /etc/kubernetes/kubelet.conf
+    ```
+
+**Actionable Takeaway:** Run `ansible-playbook -i inventory.ini site.yml`, and in a few minutes you'll have a fully joined cluster. Verify with `kubectl get nodes -o wide` from the control plane — every node should show `Ready`.
+
+## Step 3: BGP for Native Pod and Service Routing
+
+This is where a bare-metal cluster earns its keep over a cloud-managed one. In a cloud environment, the provider's SDN handles routing pod traffic and exposing `LoadBalancer` services for you. On bare metal, nothing does that unless you build it — and BGP is the right tool for the job, because it's exactly what your top-of-rack (ToR) switches already speak.
+
+We use BGP in two places:
+
+*   **Pod-to-pod routing (Calico):** Instead of an overlay (VXLAN/IPIP), Calico can peer directly with your ToR switches over BGP and advertise pod CIDRs as real routes. This drops encapsulation overhead and gives you pod IPs that are routable from the rest of your network.
+*   **Service IP advertisement (MetalLB):** Kubernetes `LoadBalancer` services need something to announce their external IPs to the network. MetalLB's BGP mode peers with your router(s) and advertises a `/32` route per service IP, giving you real load-balanced, externally-reachable services without a cloud LB.
+
+**Configuring Calico for BGP peering:**
+
+By default, Calico runs BGP between nodes using a full mesh, which is fine for pod-to-pod traffic within the cluster. To peer with an external ToR switch, disable the node-to-node mesh and define explicit peers:
+
+```yaml
+# calico-bgp-config.yaml
+apiVersion: projectcalico.org/v3
+kind: BGPConfiguration
+metadata:
+  name: default
+spec:
+  logSeverityScreen: Info
+  nodeToNodeMeshEnabled: false
+  asNumber: 64512
+
+---
+apiVersion: projectcalico.org/v3
+kind: BGPPeer
+metadata:
+  name: tor-switch-01
+spec:
+  peerIP: 192.168.1.1
+  asNumber: 64500
+```
+
+Apply it with `calicoctl apply -f calico-bgp-config.yaml` (or `kubectl apply` if you're running Calico with the Kubernetes API datastore and the CRDs installed). Your ToR switch needs a matching BGP neighbor statement pointing back at each node's IP, in AS 64512.
+
+**Deploying MetalLB in BGP mode:**
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.14.8/config/manifests/metallb-native.yaml
+```
+
+```yaml
+# metallb-bgp.yaml
+apiVersion: metallb.io/v1beta2
+kind: BGPPeer
+metadata:
+  name: tor-switch-01
+  namespace: metallb-system
+spec:
+  myASN: 64512
+  peerASN: 64500
+  peerAddress: 192.168.1.1
+---
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: production-pool
+  namespace: metallb-system
+spec:
+  addresses:
+  - 192.168.1.240-192.168.1.250
+---
+apiVersion: metallb.io/v1beta1
+kind: BGPAdvertisement
+metadata:
+  name: production-advert
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - production-pool
+```
+
+Once applied, create a `Service` of `type: LoadBalancer` and MetalLB will pull an address from `production-pool` and start advertising it over BGP. Run `birdc show protocols` (or check your switch's BGP table) to confirm the route is actually being received — this is the step people skip and then wonder why traffic isn't reaching the pool.
+
+**Actionable Takeaway:** Verify the full path end-to-end: `kubectl get svc` should show an `EXTERNAL-IP` from your pool, and a `curl` from outside the cluster to that IP should hit your pods. If it doesn't, check BGP session state first (`calicoctl node status` and your switch's `show ip bgp summary`) before touching Kubernetes at all — most failures here are a missing or mismatched AS number, not a Kubernetes problem.
+
+## Conclusion
+
+Building a bare-metal Kubernetes cluster by hand is more work than clicking "create cluster" in a cloud console, but it buys you something a managed service can't: a complete mental model of every layer between a bare disk and a running pod. PXE gets the OS down, Ansible makes that repeatable across however many nodes you add next quarter, and BGP turns your network hardware into a first-class participant in cluster routing instead of a black box you route around.
+
+None of these pieces are exotic — PXE, Ansible, and BGP have all been production tools for decades. What's new is wiring them together specifically for Kubernetes. Once it's running, treat it like any other piece of infrastructure: version your playbooks, monitor your BGP sessions, and automate node replacement the same way you automated the initial build.

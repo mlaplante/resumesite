@@ -219,4 +219,96 @@ Assertion is the process where a user proves their identity using a previously r
             // Send assertion back to server
             await fetch('/api/login/verify', {
                 method: 'POST',
-                headers: { 'Content-Type':
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(assertion)
+            });
+
+            console.log('YubiKey authentication successful!');
+        } catch (error) {
+            console.error('Authentication failed:', error);
+        }
+    }
+    ```
+
+3.  **YubiKey Interaction (User Action):**
+    The browser prompts the user to insert and touch their YubiKey (and enter a PIN if `userVerification` demands it). Rather than generating a new key pair, the YubiKey looks up the private key matching one of the `allowCredentials` entries, signs the challenge (along with authenticator data, including an incremented signature counter) with that private key, and returns the signature to the browser.
+
+4.  **RP Server Verifies Assertion:**
+    The server receives the assertion and must verify it before establishing a session:
+
+    *   **Challenge and Origin Verification:** Same as attestation — the `challenge` must match what was issued, and the origin must match the expected `rpID`.
+    *   **Signature Verification:** The server uses the `publicKey` stored during registration to verify the signature over the `authenticatorData` and a hash of the `clientDataJSON`. If this fails, the assertion is rejected outright.
+    *   **Signature Counter Check:** The server compares the `counter` value returned in this assertion against the last stored counter for that credential. It must be strictly greater than the stored value. If it isn't, that's a strong signal the private key material may have been cloned onto a second device — a legitimate hardware authenticator's counter never goes backward or repeats.
+
+    ```typescript
+    // Server-side (simplified for illustration)
+    import { verifyAuthenticationResponse } from '@simplewebauthn/server';
+
+    async function verifyAssertion(req, res) {
+        try {
+            const { assertion } = req.body;
+            const expectedChallenge = req.session.challenge;
+
+            const storedCredential = await db.getCredentialById(assertion.id);
+            if (!storedCredential) {
+                return res.status(400).send('Unknown credential');
+            }
+
+            const verification = await verifyAuthenticationResponse({
+                response: assertion,
+                expectedChallenge: expectedChallenge,
+                expectedOrigin: 'https://myapp.com',
+                expectedRPID: 'myapp.com',
+                authenticator: {
+                    credentialID: storedCredential.credentialId,
+                    credentialPublicKey: storedCredential.publicKey,
+                    counter: storedCredential.counter,
+                },
+                requireUserVerification: false,
+            });
+
+            const { verified, authenticationInfo } = verification;
+
+            if (verified) {
+                // Persist the new counter value — this is the check that
+                // protects against a cloned authenticator being replayed.
+                await db.updateCredentialCounter(
+                    storedCredential.id,
+                    authenticationInfo.newCounter
+                );
+                req.session.userId = storedCredential.userId;
+                res.status(200).send('Authentication successful');
+            } else {
+                res.status(400).send('Authentication verification failed');
+            }
+        } catch (error) {
+            console.error('Assertion verification error:', error);
+            res.status(500).send('Server error');
+        }
+    }
+    ```
+
+**Key Takeaway for Assertion:** The signature counter check is not optional bookkeeping — it's one of the few practical mechanisms a relying party has for detecting a cloned or extracted key. Skipping it because "the signature already verified" defeats a core part of FIDO2's threat model.
+
+## A Note on Attestation Types
+
+The `attestationType` you request during registration is a trust/complexity trade-off, and it's worth understanding the options rather than defaulting blindly:
+
+*   **`none`:** The authenticator provides no attestation statement at all. Simplest to implement, and the right default for most consumer-facing applications — you're trusting "a FIDO2-compliant authenticator was used" without proving which model or vendor.
+*   **`indirect`:** The authenticator may provide attestation, but through a privacy-preserving intermediary (an Anonymization CA) rather than its own certificate, so the RP can't fingerprint the specific device.
+*   **`direct`:** The authenticator returns its actual attestation certificate, signed by the manufacturer. This lets the RP verify the credential came from a genuine, specific device model (useful for enterprise deployments that only want to trust, say, YubiKey 5-series devices) via the FIDO Metadata Service, but it also means the RP is now responsible for maintaining and validating against that metadata.
+
+For most applications, `none` or `indirect` is the pragmatic choice. Reach for `direct` attestation only when you have an actual compliance or device-provenance requirement driving it — it adds real operational overhead in exchange for stronger guarantees you may not need.
+
+## Practical Considerations for Production YubiKey Deployments
+
+*   **Always support registering more than one authenticator per user.** A YubiKey gets lost, left at home, or physically destroyed. Without a second registered key (or a documented recovery flow), you've built an availability outage into your login page.
+*   **Handle `counter: 0` gracefully.** Some authenticators — notably many platform authenticators like Touch ID and Windows Hello — always report a counter of `0` rather than incrementing it. Treat a persistent `0` as "this authenticator doesn't implement counter tracking" rather than flagging every login as a clone.
+*   **Store `transports` from registration.** The `transports` array (`usb`, `nfc`, `ble`, `internal`) returned at registration time tells the browser how to reach the authenticator during assertion, and omitting it can cause unnecessary UI friction or failed discovery on some platforms.
+*   **Decide on resident keys deliberately.** YubiKeys support discoverable (resident) credentials, which enable passwordless, username-less login flows — but they consume limited on-device storage (older YubiKeys cap out at a small number of resident credentials) and are a materially different UX. Don't turn `requireResidentKey: true` on without a plan for both.
+
+## Conclusion
+
+WebAuthn with a hardware authenticator like a YubiKey gets you phishing resistance that password-plus-OTP schemes fundamentally can't match, because the private key never leaves the device and the signature is bound to the exact origin that requested it. But the security properties only hold if the relying party does its half of the work correctly: verifying challenges and origins on every request, checking the signature counter to catch cloning, and making a deliberate choice about attestation strength rather than defaulting to whatever the first tutorial you copied used.
+
+Get the verification logic right once, in server-side code you trust, and WebAuthn becomes one of the few authentication upgrades that genuinely reduces both user friction and attacker leverage at the same time.

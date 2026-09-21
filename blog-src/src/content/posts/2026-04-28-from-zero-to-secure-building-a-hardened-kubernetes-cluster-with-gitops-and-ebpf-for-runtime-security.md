@@ -271,4 +271,23 @@ data:
 To apply these custom rules, you'd configure the Falco HelmRelease to mount this ConfigMap.
 
 ```yaml
-# ... inside your
+# ... inside your falco-helmrelease.yaml HelmRelease spec.values
+falco:
+  jsonOutput: true
+extraVolumes:
+  - name: custom-rules
+    configMap:
+      name: falco-custom-rules
+extraVolumeMounts:
+  - name: custom-rules
+    mountPath: /etc/falco/rules.d/custom_rules.yaml
+    subPath: custom_rules.yaml
+```
+
+Falco loads every `.yaml` file under `/etc/falco/rules.d/` in addition to its shipped default ruleset, so this mount adds our "Shell in Web Server" rule without replacing anything that's already there. Because both the ConfigMap and the HelmRelease live in the same Git repository, shipping a new detection rule is a pull request and a Flux reconciliation, not an SSH session or a `kubectl exec` into a running Falco pod.
+
+**Actionable Takeaway:** Treat Falco rules the same way you treat application code — peer-reviewed, tested against known-good and known-bad traffic in a staging cluster, and rolled out gradually. A rule that's too broad generates alert fatigue; a rule that's too narrow misses the thing you were trying to catch.
+
+## Conclusion
+
+A hardened Kubernetes cluster isn't a single tool or a checklist you run once at cluster creation — it's the compounding effect of several layers reinforcing each other. GitOps gives you an auditable, revertable source of truth for every configuration change. Network policies, Pod Security Admission, and tight RBAC shrink the attack surface before anything ever runs. And eBPF-powered runtime detection, via Falco, catches the things that slip past prevention, in real time, with near-native performance. None of these layers is sufficient on its own, but together they turn "we think the cluster is secure" into "we can prove it, and we'll know the moment it drifts."

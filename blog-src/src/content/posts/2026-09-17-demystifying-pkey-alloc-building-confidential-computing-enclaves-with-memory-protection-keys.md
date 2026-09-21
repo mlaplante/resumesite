@@ -18,7 +18,7 @@ At its heart, MPKs enable a thread to switch between different access policies f
 
 The two primary operations are:
 
-1.  **Tagging memory with a key**: Using `mprotect()` with the `PROT_PKEY()` flag.
+1.  **Tagging memory with a key**: Using `pkey_mprotect()`, which takes the same arguments as `mprotect()` plus the key to tag the pages with.
 2.  **Setting a thread's access rights for keys**: Using `pkey_set()` to specify read/write permissions for each key.
 
 Let's illustrate with a simple scenario: we want to create a "confidential enclave" within our application. This enclave will hold sensitive data and critical logic. We want to ensure that only specific, trusted code paths can access this memory, even if other parts of our application are compromised (e.g., via a buffer overflow or a ROP attack).
@@ -57,6 +57,11 @@ static inline int sys_pkey_set(int pkey, unsigned int access_rights) {
 // Wrapper for pkey_get
 static inline unsigned int sys_pkey_get(int pkey) {
     return syscall(SYS_pkey_get, pkey);
+}
+
+// Wrapper for pkey_free
+static inline int sys_pkey_free(int pkey) {
+    return syscall(SYS_pkey_free, pkey);
 }
 
 int main() {
@@ -186,4 +191,16 @@ You'll observe that attempts to access `enclave_mem` when `PKEY_DISABLE_ACCESS` 
 
 1.  **Isolate Sensitive Data Structures**: Store cryptographic keys, authentication tokens, or other highly sensitive data in MPK-protected memory. Access to this memory would be guarded by `pkey_set()`, ensuring only specific functions can touch it.
 2.  **Protect Critical Code Paths**: Imagine a security-critical function. Its stack frame or local variables could be placed in MPK-protected memory. If an attacker diverts control flow to arbitrary code, that code would likely lack the correct `pkey_set()` permissions and crash upon attempting to manipulate the critical data.
-3.  **Lightweight Sandboxing**: For plugin architectures or JIT compilers, MPKs could offer
+3.  **Lightweight Sandboxing**: For plugin architectures or JIT compilers, MPKs could offer a cheap way to fence off generated or third-party code's writable memory from the host application's own critical state, without the cost of a separate process and IPC.
+
+## Limitations to Keep in Mind
+
+MPKs are a useful primitive, not a TEE, and it's worth being explicit about where the guarantees stop:
+
+*   **Rights are per-thread, not per-process.** The access rights for each key live in the PKRU register, which is thread-specific state saved and restored by the kernel on context switches. A new thread does not automatically inherit the calling thread's disabled-access state — every thread that touches enclave memory needs its own `pkey_set()` call before it does.
+*   **MPKs don't stop `ptrace` or `/proc/<pid>/mem`.** Protection keys are enforced by the CPU on ordinary user-space load/store instructions. A debugger attached via `ptrace()`, or a process with permission to read `/proc/<pid>/mem`, reads straight through them — MPKs protect against a *confused* or *compromised* thread inside your own process, not against a privileged external observer.
+*   **A compromised thread can just call `pkey_set()` itself.** Nothing stops attacker-controlled code running in your process from re-enabling access to a key before touching the memory it protects, if it can reach the `pkey_set()` call (or the raw `wrpkru` instruction it wraps). MPKs raise the bar against accidental corruption and simple ROP-style memory scribbles; they are not a substitute for control-flow integrity if your threat model includes arbitrary code execution in-process.
+
+## Conclusion
+
+`pkey_alloc()` and its companions give you a genuinely useful isolation primitive that ships in the mainline kernel, requires no special hardware beyond what's already in most modern Intel and AMD server CPUs, and costs a handful of syscalls rather than a TEE SDK. It's not a replacement for SGX or SEV when you need isolation from a compromised OS or hypervisor — but for isolating sensitive in-process state from the rest of your own application's bugs, it's a lightweight, well-supported tool that's worth reaching for far more often than it currently is.

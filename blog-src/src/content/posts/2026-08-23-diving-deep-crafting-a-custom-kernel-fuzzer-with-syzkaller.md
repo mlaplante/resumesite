@@ -194,4 +194,39 @@ You'll need to modify your Syzkaller manager configuration (`manager.cfg`) to in
     "workdir": "/path/to/syzkaller/workdir",
     "kernel": "/path/to/linux/kernel/source",
     "syzkaller": "/path/to/syzkaller",
-    "sshkey": "/path/to/
+    "sshkey": "/path/to/id_rsa",
+    "image": "/path/to/image/disk.img",
+    "type": "qemu",
+    "vm": {
+        "count": 2,
+        "kernel": "/path/to/linux/kernel/source/arch/x86/boot/bzImage",
+        "cpu": 2,
+        "mem": 2048
+    }
+}
+```
+
+### 4. Regenerate Syscall Descriptions
+
+Adding `mydevice.txt` to `sys/linux/` doesn't do anything by itself — Syzkaller compiles `syzlang` descriptions into Go and C code ahead of time, so you need to regenerate and rebuild before `syz-manager` knows the new syscall exists:
+
+```bash
+cd syzkaller
+make extract TARGETOS=linux SOURCEDIR=/path/to/linux/kernel/source
+make generate
+make
+```
+
+`make extract` pulls any constants you referenced (like the real numeric value of `MY_IOCTL_CMD_READ`) out of your kernel headers, `make generate` regenerates the descriptor code for every `.txt` file under `sys/linux/` — including our new one — and the final `make` rebuilds `syz-manager`, `syz-fuzzer`, and `syz-executor` with `ioctl$MY_CUSTOM_DEVICE` baked in.
+
+### 5. Launch and Monitor
+
+```bash
+./bin/syz-manager -config=my_custom_config.json
+```
+
+Open the web UI at `http://localhost:8000` and confirm `ioctl$MY_CUSTOM_DEVICE` shows up in the syscall corpus with non-zero coverage — that's your signal the description was picked up correctly and Syzkaller is actually exercising your code path, not just generating calls that get rejected at the syscall boundary. As coverage climbs, keep an eye on `workdir/crashes/`; any crash Syzkaller triggers lands there with a reproducer program you can replay and minimize with `syz-repro`.
+
+## Wrapping Up
+
+Extending Syzkaller with a custom `syzlang` description is the difference between fuzzing "the kernel in general" and fuzzing the specific driver or subsystem you actually shipped. The workflow is always the same regardless of how complex the target is: describe the interface precisely, regenerate, rebuild, and let coverage-guided fuzzing find the inputs you didn't think to write a unit test for. For any internal module that parses `ioctl` arguments from user space, this is a cheap way to catch the bounds and validation bugs that code review tends to miss.

@@ -220,4 +220,17 @@ Once you've identified the memory hot spots, here are some common strategies for
 
 1.  **Reduce Allocations:**
     *   **Reuse Buffers/Objects:** Instead of `make([]byte, 1024)` repeatedly, consider using `sync.Pool` for common objects or buffers.
-    *   **Pre-allocate Slices:** If you know the
+    *   **Pre-allocate Slices:** If you know the eventual size of a slice ahead of time, allocate it once with `make([]T, 0, capacity)` instead of letting repeated `append` calls trigger the runtime's grow-and-copy cycle.
+    *   **Avoid Unnecessary Boxing:** Passing values through `interface{}` (or `any`) can force the compiler to heap-allocate them. Keep hot paths working with concrete types where possible.
+
+2.  **Reduce Retention:**
+    *   **Watch Slice Sub-slicing:** A small sub-slice of a large backing array keeps the *entire* array alive. If you only need a small piece of a large buffer long-term, copy it out instead of slicing it.
+    *   **Nil Out References You No Longer Need:** For long-lived structs that hold large fields temporarily, explicitly setting them to `nil` once you're done lets the GC reclaim them sooner rather than waiting for the whole struct to go out of scope.
+
+3.  **Profile Continuously, Not Just Once:**
+    *   Run `go tool pprof` against staging and production regularly, not just when you already suspect a problem. A `pprof` diff between two profiles (`go tool pprof -base old.pprof new.pprof`) is one of the fastest ways to catch a regression before it becomes an incident.
+    *   Consider wiring up continuous profiling (e.g., Pyroscope or Grafana's Pyroscope-compatible agent) so you have historical heap profiles to compare against when memory usage creeps up weeks later.
+
+## Conclusion
+
+Memory profiling isn't a one-time exercise you run right before a release — it's a habit. `pprof` and `go tool pprof` make it cheap enough to run continuously: a few lines to expose the endpoints, one command to pull a profile, and `top` or `list` to go straight to the offending line. The example here was deliberately obvious, but the same workflow — profile, `top`, `list`, fix, re-profile — scales down to the subtle, slow leaks that only show up after days of production traffic.

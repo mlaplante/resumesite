@@ -172,4 +172,55 @@ POD_NS="default"
 CONTAINER_ID=$(kubectl get pod $POD_NAME -n $POD_NS -o jsonpath='{.status.containerStatuses[0].containerID}' | cut -d'/' -f2)
 POD_PID=$(sudo crictl inspectp $CONTAINER_ID | grep -A1 "Pid" | tail -n1 | awk '{print $2}')
 
-# 2. Enter the pod's
+# 2. From inside the pod's network namespace, find the ifindex of its
+#    interface. For a veth pair, the peer's ifindex on the host is
+#    exposed via /sys/class/net/<iface>/iflink.
+POD_IFINDEX=$(sudo nsenter -t "$POD_PID" -n cat /sys/class/net/eth0/iflink)
+
+# 3. Walk the host's interfaces to find the veth whose ifindex matches
+HOST_VETH=$(ip -o link | awk -F': ' -v idx="$POD_IFINDEX" '$1==idx {print $2}' | cut -d'@' -f1)
+echo "Pod $POD_NAME's traffic arrives on host interface: $HOST_VETH"
+
+# 4. Ensure a clsact qdisc exists on that host-side interface so we have
+#    somewhere to attach ingress/egress filters
+sudo tc qdisc add dev "$HOST_VETH" clsact 2>/dev/null || true
+
+# 5. Attach our compiled program to the ingress hook
+sudo tc filter add dev "$HOST_VETH" ingress bpf da obj http_policy.o sec tc
+
+# 6. Confirm it's attached
+sudo tc filter show dev "$HOST_VETH" ingress
+```
+
+A few things worth calling out about that sequence:
+
+*   **Why the host-side veth, not `eth0` inside the pod:** Attaching on the host-side interface's ingress hook means we see traffic *before* it crosses into the pod's network namespace, which keeps the enforcement point outside the workload's own blast radius. If the pod is compromised, it can't unload or bypass a filter it has no visibility into or permissions to touch.
+*   **`clsact` and `bpf da`:** The `clsact` qdisc gives us dedicated ingress and egress classifier hooks without needing a full traffic-shaping qdisc underneath. The `da` (direct-action) flag tells the TC BPF filter to use the program's return code directly as the verdict (`TC_ACT_OK` or `TC_ACT_SHOT`) instead of falling through to further classification.
+*   **Idempotency matters:** In production, this logic belongs in a DaemonSet controller that watches for pod create/delete events (via the Kubernetes API or a CNI event hook) and attaches or detaches filters accordingly, cleaning up with `tc filter del` when a pod is removed so you don't leak stale programs pinned to interfaces that no longer exist.
+
+### 4. Verifying the Policy
+
+With the filter attached, a normal health check request passes straight through:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" http://<pod-ip>/healthz
+# 200
+```
+
+But any other method or path to port 80 gets silently dropped at the TC layer, before it ever reaches the application's socket:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" --max-time 3 http://<pod-ip>/admin
+# curl: (28) Operation timed out
+```
+
+You can confirm the drop is happening in our program (and not somewhere else in the stack) by tailing the trace pipe while you send the blocked request:
+
+```bash
+sudo cat /sys/kernel/debug/tracing/trace_pipe
+# ...-12345 [002] ..s1 1234.567890: bpf_trace_printk: eBPF: Blocking non-GET /healthz request to port 80.
+```
+
+## Conclusion
+
+Standard Kubernetes NetworkPolicies get you Layer 3/4 enforcement almost for free, and for most workloads that's the right level of effort. eBPF earns its complexity when you need Layer 7 awareness, process-level context, or enforcement that has to happen faster than an iptables rule chain can deliver it. The pattern here, hooking TC ingress on the host-side veth and doing minimal, bounds-checked parsing of the packet, generalizes well beyond HTTP method/path filtering: the same approach works for enforcing DNS query allowlists, TLS SNI-based routing decisions, or blocking specific gRPC methods. Start with the narrowest policy you actually need, verify it with real traffic before trusting it in production, and lean on a DaemonSet controller to keep program attachment in sync with the pod lifecycle rather than managing it by hand.

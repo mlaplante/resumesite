@@ -199,4 +199,42 @@ A basic example of using `FAN_OPEN_PERM`:
 
 // Inside the while loop, when a FAN_OPEN_PERM event is received:
 if (metadata->mask & FAN_OPEN_PERM) {
-    printf("Permission request to
+    printf("Permission request to open %s (PID: %d): ", path, metadata->pid);
+
+    struct fanotify_response response;
+    response.fd = metadata->fd;
+
+    // In a real FIM/DLP tool, this decision would come from a policy
+    // lookup, a hash check against a known-good baseline, or a call out
+    // to a decision service — not a blanket allow. Here we just allow
+    // and log, to keep the example focused on the response mechanics.
+    response.response = FAN_ALLOW;
+    printf("ALLOWED\n");
+
+    if (write(fan_fd, &response, sizeof(response)) != sizeof(response)) {
+        perror("write response");
+    }
+}
+```
+
+**A critical warning about permission events:** the process that opened the file is blocked, waiting on the kernel, until your listener writes a `fanotify_response`. If your listener's decision logic needs to read or write anything on the same filesystem it's monitoring — including, say, a log file or a local policy cache — you can deadlock the entire mount point. Keep the decision path either entirely in-memory or backed by a filesystem you are *not* monitoring with `FAN_OPEN_PERM`.
+
+## Putting It Together: A Layered Real-Time FIM Architecture
+
+The pattern that emerges from combining these two mechanisms is a classic detect-and-enforce split, and it's worth being explicit about which tool does which job:
+
+*   **`fanotify` is your sensor.** It gives you real-time, process-attributed visibility into what's happening on the filesystem — who touched what, when, and how. Used with `_PERM` events, it can also act as a last-resort gatekeeper for operations no other layer caught.
+*   **The LSM is your durable policy layer.** SELinux or AppArmor policy survives a compromised or crashed FIM daemon, because it's enforced in the kernel independent of any userspace process being alive and healthy. This matters a lot: a userspace `fanotify` listener that gets killed (or that an attacker manages to starve) stops alerting, but LSM policy keeps denying.
+
+In production, you'd wire the `fanotify` alert path into whatever you already use for detection — syslog, a Unix socket to a local agent, or directly into a SIEM pipeline — and treat SELinux/AppArmor denials as a second, independent signal. If you ever see an LSM denial in the audit log (`ausearch -m avc`) without a corresponding `fanotify` alert, that's worth investigating on its own: it usually means your `fanotify` marks don't cover something your LSM policy does.
+
+## Practical Limitations to Plan For
+
+*   **`FAN_MARK_MOUNT` and `FAN_CLASS_CONTENT`/`FAN_CLASS_PRE_CONTENT` require `CAP_SYS_ADMIN`.** Your FIM daemon needs to run privileged (or with that specific capability), which makes it itself a high-value target — protect it accordingly.
+*   **Permission events add latency to every matched syscall.** Every `open()` on a monitored path now waits on a round trip to userspace. Scope your `_PERM` marks tightly (specific files or directories, not entire mount points), or you'll measurably slow down the system.
+*   **A crashed or hung listener with active `_PERM` marks can hang the filesystem.** If your process dies while permission events are outstanding, pending opens on marked paths can be left blocked — test this failure mode deliberately before relying on it in production.
+*   **Older kernels have narrower visibility.** Features like `FAN_REPORT_FID` (reporting file handles instead of open file descriptors, useful when you can't safely hold an fd open) were added incrementally across kernel versions — check what your target kernel actually supports before designing around a specific flag.
+
+## Conclusion
+
+Real-time FIM isn't just "run `fanotify` and call it done." The real value comes from treating `fanotify` and your LSM as complementary layers: one gives you visibility and can act as an emergency gate, the other gives you policy that holds even if your userspace tooling goes down. Build the alerting path first, get it feeding into whatever you already use for detection, and only reach for `_PERM` events on the small set of paths where blocking-on-decision is actually worth the latency and deadlock risk. For everything else, let SELinux or AppArmor carry the enforcement weight — that's what they're built for.

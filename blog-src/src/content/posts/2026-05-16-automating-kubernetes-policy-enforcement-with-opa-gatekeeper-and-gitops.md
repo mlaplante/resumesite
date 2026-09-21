@@ -255,4 +255,10 @@ You'll see a `status.violations` section listing any deployments that are curren
 
 ### Actionable Takeaways
 
-*   **Start
+*   **Start Small, Iterate Often:** Don't try to enforce every policy on day one. Begin with a handful of high-value, low-risk constraints, such as required labels or disallowed `:latest` tags, and expand your policy library as your team builds confidence in the workflow.
+*   **Dry-Run Before Enforcing:** Gatekeeper supports an `enforcementAction: dryrun` setting on each `Constraint`. Use it to see what would be blocked before you flip a policy to `deny`, so you don't take down a legitimate deployment pipeline on day one.
+*   **Test Policies Like Code:** Use `conftest` or Gatekeeper's own `gator test` command to validate your Rego logic against sample manifests in CI, before the PR ever reaches your GitOps repository.
+*   **Separate Policy Repos from Application Repos:** Keeping policies in their own Git repository, with their own review and approval process, keeps your security team in control of the guardrails without becoming a bottleneck for every application deployment.
+*   **Monitor the Audit Results:** Don't rely solely on admission-time blocking. Regularly review `status.violations` across all your constraints to catch drift in resources that predate a policy, or that were created through means that bypassed the webhook, like `kubectl edit` during an incident.
+
+By treating your Kubernetes guardrails the same way you treat application code, versioned, reviewed, tested, and automatically deployed, you turn policy enforcement from a manual, error-prone gate into a continuously enforced property of the cluster itself. The combination of OPA Gatekeeper's admission control and a GitOps pipeline means every policy change is auditable, every violation is visible, and every non-compliant resource is caught before it ever becomes an incident.

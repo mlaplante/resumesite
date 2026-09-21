@@ -182,4 +182,33 @@ int main() {
 
     if (bind(sock_fd, (struct sockaddr *)&sxdp, sizeof(sxdp)) < 0) { /* handle error */ }
 
-    // Initialize UMEM, fill fill_ring, and process
+    // Initialize UMEM, fill fill_ring, and process:
+    //   1. Allocate a UMEM buffer and register it with xsk_umem__create(),
+    //      which returns handles to the fill and completion rings.
+    //   2. Create the AF_XDP socket itself with xsk_socket__create(), binding
+    //      it to the UMEM, interface, and queue_id configured above.
+    //   3. Populate the fill ring with UMEM frame addresses via
+    //      xsk_ring_prod__fill_addr() so the kernel has somewhere to land
+    //      incoming packets, then submit with xsk_ring_prod__submit().
+    //   4. Enter the polling loop: poll() on sock_fd, drain completed
+    //      descriptors from the RX ring with xsk_ring_cons__peek(), process
+    //      each frame in place, and recycle the buffer back onto the fill
+    //      ring once you're done with it.
+
+    return 0;
+}
+```
+
+**Takeaway:** AF_XDP trades some of DPDK's raw throughput for a much smaller operational footprint: it works with unmodified NIC drivers, coexists with the normal kernel network stack for traffic you don't redirect, and doesn't require dedicating entire NICs or cores to a single application the way DPDK typically does. The zero-copy mode (`XDP_ZEROCOPY`) needs driver support to hit its best numbers, but even the copy mode substantially outperforms the standard socket path for high packet-rate workloads.
+
+## Choosing the Right Tool for the Job
+
+There's no single "best" kernel-bypass technology — the right choice depends on your constraints:
+
+*   **DPDK** is the right call when you control the entire box, need maximum throughput, and can dedicate cores and NICs to the application. It has the steepest learning curve and the largest blast radius if something goes wrong.
+*   **Solarflare OpenOnload / EFVI** is ideal when you're locked into specific hardware and want acceleration with little or no code change, or when you need a lower-level API without adopting DPDK's full programming model.
+*   **AF_XDP** is the best starting point for most teams today: it's upstream in the kernel, works across NIC vendors, and lets you keep using the rest of the standard networking stack for everything you don't explicitly redirect.
+
+## Conclusion
+
+Kernel-bypass networking isn't a drop-in optimization you reach for by default — it introduces real operational complexity: dedicated cores, huge pages, driver dependencies, and, in DPDK's case, giving up the kernel's usual visibility into your NICs. But for workloads where every microsecond is measured and matters — trading systems, packet capture and analysis pipelines, high-throughput proxies — these technologies are often the difference between hitting your latency budget and missing it entirely. Start by measuring where your current stack's time actually goes; only then pick the bypass mechanism that addresses that specific bottleneck.

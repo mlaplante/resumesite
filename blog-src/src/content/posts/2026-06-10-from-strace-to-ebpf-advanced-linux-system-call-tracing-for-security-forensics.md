@@ -198,4 +198,12 @@ This approach is more involved but provides a solid foundation for building soph
 
 ## `eBPF` for Security Forensics: Key Advantages
 
-1.  **Low Overhead:** `e
+1.  **Low Overhead:** `eBPF` programs run in-kernel and only send pre-filtered, pre-aggregated results to userspace, avoiding the per-event context switch and formatting cost that makes `strace` impractical to leave running against a busy production process.
+2.  **Safety:** Every `eBPF` program is checked by the kernel's verifier before it's allowed to load — it must provably terminate, can't perform out-of-bounds memory access, and can't crash the kernel the way a buggy kernel module could. That makes it safe to attach tracing to production systems in the middle of an active investigation.
+3.  **In-Kernel Aggregation:** Counting, histogramming, and filtering can all happen inside the `eBPF` program itself via maps, so you're not shipping raw event-by-event data to userspace just to throw most of it away in a `grep` or `awk` pipeline downstream.
+4.  **Broad Visibility:** The same infrastructure that traces syscalls can also hook network events, scheduler events, and file system operations, giving investigators a single consistent tracing model instead of a different tool for every subsystem.
+5.  **Production-Safe, Long-Running Traces:** Because overhead is so much lower than `strace`, `eBPF`-based tracing can realistically run continuously as part of your security monitoring stack — tools like Falco, Tetragon, and Tracee build on exactly this property to provide always-on runtime detection rather than point-in-time captures.
+
+## Conclusion
+
+`strace` isn't going away — it's still the fastest way to answer "what is this one process doing right now" on a box you can SSH into. But for security forensics at scale, where you need low overhead, safety on production systems, and the ability to aggregate and filter without shipping every event to userspace, `eBPF` is the better foundation. Learn `bpftrace` first for ad hoc investigation, and reach for `bcc` or a full eBPF-based runtime security tool when you need something repeatable and production-grade. Either way, the skill that transfers is the same one `strace` taught a generation of engineers: know what your systems are actually doing, not what you assume they're doing.

@@ -179,4 +179,92 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-//go:generate go run github.com/cilium/ebpf/cmd/b
+//go:generate go run github.com/cilium/ebpf/cmd/bpf2go -cc clang -cflags "-O2 -g -Wall" bpf bpf_program.c -- -I/usr/include/bpf
+
+type clientHelloInfo struct {
+	Pid      uint32
+	EthProto uint16
+	IPProto  uint16
+	L4Proto  uint16
+	Dport    uint16
+	Sport    uint16
+	Saddr    uint32
+	Daddr    uint32
+}
+
+func main() {
+	objs := bpfObjects{}
+	if err := loadBpfObjects(&objs, nil); err != nil {
+		log.Fatalf("loading eBPF objects: %v", err)
+	}
+	defer objs.Close()
+
+	kp, err := link.Kprobe("tcp_sendmsg", objs.bpfPrograms.BpfTcpSendmsg, nil)
+	if err != nil {
+		log.Fatalf("attaching kprobe: %v", err)
+	}
+	defer kp.Close()
+
+	rd, err := perf.NewReader(objs.bpfMaps.Events, os.Getpagesize())
+	if err != nil {
+		log.Fatalf("creating perf event reader: %v", err)
+	}
+	defer rd.Close()
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-stop
+		rd.Close()
+	}()
+
+	fmt.Println("Listening for TLS ClientHello messages... (Ctrl-C to stop)")
+	for {
+		record, err := rd.Read()
+		if err != nil {
+			log.Printf("reading from perf reader: %v", err)
+			return
+		}
+		if record.LostSamples != 0 {
+			log.Printf("perf ring buffer full, dropped %d samples", record.LostSamples)
+			continue
+		}
+
+		var info clientHelloInfo
+		if err := binary.Read(bytes.NewReader(record.RawSample), binary.LittleEndian, &info); err != nil {
+			log.Printf("parsing perf event: %v", err)
+			continue
+		}
+
+		src := net.IPv4(byte(info.Saddr), byte(info.Saddr>>8), byte(info.Saddr>>16), byte(info.Saddr>>24))
+		dst := net.IPv4(byte(info.Daddr), byte(info.Daddr>>8), byte(info.Daddr>>16), byte(info.Daddr>>24))
+		fmt.Printf("[pid %d] ClientHello observed: %s:%d -> %s:%d\n", info.Pid, src, info.Sport, dst, info.Dport)
+	}
+}
+```
+
+A few notes on this code before moving on. `bpf2go` generates `loadBpfObjects` and the `bpfObjects` struct (with `bpfPrograms` and `bpfMaps` sub-structs) from the C source at build time, so the Go and C sides stay in lockstep without hand-written CO-RE loading boilerplate. `link.Kprobe` attaches our `bpf_tcp_sendmsg` program to the live kernel function by symbol name, and `perf.NewReader` gives us a blocking, per-CPU-buffered channel for pulling `client_hello_info` structs out of the `BPF_MAP_TYPE_PERF_EVENT_ARRAY` we defined earlier. In a real deployment you'd also want to handle kprobe attach failures gracefully across kernel versions, since `tcp_sendmsg`'s exact signature has shifted between LTS releases — this is one of the reasons CO-RE (Compile Once, Run Everywhere) and `vmlinux.h` matter so much for portability.
+
+### Limitations of the ClientHello-Only Approach
+
+This gets us SNI and cipher-suite visibility essentially for free, without touching the TLS session at all, but it's worth being honest about what it doesn't give us:
+
+*   **TCP segmentation:** A single call to `tcp_sendmsg` doesn't guarantee we see a complete TLS record. Large ClientHello messages (common with many cipher suites, extensions, and ALPN entries) can be split across multiple sends or coalesced by the socket buffer, so a production implementation needs to track partial records per-socket rather than assuming one probe hit equals one full handshake message.
+*   **TLS 1.3 encrypts more of the handshake:** Only the ClientHello and ServerHello remain in the clear in TLS 1.3; Certificate and Finished messages are encrypted immediately after the key exchange. SNI is still visible here (unless Encrypted Client Hello is in play), but this technique alone won't get you certificate details or application data.
+*   **No decryption:** As the name implies, this is pure metadata observation. Getting to plaintext application data requires a fundamentally different hook point.
+
+## Extending to Full Plaintext Capture: Hooking `SSL_write`/`SSL_read`
+
+If the goal is genuine deep packet inspection of application-layer data — not just handshake metadata — the trick is to stop fighting the encryption at the network layer entirely and instead hook the TLS library *after* it has already decrypted (on read) or *before* it has encrypted (on write). This is precisely how tools like BCC's `sslsniff` and eBPF-based observability agents such as Pixie work.
+
+The approach uses uprobes/uretprobes on the user-space OpenSSL library rather than kprobes on the kernel network stack:
+
+*   **`uprobe` on `SSL_write`:** Attached at function entry, this gives us the `SSL *` context pointer and the plaintext `buf`/`num` arguments — the exact bytes the application is about to hand off for encryption, read directly via `bpf_probe_read_user`.
+*   **`uprobe` on `SSL_read` (entry):** At entry, `SSL_read` hasn't populated its output buffer yet, so we stash the buffer pointer (keyed by PID/TID) in a `BPF_MAP_TYPE_HASH` scratch map for the matching `uretprobe` to pick up.
+*   **`uretprobe` on `SSL_read` (return):** By the time `SSL_read` returns, OpenSSL has already decrypted the data into the caller's buffer and the return value tells us how many bytes were written. We look up the buffer pointer we stashed at entry and read that many bytes back out with `bpf_probe_read_user`.
+
+Correlating the `SSL *` pointer to a specific TCP socket (and therefore back to the metadata we captured from `tcp_sendmsg`) typically means also hooking `SSL_set_fd` or walking the `SSL` struct's underlying BIO, which is fragile across OpenSSL versions — another good argument for pairing this with `vmlinux.h`-style CO-RE relocations and per-library offset tables rather than hardcoded struct layouts.
+
+## Conclusion
+
+None of this amounts to a drop-in replacement for a traditional MITM proxy, and it isn't meant to — the value of the eBPF approach is that it gets you handshake and even application-layer visibility without terminating TLS, without distributing a CA certificate to every client, and without the latency of a user-space forwarding hop. The tradeoff is real engineering cost: kernel-version sensitivity on the kprobe side, library-version sensitivity on the uprobe side, and the ongoing burden of correlating multiple independent probe sources into one coherent session view. For security teams that need deep, low-overhead visibility into what's actually crossing the wire inside a Kubernetes cluster or a service mesh, though, this is exactly the kind of primitive worth building toward.
