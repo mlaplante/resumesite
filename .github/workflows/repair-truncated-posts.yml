@@ -1,0 +1,139 @@
+name: Repair Truncated Posts
+
+# One-off backfill, run by hand in batches. Posts published before the generator
+# checked Gemini's `finishReason` were cut mid-sentence by the output-token cap;
+# this asks the model to write the missing ending. Each batch lands as its own PR
+# so the AI-written endings get reviewed before they go live.
+#
+# After merging a batch, drop the repaired filenames from KNOWN_TRUNCATED in
+# tests/site/content.test.ts — the burn-down test fails until you do.
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: 'How many posts to repair in this batch'
+        required: true
+        default: '5'
+        type: string
+      only:
+        description: 'Repair just this one filename (overrides limit)'
+        required: false
+        default: ''
+        type: string
+      dry_run:
+        description: 'Report what would change without writing files'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: blog-post-repair
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      # Actions are pinned to full commit SHAs so a moved/compromised tag
+      # can't inject code into a workflow that holds `contents: write`.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      - name: Repair truncated posts
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          INPUT_LIMIT: ${{ github.event.inputs.limit }}
+          INPUT_ONLY: ${{ github.event.inputs.only }}
+          INPUT_DRY_RUN: ${{ github.event.inputs.dry_run }}
+        run: |
+          # Both inputs reach a shell command, so never trust them unvalidated.
+          case "$INPUT_LIMIT" in
+            ''|*[!0-9]*) echo "limit must be a positive integer: $INPUT_LIMIT" >&2; exit 1 ;;
+          esac
+
+          SELECT=(--limit "$INPUT_LIMIT")
+          if [ -n "$INPUT_ONLY" ]; then
+            # A post filename and nothing else — no paths, no shell metacharacters.
+            case "$INPUT_ONLY" in
+              *[!A-Za-z0-9.-]*) echo "only must be a bare post filename: $INPUT_ONLY" >&2; exit 1 ;;
+            esac
+            SELECT=(--only "$INPUT_ONLY")
+          fi
+
+          if [ "$INPUT_DRY_RUN" = "true" ]; then
+            node scripts/repair-truncated-posts.js --dry-run "${SELECT[@]}"
+          else
+            node scripts/repair-truncated-posts.js "${SELECT[@]}"
+          fi
+
+      - name: Check for repairs
+        id: check
+        run: |
+          if git status --porcelain | grep -q 'blog-src/src/content/posts/'; then
+            COUNT=$(git status --porcelain | grep -c 'blog-src/src/content/posts/')
+            echo "has_repairs=true" >> "$GITHUB_OUTPUT"
+            echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_repairs=false" >> "$GITHUB_OUTPUT"
+            echo "Nothing was repaired."
+          fi
+
+      - name: Create PR with repairs
+        if: steps.check.outputs.has_repairs == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COUNT: ${{ steps.check.outputs.count }}
+        run: |
+          BRANCH="blog/repair-truncated-${{ github.run_id }}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git checkout -b "$BRANCH"
+          git add blog-src/src/content/posts/
+          git commit -m "fix(blog): restore endings on $COUNT truncated posts"
+          git push -u origin "$BRANCH"
+
+          # Filenames come from git, not from model output, so they're safe to list.
+          # Built with a loop rather than sed, whose `s|$|...|` trips shellcheck SC2016.
+          FILES=""
+          while IFS= read -r changed; do
+            [ -n "$changed" ] || continue
+            FILES="${FILES}- \`${changed}\`"$'\n'
+          done < <(git show --name-only --format='' HEAD)
+
+          gh label create blog-repair --color "D93F0B" --description "Backfill of truncated posts" 2>/dev/null || true
+
+          PR_BODY=$(cat <<EOF
+          ## Truncated Post Repairs
+
+          Restored endings on **$COUNT** post(s) that were published mid-sentence,
+          back when the generator did not check Gemini's \`finishReason\`.
+
+          $FILES
+
+          Each ending was written by Gemini and had to pass the \`findTruncation\`
+          check before being written, but the prose itself is unreviewed.
+
+          ### Before merging
+          1. Read each ending — check the code actually compiles / makes sense and the seam reads naturally.
+          2. Remove these filenames from \`KNOWN_TRUNCATED\` in \`tests/site/content.test.ts\`.
+
+          *Generated via \`.github/workflows/repair-truncated-posts.yml\`*
+          EOF
+          )
+
+          gh pr create \
+            --title "fix(blog): restore endings on $COUNT truncated posts" \
+            --body "$PR_BODY" \
+            --label "blog-repair" \
+            --base master

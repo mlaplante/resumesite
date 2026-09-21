@@ -14,6 +14,7 @@ import {
   stripTitleDirective,
   stripLeadingHeading,
   makeExcerpt,
+  findTruncation,
   buildFrontmatter,
   findMostSimilar,
   findMostSimilarSemantic,
@@ -454,6 +455,59 @@ describe('pickUniqueTopic', () => {
     // embed was attempted (1 candidate try) but the function still completed.
     expect(embedCalls).toBeGreaterThanOrEqual(1);
     expect(genCalls).toBe(1);
+  });
+});
+
+describe('findTruncation', () => {
+  it('accepts a body that ends on a finished sentence', () => {
+    expect(findTruncation('Some intro.\n\nAnd a closing thought that lands.')).toBeNull();
+  });
+
+  it('accepts a body that ends on a closed code block', () => {
+    expect(findTruncation('Run it:\n\n```bash\nmake install\n```')).toBeNull();
+  });
+
+  it('accepts a body that ends on a heading or a table row', () => {
+    expect(findTruncation('Intro.\n\n## What Next')).toBeNull();
+    expect(findTruncation('Intro.\n\n| a | b |\n| - | - |\n| 1 | 2 |')).toBeNull();
+  });
+
+  // Regression: the author signature block legitimately ends without sentence
+  // punctuation, and flagging it made every signed post a false positive.
+  it('ignores a trailing author signature block', () => {
+    const body = [
+      'A complete post that ends properly.',
+      '',
+      '---',
+      '',
+      '**Michael LaPlante**  ',
+      'SVP, Information Security & Operations  ',
+      '15+ Years Engineering Experience',
+    ].join('\n');
+    expect(findTruncation(body)).toBeNull();
+  });
+
+  it('flags an unclosed code fence', () => {
+    const body = 'Here is the driver:\n\n```c\nint main(void) {\n  return 0;';
+    expect(findTruncation(body)).toMatch(/unbalanced code fence/);
+  });
+
+  it('flags prose cut mid-sentence', () => {
+    expect(findTruncation('Intro.\n\nThe key thing to remember about mmap is')).toMatch(
+      /ends mid-sentence/,
+    );
+  });
+
+  // The exact shape that shipped 65 truncated posts: Gemini stopped mid-identifier
+  // inside a code block after hitting maxOutputTokens, and returned HTTP 200.
+  it('flags a body cut mid-identifier inside a code block', () => {
+    const body = '```c\nmy_driver_class = class_create(THIS_';
+    expect(findTruncation(body)).toBeTruthy();
+  });
+
+  it('flags an empty body', () => {
+    expect(findTruncation('')).toMatch(/empty/);
+    expect(findTruncation(null)).toMatch(/empty/);
   });
 });
 
