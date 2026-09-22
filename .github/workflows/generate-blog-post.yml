@@ -23,9 +23,9 @@ on:
         required: false
         type: string
 
-permissions:
-  contents: write
-  pull-requests: write
+# No ambient token. Each job below requests exactly the scopes it uses, so a
+# compromised step in one job can't reach writes it never needed.
+permissions: {}
 
 # Avoid two scheduled runs and a manual dispatch racing each other into
 # duplicate PRs against `master`.
@@ -36,6 +36,9 @@ concurrency:
 jobs:
   generate:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # commit the draft branch and push it
+      pull-requests: write  # open the review PR
     timeout-minutes: 20
     steps:
       # Actions are pinned to full commit SHAs so a moved/compromised tag
