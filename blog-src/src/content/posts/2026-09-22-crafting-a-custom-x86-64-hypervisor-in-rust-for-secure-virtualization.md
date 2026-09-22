@@ -278,7 +278,7 @@ fn main() {
     // 4. Inject Payload into Memory Location
     load_guest_code(&guest_mem);
 
-    // 5. Instanciate virtual CPU (vCPU 0)
+    // 5. virtual CPU (vCPU 0)
     let vcpu = vm.create_vcpu(0).expect("Failed to instantiate vCPU 0.");
 
     // 6. Setup Initial Execution State
