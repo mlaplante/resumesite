@@ -23,10 +23,10 @@
     "@astrojs/rss": "^4.0.19",
     "@astrojs/sitemap": "^3.7.4",
     "@resvg/resvg-js": "^2.6.2",
-    "astro": "^7.3.3",
+    "astro": "^7.3.5",
     "pdfkit": "^0.20.2",
-    "satori": "^0.33.4",
-    "sharp": "^0.35.4",
+    "satori": "^0.33.5",
+    "sharp": "^0.35.5",
     "wawoff2": "^2.0.1"
   },
   "devDependencies": {
