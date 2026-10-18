@@ -174,7 +174,7 @@ int main(int argc, char **argv) {
 
 *   **Input Parsing:** The example above uses a fixed `syscall_info_t` structure. A more robust fuzzer might use a variable-length format, perhaps with a "syscall type" byte followed by argument types and values. This allows for more diverse syscall sequences.
 *   **Argument Types:** System call arguments aren't just raw `long` values. They can be pointers, file descriptors, flags, lengths, etc.
-    *   **Pointers:** When a syscall expects a pointer, we must provide a valid, writeable memory region. Our `data_buffer` addresses this by providing a controlled memory area that fuzzed data can be copied into or pointed to.
+    *   **Pointers:** When a syscall expects a pointer, we must provide a valid, writable memory region. Our `data_buffer` addresses this by providing a controlled memory area that fuzzed data can be copied into or pointed to.
     *   **File Descriptors:** Syscalls like `read`, `write`, `close` operate on file descriptors. The fuzzer needs to manage these: opening files, passing the returned FDs to subsequent calls, and closing them. This often requires maintaining a "state" or "context" for the fuzzer.
     *   **Flags/Enums:** These are often bitmasks or specific integer values. The fuzzer should prioritize known valid values but also inject invalid ones to test error handling.
 *   **Error Handling:** While the harness itself shouldn't crash, it should log or ignore expected syscall errors (e.g., `EPERM`, `EINVAL`) unless they indicate a deeper issue. The goal is to find *unexpected* crashes or hangs.
