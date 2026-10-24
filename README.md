@@ -88,7 +88,10 @@ resumesite/
 ├── scripts/                        # AI blog draft generators
 │   ├── lib/blog-post.js            # Shared mode/dedupe/frontmatter logic
 │   ├── lib/news.js                 # Security-news RSS/Atom feeds for topic grounding
-│   ├── generate-post.js            # Anthropic Claude
+│   ├── lib/anthropic.js            # Claude client (Opus 5.5 -> Sonnet 5.5)
+│   ├── lib/provider-chain.js       # Ordered provider fallback
+│   ├── generate-post-chain.js      # Daily workflow: Claude, then Gemini
+│   ├── generate-post.js            # Anthropic Claude (manual)
 │   ├── generate-post-gemini.js     # Google Gemini
 │   ├── generate-post-gh-models.js  # GitHub Models
 │   └── backfill-updated.js         # Adds `updated:` frontmatter from git history
@@ -219,7 +222,7 @@ in `og/[slug].png.ts`, bump `CARD_VERSION` there so every card re-renders;
 
 ### AI draft dedupe
 
-The `auto` mode of `generate-post-gemini.js` and `generate-post-gh-models.js`
+The `auto` mode of `generate-post-chain.js`, `generate-post-gemini.js` and `generate-post-gh-models.js`
 uses **embedding cosine similarity** (Gemini `gemini-embedding-001` /
 GitHub Models `text-embedding-3-small`) against every existing title +
 excerpt to reject near-duplicate topic suggestions like "Zero-Trust with eBPF"
