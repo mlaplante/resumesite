@@ -73,7 +73,7 @@ complying or silently refusing.
   the human gate differently. Don't assume "it's in `drafts/`" means "it's not live," and don't assume
   "it's in `posts/`" means "it's live" — check whether a PR is open or merged instead:
   - **(a) Automated daily pipeline** — `.github/workflows/generate-blog-post.yml` runs on cron `0 8 * * *`
-    (UTC) or manual `workflow_dispatch`, invoking `node scripts/generate-post-gemini.js`. Verified in
+    (UTC) or manual `workflow_dispatch`, invoking `node scripts/generate-post-chain.js` (Claude, then Gemini). Verified in
     `scripts/lib/blog-post.js` (`POSTS_DIR = .../blog-src/src/content/posts`, `writeFileSync(filepath,
     content)` at line ~503) and in the workflow itself (`git add blog-src/src/content/posts/`): **this path
     writes the finished post file directly into `content/posts/`, not `content/drafts/`.** The workflow then
@@ -191,7 +191,7 @@ merge."
 ## 6. AI-draft publication path (summary — see rule 2 for the full detail and the correction)
 
 ```
-Automated:  cron 08:00 UTC daily → generate-post-gemini.js → file written straight into
+Automated:  cron 08:00 UTC daily → generate-post-chain.js → file written straight into
             content/posts/ → PR opened, labeled blog-draft → HUMAN reads + merges (or
             closes to discard) → merge = publish + deploy
 

@@ -7,29 +7,16 @@
  *   node scripts/generate-post.js git           # from recent git activity
  *   node scripts/generate-post.js topic "..."   # on a specific topic
  *
+ * The Claude transport (Opus 5.5 -> Sonnet 5.5 fallback, stop-reason
+ * enforcement) lives in scripts/lib/anthropic.js. The daily workflow uses
+ * scripts/generate-post-chain.js, which adds Gemini as a final fallback.
+ *
  * Environment:
  *   ANTHROPIC_API_KEY  - required (read by the SDK)
  */
 
-import Anthropic from '@anthropic-ai/sdk';
 import { runGenerator } from './lib/blog-post.js';
-
-const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514';
-
-const client = new Anthropic();
-
-async function generate({ system, user, maxTokens = 2000 }) {
-  const message = await client.messages.create({
-    model: MODEL,
-    max_tokens: maxTokens,
-    system,
-    messages: [{ role: 'user', content: user }],
-  });
-  // The SDK guarantees `content[0]` is a content block; for our text-only
-  // prompts the first block is always text.
-  const block = message.content[0];
-  return block.type === 'text' ? block.text : '';
-}
+import { generate } from './lib/anthropic.js';
 
 runGenerator({
   argv: process.argv,

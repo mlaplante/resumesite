@@ -12,7 +12,8 @@ that looks stale.
 ## 0. The problem, stated precisely
 
 The AI blog-draft pipeline (`scripts/lib/blog-post.js`, shared by `scripts/generate-post.js`
-[Anthropic] and `scripts/generate-post-gemini.js` [Gemini, used by CI]) has produced, at
+[Anthropic], `scripts/generate-post-gemini.js` [Gemini] and `scripts/generate-post-chain.js`
+[Claude → Gemini, used by CI]) has produced, at
 different points in its history, four distinct quality failures:
 
 1. **Near-duplicate posts** — same topic, different surface wording (e.g. "...with eBPF" vs
@@ -41,9 +42,9 @@ provider scripts do NOT exercise the same guards**, and the manually-run npm scr
 |---|---|---|---|---|---|---|
 | `npm run blog:draft:git` (`generate-post.js git`) | Anthropic | No | N/A — git mode never calls `pickUniqueTopic` | **No** — gated on `fromGit === false`; git mode sets `fromGit = true` | Yes | Yes |
 | `npm run blog:draft:topic` (`generate-post.js topic "..."`) | Anthropic | No | N/A — mode is set to `'topic'` directly, `pickUniqueTopic` never runs | **No** — gated on `supportsAuto`, and `generate-post.js` passes `supportsAuto: false` | Yes | Yes |
-| CI cron / `workflow_dispatch mode=auto` (`generate-post-gemini.js auto`) | Gemini | Yes | **Yes** — semantic (cosine ≥ `SEMANTIC_THRESHOLD`, default 0.85) with lexical Jaccard (`DUPLICATE_THRESHOLD` 0.5) fallback if embedding fails | **Yes** | Yes | Yes |
-| `workflow_dispatch mode=topic` (`generate-post-gemini.js topic "..."`) | Gemini | Yes | No — an explicit topic skips `pickUniqueTopic` | **Yes** | Yes | Yes |
-| `workflow_dispatch mode=git` (`generate-post-gemini.js git`) | Gemini | Yes | N/A (git mode) | **No** (`fromGit = true`) | Yes | Yes |
+| CI cron / `workflow_dispatch mode=auto` (`generate-post-chain.js auto`) | Claude → Gemini (Gemini embeddings) | Yes | **Yes** — semantic (cosine ≥ `SEMANTIC_THRESHOLD`, default 0.85) with lexical Jaccard (`DUPLICATE_THRESHOLD` 0.5) fallback if embedding fails | **Yes** | Yes | Yes |
+| `workflow_dispatch mode=topic` (`generate-post-chain.js topic "..."`) | Claude → Gemini (Gemini embeddings) | Yes | No — an explicit topic skips `pickUniqueTopic` | **Yes** | Yes | Yes |
+| `workflow_dispatch mode=git` (`generate-post-chain.js git`) | Claude → Gemini (Gemini embeddings) | Yes | N/A (git mode) | **No** (`fromGit = true`) | Yes | Yes |
 
 Verified by tracing `runGenerator()` in `scripts/lib/blog-post.js`: the `pickUniqueTopic`
 call only happens inside `if (mode === 'auto')`; the final re-score guard is
@@ -54,8 +55,9 @@ false })` and never passes an `embed` function; `generate-post-gemini.js` calls 
 **Consequence:** the manual `npm run blog:draft:*` commands can and will write a lexically-
 or semantically-near-duplicate post — only an *exact* (case-insensitive title, or slug)
 repeat is ever rejected on those commands. The full multi-layer defense this skill is
-about exists **only** in the Gemini path that CI actually runs on cron. Any quality
-investigation must center on `generate-post-gemini.js` and the `auto`/`topic`-with-
+about exists **only** in the chain path that CI actually runs on cron (text from Claude,
+falling back to Gemini; embeddings always from Gemini). Any quality
+investigation must center on `generate-post-chain.js` and the `auto`/`topic`-with-
 `pickUniqueTopic` paths, not on `blog:draft:*`.
 
 Also note: `npm run blog:draft:*` **writes a real file** into
