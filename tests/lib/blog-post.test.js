@@ -19,6 +19,16 @@ import {
   findMostSimilar,
   findMostSimilarSemantic,
   pickUniqueTopic,
+  parseNewsPick,
+  newsTopicPickerPrompt,
+  topicUserPrompt,
+  topicPickerPrompt,
+  sourcesSection,
+  evergreenFocusArea,
+  focusActive,
+  EVERGREEN_FOCUS_AREAS,
+  PICK_TOPIC_MAX_ATTEMPTS,
+  NEWS_TOPIC_ATTEMPTS,
   DUPLICATE_THRESHOLD,
   SEMANTIC_THRESHOLD,
 } from '../../scripts/lib/blog-post.js';
@@ -396,7 +406,8 @@ describe('pickUniqueTopic', () => {
       calls++;
       return 'A Brand New Topic About Quantum Networking';
     };
-    const topic = await pickUniqueTopic(generate, ['Cloud Security Basics']);
+    const { topic, source } = await pickUniqueTopic(generate, ['Cloud Security Basics']);
+    expect(source).toBeNull();
     expect(topic).toBe('A Brand New Topic About Quantum Networking');
     expect(calls).toBe(1);
   });
@@ -408,7 +419,7 @@ describe('pickUniqueTopic', () => {
     ];
     let i = 0;
     const generate = async () => responses[i++];
-    const topic = await pickUniqueTopic(generate, ['Zero Trust Network Segmentation Strategies']);
+    const { topic } = await pickUniqueTopic(generate, ['Zero Trust Network Segmentation Strategies']);
     expect(topic).toBe('A Completely Different Topic About Quantum Networking');
     expect(i).toBe(2);
   });
@@ -427,7 +438,7 @@ describe('pickUniqueTopic', () => {
         : text.includes('Quantum')
           ? [0, 1, 0]
           : [0, 0, 1];
-    const topic = await pickUniqueTopic(generate, ['Zero Trust Network Segmentation Strategies'], embed);
+    const { topic } = await pickUniqueTopic(generate, ['Zero Trust Network Segmentation Strategies'], embed);
     expect(topic).toBe('A Completely Different Topic About Quantum Networking');
     expect(i).toBe(2);
   });
@@ -450,7 +461,7 @@ describe('pickUniqueTopic', () => {
       genCalls++;
       return 'A Fresh Unrelated Topic Title';
     };
-    const topic = await pickUniqueTopic(generate, [{ title: 'Old Thing', excerpt: '' }], embed);
+    const { topic } = await pickUniqueTopic(generate, [{ title: 'Old Thing', excerpt: '' }], embed);
     expect(topic).toBe('A Fresh Unrelated Topic Title');
     // embed was attempted (1 candidate try) but the function still completed.
     expect(embedCalls).toBeGreaterThanOrEqual(1);
@@ -508,6 +519,147 @@ describe('findTruncation', () => {
   it('flags an empty body', () => {
     expect(findTruncation('')).toMatch(/empty/);
     expect(findTruncation(null)).toMatch(/empty/);
+  });
+});
+
+describe('pickUniqueTopic (news-grounded)', () => {
+  const news = [
+    { title: 'PHP Issues Emergency Patches for Two Critical RCE Flaws', summary: 'Fixed in 8.5.12.', link: 'https://example.com/php', date: '2026-10-21' },
+    { title: 'Node.js Security Release Fixes Brotli RCE', summary: '', link: 'https://example.com/node', date: '2026-10-21' },
+  ];
+
+  it('anchors the first candidate to a numbered news item and returns it as the source', async () => {
+    const prompts = [];
+    const generate = async ({ user }) => {
+      prompts.push(user);
+      return '2 | Patching the Node.js Brotli Decompression RCE in Production';
+    };
+    const { topic, source } = await pickUniqueTopic(generate, ['Cloud Security Basics'], undefined, { news });
+    expect(topic).toBe('Patching the Node.js Brotli Decompression RCE in Production');
+    expect(source).toBe(news[1]);
+    expect(prompts[0]).toContain('1. [2026-10-21] PHP Issues Emergency Patches');
+    expect(prompts[0]).toContain('untrusted third-party headlines');
+  });
+
+  it('falls through to evergreen focus-area prompts after the news attempts are rejected', async () => {
+    const prompts = [];
+    let i = 0;
+    const generate = async ({ user }) => {
+      prompts.push(user);
+      i++;
+      return i <= NEWS_TOPIC_ATTEMPTS
+        ? '1 | Zero Trust Network Segmentation'
+        : 'Designing Break-Glass Access for Privileged Accounts';
+    };
+    const { topic, source } = await pickUniqueTopic(
+      generate,
+      ['Zero Trust Network Segmentation Strategies'],
+      undefined,
+      { news },
+    );
+    expect(topic).toBe('Designing Break-Glass Access for Privileged Accounts');
+    expect(source).toBeNull();
+    expect(i).toBe(NEWS_TOPIC_ATTEMPTS + 1);
+    expect(prompts[NEWS_TOPIC_ATTEMPTS]).toMatch(/For this suggestion, focus on: .+\./);
+    expect(prompts[NEWS_TOPIC_ATTEMPTS]).not.toContain('security news items');
+  });
+
+  it('skips news prompts entirely when no news could be fetched', async () => {
+    const prompts = [];
+    const generate = async ({ user }) => {
+      prompts.push(user);
+      return 'Designing Break-Glass Access for Privileged Accounts';
+    };
+    await pickUniqueTopic(generate, [], undefined, { news: [] });
+    expect(prompts[0]).toContain('For this suggestion, focus on:');
+  });
+
+  it('rejects an unusable reply instead of accepting it as unique', async () => {
+    const responses = ['3 |', 'Designing Break-Glass Access for Privileged Accounts'];
+    let i = 0;
+    const generate = async () => responses[i++];
+    const { topic } = await pickUniqueTopic(generate, ['Cloud Security Basics'], undefined, { news });
+    expect(topic).toBe('Designing Break-Glass Access for Privileged Accounts');
+    expect(i).toBe(2);
+  });
+
+  it('gives up after PICK_TOPIC_MAX_ATTEMPTS total candidates', async () => {
+    let calls = 0;
+    const generate = async () => {
+      calls++;
+      return '1 | Zero Trust Network Segmentation';
+    };
+    await expect(
+      pickUniqueTopic(generate, ['Zero Trust Network Segmentation Patterns'], undefined, { news }),
+    ).rejects.toThrow(/Could not find a sufficiently unique topic/);
+    expect(calls).toBe(PICK_TOPIC_MAX_ATTEMPTS);
+  });
+});
+
+describe('parseNewsPick', () => {
+  const news = [{ title: 'A' }, { title: 'B' }];
+
+  it('parses "<n> | <title>" and resolves the source item', () => {
+    expect(parseNewsPick('2 | Hardening Against the Brotli RCE', news)).toEqual({
+      topic: 'Hardening Against the Brotli RCE',
+      source: news[1],
+    });
+  });
+
+  it('accepts common separator variants and strips quotes', () => {
+    expect(parseNewsPick('1. "Responding to PHP2Shell"', news).source).toBe(news[0]);
+    expect(parseNewsPick('[1] - Responding to PHP2Shell', news).topic).toBe('Responding to PHP2Shell');
+  });
+
+  it('returns a null source for out-of-range numbers or a bare title', () => {
+    expect(parseNewsPick('9 | Something New Entirely', news).source).toBeNull();
+    expect(parseNewsPick('Just A Plain Topic Title', news)).toEqual({ topic: 'Just A Plain Topic Title', source: null });
+  });
+});
+
+describe('news-grounded writer prompt and sources', () => {
+  const source = { title: 'Node.js [Security] Release', summary: 'Brotli fix.', link: 'https://example.com/a_(b)', date: '2026-10-21' };
+
+  it('adds source material and accuracy rules only when a source is supplied', () => {
+    const grounded = topicUserPrompt('Some Topic', source);
+    expect(grounded).toContain('Headline: Node.js [Security] Release');
+    expect(grounded).toMatch(/do not invent CVE identifiers/);
+    expect(topicUserPrompt('Some Topic')).not.toContain('Headline:');
+  });
+
+  it('renders a deterministic, link-safe Sources section', () => {
+    expect(sourcesSection(source)).toBe(
+      '\n\n## Sources\n\n- [Node.js Security Release](https://example.com/a_%28b%29) (2026-10-21)\n',
+    );
+    expect(sourcesSection(null)).toBe('');
+    expect(sourcesSection({ title: 'x', link: '' })).toBe('');
+  });
+
+  it('numbers news items in the picker prompt and includes exclusions', () => {
+    const p = newsTopicPickerPrompt([source], ['Existing Post']);
+    expect(p).toContain('1. [2026-10-21] Node.js [Security] Release — Brotli fix.');
+    expect(p).toContain('- Existing Post');
+  });
+});
+
+describe('evergreenFocusArea', () => {
+  it('rotates through distinct areas on consecutive attempts', () => {
+    const day = new Date('2026-10-24T08:00:00Z');
+    const areas = [0, 1, 2].map(i => evergreenFocusArea(i, day));
+    expect(new Set(areas).size).toBe(3);
+    areas.forEach(a => expect(EVERGREEN_FOCUS_AREAS).toContain(a));
+  });
+});
+
+describe('focusActive / topicPickerPrompt date gate', () => {
+  it('is active through FOCUS_UNTIL and inactive after', () => {
+    expect(focusActive('2026-08-12')).toBe(true);
+    expect(focusActive('2026-08-13')).toBe(false);
+  });
+
+  it('switches the picker prompt with the gate', () => {
+    expect(topicPickerPrompt([], '2026-07-01')).toMatch(/governance of AI within cybersecurity/);
+    expect(topicPickerPrompt([], '2026-10-24')).toMatch(/AVOID topics primarily about AI/);
   });
 });
 

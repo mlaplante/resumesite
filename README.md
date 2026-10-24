@@ -87,6 +87,7 @@ resumesite/
 │   └── schema.sql                  # D1 table + indexes
 ├── scripts/                        # AI blog draft generators
 │   ├── lib/blog-post.js            # Shared mode/dedupe/frontmatter logic
+│   ├── lib/news.js                 # Security-news RSS/Atom feeds for topic grounding
 │   ├── generate-post.js            # Anthropic Claude
 │   ├── generate-post-gemini.js     # Google Gemini
 │   ├── generate-post-gh-models.js  # GitHub Models
@@ -228,6 +229,15 @@ lexical Jaccard if the embedding call fails. Embeddings are cached in
 `scripts/.embeddings-cache.json` (git-ignored; persisted across CI runs via
 `actions/cache` in `generate-blog-post.yml`) so daily runs only embed the
 new candidate. Cache keys are namespaced by embedding model.
+
+Topic picking is **news-grounded** so the picker doesn't keep proposing
+evergreen deep dives the blog already covers. `auto` mode fetches the past
+week's items from a few security feeds (`scripts/lib/news.js`; override with
+`NEWS_FEEDS`, comma-separated, or set it empty to disable). The first 3 of 6
+candidates must each be anchored to one of those items. A grounded post gets
+the item as source material, plus a deterministic `## Sources` link. The
+remaining candidates are evergreen, and each is steered to a different focus
+area. If every feed fails, the pipeline uses evergreen candidates only.
 
 The LLM is also required to emit a `TITLE:` directive on the first line
 of every draft; `extractTitle` validates that it isn't a file path, code
