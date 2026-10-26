@@ -150,7 +150,7 @@ know which one you're invoking:
 
 | | Manual (`npm run blog:draft:*`) | Scheduled (`generate-blog-post.yml`) |
 |---|---|---|
-| Provider | Anthropic Claude, via `scripts/generate-post.js` (`ANTHROPIC_MODEL` env, default `claude-sonnet-4-20250514`) | Google Gemini, via `scripts/generate-post-gemini.js` (`GEMINI_MODEL: 'gemini-2.5-flash'`, hardcoded in the workflow) |
+| Provider | Anthropic Claude, via `scripts/generate-post.js` (Opus 5.5 → Sonnet 5.5, see `scripts/lib/anthropic.js`) | `scripts/generate-post-chain.js`: Claude Opus 5.5 → Claude Sonnet 5.5 → Gemini (`GEMINI_MODEL: 'gemini-2.5-flash'` chain); Gemini always supplies dedupe embeddings |
 | Modes | `git`, `topic` only (**no `auto`** — `supportsAuto: false` in the script) | `auto` (default), `topic`, `git`, chosen by `workflow_dispatch` input or the cron default |
 | Trigger | You, locally | Cron `0 8 * * *` (daily, UTC) **or** manual `workflow_dispatch` |
 | Where it writes | `blog-src/src/content/posts/<generated-filename>` — **directly into `posts/`, not `drafts/`** | Same: `blog-src/src/content/posts/` |
@@ -168,7 +168,7 @@ with no topic argument (or without `--`) prints
 (from `runGenerator` in `scripts/lib/blog-post.js`).
 
 The scheduled workflow (`generate-blog-post.yml`):
-1. Runs `node scripts/generate-post-gemini.js "$INPUT_MODE"` (or
+1. Runs `npm ci --ignore-scripts`, then `node scripts/generate-post-chain.js "$INPUT_MODE"` (or
    `... topic "$INPUT_TOPIC"` when dispatched with `mode: topic`).
 2. If a new file under `blog-src/src/content/posts/` shows up in
    `git status --porcelain`, it sanitizes the extracted `title:` for shell
