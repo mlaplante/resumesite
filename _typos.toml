@@ -17,6 +17,7 @@ certifi = "certifi"          # Python certifi CA bundle package
 cose = "cose"                # COSE (CBOR Object Signing and Encryption)
 controllen = "controllen"    # struct msghdr.msg_controllen (sendmsg/recvmsg)
 counterfit = "counterfit"    # Microsoft Counterfit (AI security tool)
+fnd = "fnd"                  # Oracle EBS FND_* tables (fnd_user, fnd_executables)
 fpr = "fpr"                  # false positive rate acronym
 hashi = "hashi"              # HashiCorp
 hav = "hav"                  # hardware-assisted virtualization
