@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "4ea7a44b4c00",
+  "strategy": "manual-commit",
+  "branch": "master",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "blog-src/src/content/posts/2026-10-30-hunting-exploitation-of-the-max-severity-gitlab-flaw-cisa-just-flagged.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/4e/a7a44b4c00/0/metadata.json",
+      "transcript": "/4e/a7a44b4c00/0/full.jsonl",
+      "compact_transcript": "/4e/a7a44b4c00/0/transcript.jsonl",
+      "content_hash": "/4e/a7a44b4c00/0/content_hash.txt",
+      "prompt": "/4e/a7a44b4c00/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 14,
+    "cache_creation_tokens": 33026,
+    "cache_read_tokens": 276016,
+    "output_tokens": 1201,
+    "api_call_count": 6
+  }
+}
