@@ -72,3 +72,14 @@ updates:
     open-pull-requests-limit: 5
     cooldown:
       default-days: 7
+    groups:
+      # Every `github/codeql-action/*` step (init + analyze in codeql.yml,
+      # upload-sarif in scorecard.yml) must run the SAME version: init writes a
+      # version-stamped config that analyze refuses to load if they differ
+      # ("Loaded a configuration file for version X, but running version Y").
+      # Ungrouped, Dependabot opens one PR per sub-action, so every one of
+      # those PRs, and master between merges, fails CodeQL. Bump them as one
+      # PR, for majors too, so they always move in lockstep.
+      codeql-action:
+        patterns:
+          - "github/codeql-action*"
