@@ -28,6 +28,21 @@ updates:
           - "*"
         update-types:
           - major
+    ignore:
+      # typescript-eslint (8.72.x, latest and canary) peer-requires
+      # `typescript <6.1.0` and throws "typescript-eslint does not support
+      # TS 7.0" at load time, so `npm run lint` fails on TypeScript 7.
+      # TypeScript 7's native port no longer exposes the JS compiler API the
+      # linter needs (its main export is only a version stub). Running TS 7
+      # side-by-side via `@typescript/typescript6` was tried and rejected: it
+      # pulls in a second `tsc` bin that shadows TS 7's, and only the small
+      # worker typecheck would benefit since blog-src is also pinned to TS 6
+      # (see the matching ignore below).
+      # Remove this ignore once typescript-eslint supports TS 7
+      # (https://github.com/typescript-eslint/typescript-eslint/issues/10940).
+      - dependency-name: "typescript"
+        update-types:
+          - "version-update:semver-major"
 
   # Astro site package.
   - package-ecosystem: npm

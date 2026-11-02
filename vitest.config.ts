@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitest/config';
-import { cloudflareTest } from '@cloudflare/vitest-pool-workers';
+import { cloudflareTest } from '@cloudflare/vitest-plugin';
 
 // Two projects so the Worker tests run inside a real Cloudflare Workers
 // runtime (miniflare-backed) with D1 bindings, while the shared blog-post

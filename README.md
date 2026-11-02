@@ -276,7 +276,7 @@ npm test          # runs both projects below
 Two vitest projects:
 
 - **worker** — runs inside the real Cloudflare Workers runtime via
-  `@cloudflare/vitest-pool-workers`, with a Miniflare-backed D1. Covers the
+  `@cloudflare/vitest-plugin`, with a Miniflare-backed D1. Covers the
   contact handler end-to-end: origin enforcement, validation, honeypot,
   Turnstile, rate-limit, upstream-failure path, OPTIONS / 405 routing.
 - **lib** — plain Node project. Covers the shared blog-post lib (title
