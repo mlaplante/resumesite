@@ -33,13 +33,13 @@
   "devDependencies": {
     "@anthropic-ai/sdk": "^1.3.0",
     "@cloudflare/vitest-plugin": "^1.4.12",
-    "@cloudflare/workers-types": "^5.20261025.1",
+    "@cloudflare/workers-types": "^5.20261030.1",
     "@eslint/js": "^10.0.1",
-    "eslint": "^10.13.0",
+    "eslint": "^10.14.0",
     "eslint-plugin-astro": "^3.2.1",
     "globals": "^17.13.0",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.72.0",
+    "typescript-eslint": "^8.72.1",
     "vitest": "^5.0.5"
   },
   "overrides": {
