@@ -7,6 +7,8 @@ on:
   pull_request:
   push:
     branches: [master]
+  # Dispatched by the blog-draft workflows; see ci.yml.
+  workflow_dispatch:
 
 permissions:
   contents: read

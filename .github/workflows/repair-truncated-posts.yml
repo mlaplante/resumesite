@@ -41,6 +41,7 @@ jobs:
     permissions:
       contents: write  # commit the repair branch and push it
       pull-requests: write  # open the batch PR
+      actions: write  # dispatch CI on the repair branch (see the PR step)
     timeout-minutes: 30
     steps:
       # Actions are pinned to full commit SHAs so a moved/compromised tag
@@ -141,3 +142,9 @@ jobs:
             --body "$PR_BODY" \
             --label "blog-repair" \
             --base master
+
+          # GITHUB_TOKEN pushes/PRs trigger no workflows; dispatch the PR checks
+          # so they report on this branch's head commit (see generate-blog-post.yml).
+          for wf in ci.yml typos.yml gitleaks.yml; do
+            gh workflow run "$wf" --ref "$BRANCH"
+          done
