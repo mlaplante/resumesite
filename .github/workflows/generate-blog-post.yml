@@ -39,6 +39,7 @@ jobs:
     permissions:
       contents: write  # commit the draft branch and push it
       pull-requests: write  # open the review PR
+      actions: write  # dispatch CI on the draft branch (see the PR step)
     timeout-minutes: 20
     steps:
       # Actions are pinned to full commit SHAs so a moved/compromised tag
@@ -51,6 +52,10 @@ jobs:
         with:
           node-version-file: .nvmrc
           check-latest: true
+          # Same key as ci.yml's lint job (root lockfile only), so the daily
+          # run restores the npm cache master's CI already saved.
+          cache: npm
+          cache-dependency-path: package-lock.json
 
       # The Anthropic provider needs @anthropic-ai/sdk. Lifecycle scripts are
       # skipped: this job holds `contents: write`, and generation needs no
@@ -174,3 +179,12 @@ jobs:
             --body "$PR_BODY" \
             --label "blog-draft" \
             --base master
+
+          # Pushes and PRs made with GITHUB_TOKEN start no workflow runs, so on
+          # its own this PR would get no CI at all: no content-schema/dedupe
+          # tests, no build, no spell check. workflow_dispatch is the one event
+          # GITHUB_TOKEN may still trigger, and the runs report their checks
+          # on the branch's head commit, which is the PR's.
+          for wf in ci.yml typos.yml gitleaks.yml; do
+            gh workflow run "$wf" --ref "$BRANCH"
+          done

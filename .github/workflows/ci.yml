@@ -4,6 +4,10 @@ on:
   pull_request:
   push:
     branches: [master]
+  # Lets automation dispatch CI on a branch it pushed with GITHUB_TOKEN
+  # (generate-blog-post.yml, repair-truncated-posts.yml). Those pushes and PRs
+  # deliberately trigger no workflows, so without this the checks never run.
+  workflow_dispatch:
 
 permissions:
   contents: read
