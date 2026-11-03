@@ -185,6 +185,9 @@ jobs:
           # tests, no build, no spell check. workflow_dispatch is the one event
           # GITHUB_TOKEN may still trigger, and the runs report their checks
           # on the branch's head commit, which is the PR's.
-          for wf in ci.yml typos.yml gitleaks.yml; do
+          for wf in ci.yml typos.yml; do
             gh workflow run "$wf" --ref "$BRANCH"
           done
+          # base=master scopes the secret scan to this PR's commits; without it
+          # a dispatched gitleaks run scans every branch's full history.
+          gh workflow run gitleaks.yml --ref "$BRANCH" -f base=master

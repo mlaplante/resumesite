@@ -145,6 +145,9 @@ jobs:
 
           # GITHUB_TOKEN pushes/PRs trigger no workflows; dispatch the PR checks
           # so they report on this branch's head commit (see generate-blog-post.yml).
-          for wf in ci.yml typos.yml gitleaks.yml; do
+          for wf in ci.yml typos.yml; do
             gh workflow run "$wf" --ref "$BRANCH"
           done
+          # base=master scopes the secret scan to this PR's commits; without it
+          # a dispatched gitleaks run scans every branch's full history.
+          gh workflow run gitleaks.yml --ref "$BRANCH" -f base=master

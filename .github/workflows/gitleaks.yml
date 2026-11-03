@@ -8,6 +8,15 @@ on:
   push:
     branches: [master]
   workflow_dispatch:
+    inputs:
+      base:
+        description: >-
+          Scan only the commits on this ref not on the given base branch, the
+          same range a pull_request run scans. The blog-draft and repair
+          workflows pass "master" here, since their dispatched run stands in
+          for the PR check. Leave empty for a full-history scan of every ref.
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -28,7 +37,34 @@ jobs:
           fetch-depth: 0  # scan the full commit history, not just HEAD
           persist-credentials: false
 
+      # On workflow_dispatch the action passes no --log-opts, so gitleaks runs
+      # over `git log --all`: every fetched branch, including the
+      # entire/checkpoints/v1 session-transcript branch. That is the intended
+      # behavior for a manual full scan, but not for a dispatched PR check.
       # No GITLEAKS_LICENSE needed: only required for organization-owned repos.
-      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+      - if: github.event_name != 'workflow_dispatch' || inputs.base == ''
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # PR-shaped scan for a dispatched run with a base: the action can't scope
+      # a dispatch, so run the same gitleaks version it defaults to directly,
+      # checksum-verified, over the range a pull_request event would scan.
+      - name: Scan commits not on base
+        if: github.event_name == 'workflow_dispatch' && inputs.base != ''
+        env:
+          BASE: ${{ inputs.base }}
+          GITLEAKS_VERSION: 8.24.3
+          GITLEAKS_SHA256: 9991e0b2903da4c8f6122b5c3186448b927a5da4deef1fe45271c3793f4ee29c
+        run: |
+          if ! [[ "$BASE" =~ ^[A-Za-z0-9._/-]+$ ]]; then
+            echo "::error::invalid base ref: $BASE"
+            exit 1
+          fi
+          tarball="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -sSfLo "$RUNNER_TEMP/$tarball" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${tarball}"
+          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/$tarball" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/$tarball" -C "$RUNNER_TEMP" gitleaks
+          "$RUNNER_TEMP/gitleaks" git --redact -v --no-banner \
+            --log-opts="--no-merges --first-parent origin/${BASE}..HEAD" .
