@@ -1,0 +1,50 @@
+# gitleaks fingerprints of reviewed false positives (generic-api-key rule).
+# Format: <commit>:<path>:<rule>:<line>, as printed by `gitleaks git -v`.
+#
+# Each entry was inspected unredacted with gitleaks 8.24.3 over every ref
+# (including entire/checkpoints/v1) and confirmed not to be a credential.
+# Fingerprints pin one exact commit+line, so a new secret anywhere, including
+# in new session transcripts, is still reported. Do NOT replace these with a
+# path allowlist. Add an entry only after reviewing the finding yourself.
+
+# Anthropic API beta flag "interleaved-thinking-2025-05-14" in recorded request params
+# (session transcripts on entire/checkpoints/v1). Matched because the neighbouring
+# "oauth-2025-04-20" flag contains the keyword "auth". Not a credential.
+257cdd5e2337662f2b574a0c8ba92347835c9bc5:ea/bc6bfbde81/0/full.jsonl:generic-api-key:32
+257cdd5e2337662f2b574a0c8ba92347835c9bc5:ea/bc6bfbde81/0/full.jsonl:generic-api-key:49
+257cdd5e2337662f2b574a0c8ba92347835c9bc5:ea/bc6bfbde81/0/full.jsonl:generic-api-key:61
+257cdd5e2337662f2b574a0c8ba92347835c9bc5:ea/bc6bfbde81/0/full.jsonl:generic-api-key:67
+257cdd5e2337662f2b574a0c8ba92347835c9bc5:ea/bc6bfbde81/0/full.jsonl:generic-api-key:74
+257cdd5e2337662f2b574a0c8ba92347835c9bc5:ea/bc6bfbde81/0/full.jsonl:generic-api-key:87
+257cdd5e2337662f2b574a0c8ba92347835c9bc5:ea/bc6bfbde81/0/full.jsonl:generic-api-key:102
+257cdd5e2337662f2b574a0c8ba92347835c9bc5:ea/bc6bfbde81/0/full.jsonl:generic-api-key:114
+307c7de43a9bf99f8beab84c6fc9c4b80da84557:c2/566165ee91/0/full.jsonl:generic-api-key:92
+307c7de43a9bf99f8beab84c6fc9c4b80da84557:c2/566165ee91/0/full.jsonl:generic-api-key:98
+307c7de43a9bf99f8beab84c6fc9c4b80da84557:c2/566165ee91/0/full.jsonl:generic-api-key:107
+41bb40a553f984d0262cd81b7843b496ed92a1f3:ea/bc6bfbde81/0/full.jsonl:generic-api-key:121
+41bb40a553f984d0262cd81b7843b496ed92a1f3:ea/bc6bfbde81/0/full.jsonl:generic-api-key:127
+41bb40a553f984d0262cd81b7843b496ed92a1f3:ea/bc6bfbde81/0/full.jsonl:generic-api-key:134
+41bb40a553f984d0262cd81b7843b496ed92a1f3:ea/bc6bfbde81/0/full.jsonl:generic-api-key:147
+41bb40a553f984d0262cd81b7843b496ed92a1f3:ea/bc6bfbde81/0/full.jsonl:generic-api-key:153
+41bb40a553f984d0262cd81b7843b496ed92a1f3:ea/bc6bfbde81/0/full.jsonl:generic-api-key:157
+c4f9ea92951189ea84db37d050ac7a59a3fa4177:c2/566165ee91/0/full.jsonl:generic-api-key:32
+c4f9ea92951189ea84db37d050ac7a59a3fa4177:c2/566165ee91/0/full.jsonl:generic-api-key:53
+c4f9ea92951189ea84db37d050ac7a59a3fa4177:c2/566165ee91/0/full.jsonl:generic-api-key:59
+c4f9ea92951189ea84db37d050ac7a59a3fa4177:c2/566165ee91/0/full.jsonl:generic-api-key:65
+c4f9ea92951189ea84db37d050ac7a59a3fa4177:c2/566165ee91/0/full.jsonl:generic-api-key:71
+c4f9ea92951189ea84db37d050ac7a59a3fa4177:c2/566165ee91/0/full.jsonl:generic-api-key:83
+ef0448901714b643f1c2cbca7e5a6703d133e805:4e/a7a44b4c00/0/full.jsonl:generic-api-key:32
+ef0448901714b643f1c2cbca7e5a6703d133e805:4e/a7a44b4c00/0/full.jsonl:generic-api-key:48
+ef0448901714b643f1c2cbca7e5a6703d133e805:4e/a7a44b4c00/0/full.jsonl:generic-api-key:64
+ef0448901714b643f1c2cbca7e5a6703d133e805:4e/a7a44b4c00/0/full.jsonl:generic-api-key:73
+ef0448901714b643f1c2cbca7e5a6703d133e805:4e/a7a44b4c00/0/full.jsonl:generic-api-key:80
+ef0448901714b643f1c2cbca7e5a6703d133e805:4e/a7a44b4c00/0/full.jsonl:generic-api-key:94
+
+# Kebab-case lesson slug next to "...-auth-guard-noop" in a session transcript
+# on entire/checkpoints/v1. Not a credential.
+b86c6ddea96e39b56624a5b8a1a97c9c414a14ac:c7/500b37724d/0/full.jsonl:generic-api-key:19
+
+# Illustrative memory address ("Secret value address: 0x7ffc...") in the ptrace
+# blog draft's example output. Not a credential.
+74f6f8a73f3b145799e5be63d88aef925cb0a77e:blog-src/src/content/drafts/2026-05-24-demystifying-ptrace-building-a-custom-debugger-for-linux-binaries.md:generic-api-key:120
+74f6f8a73f3b145799e5be63d88aef925cb0a77e:blog-src/src/content/drafts/2026-05-24-demystifying-ptrace-building-a-custom-debugger-for-linux-binaries.md:generic-api-key:165
