@@ -1,0 +1,29 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "6a0724819f3f",
+  "strategy": "manual-commit",
+  "branch": "fix/blog-excerpt-newlines-dispatch-retry",
+  "checkpoints_count": 4,
+  "files_touched": [
+    ".github/workflows/generate-blog-post.yml",
+    ".github/workflows/repair-truncated-posts.yml",
+    "scripts/lib/blog-post.js",
+    "tests/lib/blog-post.test.js"
+  ],
+  "sessions": [
+    {
+      "metadata": "/6a/0724819f3f/0/metadata.json",
+      "transcript": "/6a/0724819f3f/0/full.jsonl",
+      "compact_transcript": "/6a/0724819f3f/0/transcript.jsonl",
+      "content_hash": "/6a/0724819f3f/0/content_hash.txt",
+      "prompt": "/6a/0724819f3f/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 52,
+    "cache_creation_tokens": 94010,
+    "cache_read_tokens": 2442067,
+    "output_tokens": 18015,
+    "api_call_count": 26
+  }
+}
