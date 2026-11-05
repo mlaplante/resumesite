@@ -628,6 +628,9 @@ export function makeExcerpt(content) {
   const text = stripTitleDirective(content)
     .replace(/^#.+\n+/, '')
     .replace(/[#*`[\]]/g, '')
+    // The excerpt is one double-quoted frontmatter line. An unindented line
+    // break there is invalid YAML and fails the site build.
+    .replace(/\s+/g, ' ')
     .trim();
   let sliced = text.slice(0, 150);
   // If the 150-char cut lands mid-word, back up to the last word boundary so
