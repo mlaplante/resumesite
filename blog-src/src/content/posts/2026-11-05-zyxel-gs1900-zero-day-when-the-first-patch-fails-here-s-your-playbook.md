@@ -5,9 +5,7 @@ category: "thought-leadership"
 tags: ["network-security", "incident-response", "firmware", "vulnerability-management", "zyxel"]
 # series: ""      # optional: set the same value on every part of a multi-part series
 # seriesOrder: 1   # this post's position within that series
-excerpt: "Most teams close a ticket once the patch is applied. This incident shows why that isn't enough.
-
-Researchers at Binarly found that Zyxel GS1900..."
+excerpt: "Most teams close a ticket once the patch is applied. This incident shows why that isn't enough. Researchers at Binarly found that Zyxel GS1900..."
 ---
 
 Most teams close a ticket once the patch is applied. This incident shows why that isn't enough.
