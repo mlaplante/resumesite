@@ -242,6 +242,14 @@ describe('makeExcerpt', () => {
     const ex = makeExcerpt(body);
     expect(ex.endsWith('supercalifragilistic...')).toBe(true);
   });
+  it('collapses line breaks when the opening paragraph is short', () => {
+    // A newline here reaches the frontmatter as an unindented multi-line
+    // double-quoted scalar, which is invalid YAML and fails the site build.
+    const body = '# Title\n\nShort opening paragraph.\n\nSecond paragraph\nwraps here.';
+    expect(makeExcerpt(body)).toBe(
+      'Short opening paragraph. Second paragraph wraps here....',
+    );
+  });
   it('strips common markdown punctuation', () => {
     const body = '# Title\n\n**Bold** and `code` and [link](http://x) text';
     expect(makeExcerpt(body)).not.toContain('**');

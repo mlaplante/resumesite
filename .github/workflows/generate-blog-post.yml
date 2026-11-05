@@ -185,9 +185,23 @@ jobs:
           # tests, no build, no spell check. workflow_dispatch is the one event
           # GITHUB_TOKEN may still trigger, and the runs report their checks
           # on the branch's head commit, which is the PR's.
+          # Retry transient API errors, and attempt every dispatch before failing
+          # so one bad response can't leave the PR without its other checks.
+          dispatch() {
+            local attempt
+            for attempt in 1 2 3 4; do
+              gh workflow run "$@" && return 0
+              echo "::warning::gh workflow run $1 failed (attempt $attempt of 4)"
+              [ "$attempt" -lt 4 ] && sleep $((attempt * 15))
+            done
+            echo "::error::Could not dispatch $1; run it manually on $BRANCH"
+            return 1
+          }
+          dispatch_failed=0
           for wf in ci.yml typos.yml; do
-            gh workflow run "$wf" --ref "$BRANCH"
+            dispatch "$wf" --ref "$BRANCH" || dispatch_failed=1
           done
           # base=master scopes the secret scan to this PR's commits; without it
           # a dispatched gitleaks run scans every branch's full history.
-          gh workflow run gitleaks.yml --ref "$BRANCH" -f base=master
+          dispatch gitleaks.yml --ref "$BRANCH" -f base=master || dispatch_failed=1
+          exit "$dispatch_failed"
