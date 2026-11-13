@@ -15,17 +15,19 @@ import { formatDateLong } from '../../utils/format';
 const here = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = resolve(here, '../../../public');
 
-// Rendered cards are cached on disk (blog-src/.cache/og/, gitignored) keyed by
+// Rendered cards are cached on disk (blog-src/node_modules/.astro/og/) keyed by
 // everything that feeds the render: the card template version, the post's
 // title/category/date, and the font bytes. Rendering 180+ cards is ~80% of a
 // cold build's wall-clock time; with the cache warm only new or retitled
 // posts pay the satori → resvg → sharp cost. CI restores the directory via
-// actions/cache (see .github/workflows/ci.yml).
+// actions/cache (see .github/workflows/ci.yml). It lives under
+// node_modules/.astro because that is the one in-repo directory Cloudflare
+// Workers Builds keeps between builds when its build cache is on.
 //
 // Bump CARD_VERSION whenever buildCard() or the PNG encoding below changes,
 // otherwise cached cards keep the old look.
 const CARD_VERSION = 1;
-const CACHE_DIR = resolve(here, '../../../.cache/og');
+const CACHE_DIR = resolve(here, '../../../node_modules/.astro/og');
 const FONT_FILES = ['poppins-400.woff2', 'poppins-600.woff2'] as const;
 const fontsHash = createHash('sha256');
 for (const file of FONT_FILES) fontsHash.update(readFileSync(`${PUBLIC}/fonts/poppins/${file}`));
