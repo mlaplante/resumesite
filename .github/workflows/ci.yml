@@ -97,7 +97,7 @@ jobs:
         run: npm ci
         working-directory: blog-src
 
-      # Rendered OG cards (blog-src/.cache/og/) are keyed by post title/date and
+      # Rendered OG cards (blog-src/node_modules/.astro/og/) are keyed by post title/date and
       # font bytes, so a restored cache skips the satori/resvg/sharp render for
       # every post that didn't change — most of a cold build's wall-clock time.
       # The key includes the posts tree so the newest cache is saved whenever
@@ -105,7 +105,7 @@ jobs:
       - name: Restore OG card cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: blog-src/.cache/og
+          path: blog-src/node_modules/.astro/og
           key: og-cards-${{ hashFiles('blog-src/src/content/posts/**', 'blog-src/src/pages/og/**', 'blog-src/public/fonts/poppins/poppins-400.woff2', 'blog-src/public/fonts/poppins/poppins-600.woff2') }}
           restore-keys: |
             og-cards-
@@ -135,7 +135,11 @@ jobs:
       # Pinned to an exact version: this step blocks merges, so a new @lhci/cli
       # (and the Lighthouse it bundles) must not land on CI unreviewed. Bump
       # deliberately, the same way the SHA-pinned actions above are bumped.
+      # Skipped on pushes to master: the same commit was already audited on its
+      # PR, so the post-merge rerun only cost ~2.5 minutes. PRs and
+      # workflow_dispatch (automation-pushed branches) still run it.
       - name: Lighthouse audit
+        if: github.event_name != 'push'
         run: |
           npx --yes @lhci/cli@0.15.1 collect
           npx --yes @lhci/cli@0.15.1 assert
