@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "68f13065cf79",
+  "strategy": "manual-commit",
+  "branch": "security/hardening-2026-11",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "blog-src/src/pages/services.astro",
+    "tests/worker/contact.test.ts",
+    "worker/email/templates.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/68/f13065cf79/0/metadata.json",
+      "transcript": "/68/f13065cf79/0/full.jsonl",
+      "compact_transcript": "/68/f13065cf79/0/transcript.jsonl",
+      "content_hash": "/68/f13065cf79/0/content_hash.txt",
+      "prompt": "/68/f13065cf79/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 54,
+    "cache_creation_tokens": 138063,
+    "cache_read_tokens": 2695115,
+    "output_tokens": 17700,
+    "api_call_count": 25
+  }
+}

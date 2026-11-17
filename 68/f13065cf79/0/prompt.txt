@@ -1,0 +1,1 @@
+Can we take a wholistic view of our application and code, and make sure we have a defensible position and patch any vulnerabilities we find
