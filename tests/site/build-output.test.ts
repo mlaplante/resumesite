@@ -72,6 +72,46 @@ describe.skipIf(!hasDist)('production build output', () => {
     expect(statSync(join(DIST, 'resume.pdf')).size).toBeGreaterThan(20_000);
   });
 
+  // Post bodies are Markdown, and the renderer passes raw HTML through
+  // verbatim. Most posts are drafted by an LLM from fetched news text, so a
+  // prompt-injected `<meta http-equiv=refresh>`, `<style>` overlay, or `<form>`
+  // would otherwise ride a routine draft PR onto the live site. The CSP blocks
+  // script execution, off-site frames and off-site form posts, but not
+  // redirects or restyling — so no post may render active markup at all.
+  // Checked on the built page (not the Markdown source) because fenced and
+  // inline code is entity-escaped by then: any literal tag left is a real one.
+  it('renders no active HTML inside any post body', () => {
+    const FORBIDDEN_TAG =
+      /<(script|iframe|frame|frameset|object|embed|applet|form|input|button|textarea|select|option|base|meta|link|style|svg|math|audio|video|source|track|dialog|template|slot|portal|marquee)\b/i;
+    const EVENT_ATTR = /<[^>]*\son[a-z]+\s*=/i;
+    const SCRIPT_URL = /<[^>]*\s(?:href|src|action|formaction|xlink:href)\s*=\s*["']?\s*(?:javascript|vbscript|data):/i;
+
+    const blogDir = join(DIST, 'blog');
+    const offenders: string[] = [];
+    let checked = 0;
+    for (const slug of readdirSync(blogDir)) {
+      const file = join(blogDir, slug, 'index.html');
+      if (!existsSync(file)) continue;
+      const html = readFileSync(file, 'utf8');
+      // The post body sits between the inline TOC and the end of <article>;
+      // listing/category pages have no inline TOC and are skipped.
+      const tocAt = html.indexOf('id="toc-inline-nav"');
+      if (tocAt === -1) continue;
+      const start = html.indexOf('</details>', tocAt);
+      const end = html.lastIndexOf('</article>');
+      expect(start, `${slug}: post body start not found`).toBeGreaterThan(-1);
+      expect(end, `${slug}: post body end not found`).toBeGreaterThan(start);
+      // GFM task lists (`- [ ] item`) render as exactly this inert checkbox —
+      // the one form control a post body may legitimately contain.
+      const body = html.slice(start, end).replaceAll('<input type="checkbox" disabled>', '');
+      checked++;
+      const hit = body.match(FORBIDDEN_TAG) ?? body.match(EVENT_ATTR) ?? body.match(SCRIPT_URL);
+      if (hit) offenders.push(`${slug}: ${hit[0].slice(0, 80)}`);
+    }
+    expect(checked, 'no post pages were inspected — body markers changed?').toBeGreaterThan(0);
+    expect(offenders, `active HTML rendered in post bodies:\n${offenders.join('\n')}`).toEqual([]);
+  });
+
   it('builds a populated client-side search index', () => {
     const index = JSON.parse(
       readFileSync(join(DIST, 'blog/search.json'), 'utf8'),

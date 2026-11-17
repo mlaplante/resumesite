@@ -59,6 +59,9 @@ function nl2br(s: string): string {
   return esc(s).replace(/\r?\n/g, '<br />');
 }
 
+// What the auto-reply is willing to echo back as a greeting name.
+const GIVEN_NAME_RE = /^[\p{L}\p{M}'’-]{1,40}$/u;
+
 const year = new Date().getFullYear();
 
 // The shared brand shell. `preheader` is the hidden inbox-preview snippet;
@@ -183,9 +186,14 @@ export function renderNotificationEmail(d: ContactDetails): RenderedEmail {
 // Auto-reply: sent back to the person who submitted the form.
 // -------------------------------------------------------------------------
 export function renderAutoReplyEmail(d: Pick<ContactDetails, 'name'>): RenderedEmail {
-  // Use the first name only for a warmer greeting; fall back to the full
-  // string if there's no whitespace to split on.
-  const firstName = d.name.trim().split(/\s+/)[0] || 'there';
+  // Use the first name only for a warmer greeting. This email goes to whatever
+  // address the submitter typed — possibly a third party's — so the name is
+  // the one submitter-controlled string a stranger could receive under this
+  // domain. Echo it only when it looks like a plain given name (letters,
+  // combining marks, apostrophe, hyphen; no dots, slashes, or digits, so no
+  // URLs or domains) and otherwise fall back to a neutral greeting.
+  const candidate = d.name.trim().split(/\s+/)[0] ?? '';
+  const firstName = GIVEN_NAME_RE.test(candidate) ? candidate : 'there';
 
   const bodyHtml = `
     <h1 style="margin:0 0 16px; font-family:${BRAND.sans}; font-size:22px; font-weight:700; color:${BRAND.ink};">Thanks for reaching out, ${esc(firstName)}!</h1>

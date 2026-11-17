@@ -533,6 +533,46 @@ describe('contact form: branded emails', () => {
     expect(notification!.replyTo).toBe('"x <attacker@evil.com>, spoof" <test@example.com>');
   });
 
+  // The auto-reply goes to whatever address the submitter typed, which may be
+  // a third party's. Anything the submitter controls in that email is content
+  // delivered to a stranger under this domain's name — so the greeting only
+  // ever echoes something that looks like a plain given name.
+  it.each([
+    ['a URL', 'https://evil.example/claim-prize'],
+    ['a bare domain', 'evil.example'],
+    ['markup', '<a href=x>click</a>'],
+    ['an over-long token', 'A'.repeat(41)],
+    ['digits', 'Win1000'],
+  ])('does not echo %s from the name into the auto-reply', async (_label, name) => {
+    const mails = stubAndCapture();
+    const ctx = createExecutionContext();
+    const res = await worker.fetch(makeContactRequest({ fields: { name } }), env, ctx);
+    await waitOnExecutionContext(ctx);
+    expect(res.status).toBe(303);
+
+    const autoReply = mails.find(m => String(m.subject).includes('Thanks for reaching out'));
+    expect(autoReply).toBeDefined();
+    for (const part of [String(autoReply!.html), String(autoReply!.text)]) {
+      expect(part).toContain('Thanks for reaching out, there!');
+      expect(part).not.toContain(name);
+    }
+  });
+
+  it.each([
+    ['Zoë Smith', 'Zoë'],
+    ["O'Brien", "O'Brien"],
+    ['Jean-Luc Picard', 'Jean-Luc'],
+    ['李 雷', '李'],
+  ])('still greets a real given name (%s) in the auto-reply', async (name, first) => {
+    const mails = stubAndCapture();
+    const ctx = createExecutionContext();
+    await worker.fetch(makeContactRequest({ fields: { name } }), env, ctx);
+    await waitOnExecutionContext(ctx);
+
+    const autoReply = mails.find(m => String(m.subject).includes('Thanks for reaching out'));
+    expect(String(autoReply!.text)).toContain(`Thanks for reaching out, ${first}!`);
+  });
+
   it('does not block the redirect on an auto-reply failure', async () => {
     // Turnstile ok; ForwardEmail: first call (auto-reply, fired via waitUntil)
     // fails, second call (owner notification) succeeds. The user still gets the

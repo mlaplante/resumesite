@@ -3,6 +3,7 @@ import SiteLayout from '../layouts/SiteLayout.astro';
 import Icon from '../components/Icon.astro';
 import { stats } from '../data/resume';
 import { SITE_URL, CAL_LINK } from '../config';
+import { safeJsonLd } from '../utils/schema';
 
 const bookingUrl = CAL_LINK ? `https://cal.com/${CAL_LINK}` : '';
 
@@ -60,7 +61,7 @@ const process = [
   },
 ];
 
-const professionalServiceSchema = JSON.stringify({
+const professionalServiceSchema = safeJsonLd({
   "@context": "https://schema.org",
   "@type": "ProfessionalService",
   "name": "LaPlante Web Development",
