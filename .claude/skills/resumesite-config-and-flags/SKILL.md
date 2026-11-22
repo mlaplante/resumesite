@@ -98,7 +98,7 @@ Content-schema caps (not runtime tunables, but drift the same way — `blog-src/
 | `image.service.entrypoint` | `astro/assets/services/sharp` | `astro.config.mjs:17` | Sharp-based image service for the `<Image />` component / OG rendering pipeline. |
 | `markdown.shikiConfig.themes` | `{ light: 'github-light', dark: 'github-dark' }`, `wrap: true` | `astro.config.mjs:32-37` | Code-block syntax highlighting themes for posts. |
 | `integrations` | `[sitemap()]` | `astro.config.mjs:20` | `@astrojs/sitemap`, defaults (no custom filter/changefreq config). |
-| `wrangler.jsonc` `compatibility_date` | `'2026-04-17'` | `wrangler.jsonc:4` | Bumping this is a deliberate, tested change — see `resumesite-cloudflare-reference`. |
+| `wrangler.jsonc` `compatibility_date` | `'2026-11-01'` | `wrangler.jsonc:4` | Bumping this is a deliberate, tested change — see `resumesite-cloudflare-reference`. |
 | `wrangler.jsonc` `compatibility_flags` | `['nodejs_compat']` | `wrangler.jsonc:5` | Required for Node-API usage in the Worker/build toolchain. |
 | `wrangler.jsonc` `assets.run_worker_first` | `['/api/*', '/css/*', '/js/*']` | `wrangler.jsonc:13` | `/css/*` and `/js/*` route through the Worker (not straight to `ASSETS`) so a fingerprinted-filename 404 from a stale cached HTML page can fall back to the current asset — see `worker/index.ts`'s `HASHED_ASSET` regex fallback. |
 | `wrangler.jsonc` `d1_databases[0]` | binding `DB`, name `contact-submissions`, id `7d630334-b908-4819-bd9f-2ec6ff05c4e8` | `wrangler.jsonc:18-24` | Production D1. Tests use a separate binding (`test-contact-submissions`, `vitest.config.ts`) — tests never touch this one. |

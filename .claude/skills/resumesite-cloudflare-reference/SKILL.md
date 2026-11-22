@@ -38,7 +38,7 @@ Re-verification commands are in "Provenance and maintenance" at the end.
 ```jsonc
 {
   "name": "resumesite",
-  "compatibility_date": "2026-04-17",
+  "compatibility_date": "2026-11-01",
   "compatibility_flags": ["nodejs_compat"],
   "main": "worker/index.ts",
   "assets": {
