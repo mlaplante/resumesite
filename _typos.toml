@@ -21,6 +21,7 @@ fnd = "fnd"                  # Oracle EBS FND_* tables (fnd_user, fnd_executable
 fpr = "fpr"                  # false positive rate acronym
 hashi = "hashi"              # HashiCorp
 hav = "hav"                  # hardware-assisted virtualization
+ot = "ot"                    # OT, operational technology (ICS/SCADA)
 parm = "parm"                # libbpf PT_REGS_PARM1..N macros (bpf_tracing.h)
 pn = "pn"                    # nmap -Pn (skip host discovery)
 shure = "shure"              # Shure SM7B microphone
