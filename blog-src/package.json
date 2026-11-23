@@ -21,9 +21,9 @@
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.19",
-    "@astrojs/sitemap": "^3.7.4",
+    "@astrojs/sitemap": "^3.7.5",
     "@resvg/resvg-js": "^2.6.2",
-    "astro": "^7.4.7",
+    "astro": "^7.4.12",
     "pdfkit": "^0.20.2",
     "satori": "^0.63.2",
     "sharp": "^0.35.5",
@@ -32,7 +32,7 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.12",
     "@types/pdfkit": "^0.17.7",
-    "bootstrap": "^5.3.8",
+    "bootstrap": "^5.3.9",
     "esbuild": "^0.28.2",
     "purgecss": "^9.1.0",
     "typescript": "^6.0.3"
