@@ -21,10 +21,10 @@
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.19",
-    "@astrojs/sitemap": "^3.7.5",
+    "@astrojs/sitemap": "^3.7.6",
     "@resvg/resvg-js": "^2.6.2",
-    "astro": "^7.4.12",
-    "pdfkit": "^0.20.2",
+    "astro": "^7.4.13",
+    "pdfkit": "^0.21.0",
     "satori": "^0.63.2",
     "sharp": "^0.35.5",
     "wawoff2": "^2.0.1"
@@ -36,5 +36,9 @@
     "esbuild": "^0.28.2",
     "purgecss": "^9.1.0",
     "typescript": "^6.0.3"
+  },
+  "allowScripts": {
+    "esbuild": true,
+    "fsevents": true
   }
 }

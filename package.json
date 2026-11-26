@@ -31,21 +31,26 @@
     "personal-website"
   ],
   "devDependencies": {
-    "@anthropic-ai/sdk": "^1.8.0",
-    "@cloudflare/vitest-plugin": "^1.8.2",
-    "@cloudflare/workers-types": "^5.20261030.1",
+    "@anthropic-ai/sdk": "^1.14.0",
+    "@cloudflare/vitest-plugin": "^1.9.2",
+    "@cloudflare/workers-types": "^5.20261125.1",
     "@eslint/js": "^10.0.1",
     "eslint": "^10.15.0",
-    "eslint-plugin-astro": "^3.2.1",
+    "eslint-plugin-astro": "^3.2.2",
     "globals": "^17.14.0",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.72.2",
-    "vitest": "^5.1.0"
+    "typescript-eslint": "^8.74.0",
+    "vitest": "^5.1.2"
   },
   "overrides": {
     "miniflare": {
       "sharp": "^0.35.4"
     },
     "minimatch": "^11.0.1"
+  },
+  "allowScripts": {
+    "esbuild": true,
+    "workerd": true,
+    "fsevents": true
   }
 }
